@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { window } from 'vscode';
+import { window, OutputChannel } from 'vscode';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -18,32 +18,37 @@ export function activate(context: vscode.ExtensionContext) {
 	let profiles = Object.keys(config);
 	let languages: Array<string> = ["Python", "SQL", "Scala", "R"];
 	let language = "";
-	let context_id = "";
-	let command_id = "";
+	let contextId = "";
+	let commandId = "";
 	let host = "";
 	let token = "";
 	let cluster = "";
-	let http_config: any;
-	let execution_id = 0;
-
-	console.log('Extension "db-12-vscode" is now active');
+	let httpConfig: any;
+	let executionId = 0;
+	let output: vscode.OutputChannel;
 
 	let initialize = vscode.commands.registerCommand('db-12-vscode.initialize', async () => {
-		const editor = vscode.window.activeTextEditor;
+		const editor = window.activeTextEditor;
 		if (!editor) {
 			return;
 		}
+
+		if (output === undefined) {
+			output = window.createOutputChannel("Databricks");
+			output.show(true);
+		}
+
 		const profile = await window.showQuickPick(profiles, {
 			placeHolder: 'Select Databricks CLI profile'
 		});
 		if (profile !== undefined) {
 			host = config[profile]["host"];
 			token = config[profile]["token"];
-			http_config = { headers: { "Authorization": `Bearer ${token}` } };
+			httpConfig = { headers: { "Authorization": `Bearer ${token}` } };
 
 			try {
 				const uri = url.resolve(host, 'api/2.0/clusters/list');
-				const response = await axios.get(uri, http_config);
+				const response = await axios.get(uri, httpConfig);
 				const clusterConfig: Response[] = response["data"]["clusters"];
 				let clusters: string[] = [];
 				clusterConfig.forEach(cluster => {
@@ -53,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
 					placeHolder: 'Select Databricks cluster'
 				}) || "";
 			} catch (error) {
-				window.showErrorMessage(`ERROR received: ${error}\n`);
+				output.appendLine(`ERROR: ${error}\n`);
 			}
 
 			const lang = await window.showQuickPick(languages, {
@@ -64,39 +69,39 @@ export function activate(context: vscode.ExtensionContext) {
 			try {
 				const uri = url.resolve(host, 'api/1.2/contexts/create');
 				const data = { "language": language, "clusterId": cluster };
-				const response = await axios.post(uri, data, http_config);
-				context_id = (response as Response)["data"].id;
+				const response = await axios.post(uri, data, httpConfig);
+				contextId = (response as Response)["data"].id;
 			} catch (error) {
-				window.showErrorMessage(`ERROR received: ${error}\n`);
+				output.appendLine(`ERROR: ${error}\n`);
 			}
 
 			try {
-				const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${context_id}`;
+				const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${contextId}`;
 				const uri = url.resolve(host, path);
 				const condition = (value: string) => value === "PENDING";
-				let response = await poll(uri, http_config, condition, 1000);
-				console.info(`Execution Context created`);
+				let response = await poll(uri, httpConfig, condition, 1000, output);
+				output.appendLine(`Execution Context created for profile '${profile}' and cluster '${cluster}'`);
 			} catch (error) {
-				console.error(`ERROR received: ${error}\n`);
+				output.appendLine(`ERROR: ${error}\n`);
 			}
 
-			execution_id = 0;
+			executionId = 0;
 		} else {
-			console.error("Wrong profile selected");
+			output.appendLine("Error: Wrong profile selected");
 		}
 	});
 
-	let sendCode = vscode.commands.registerCommand('db-12-vscode.sendCode', () => {
-		console.info('db-12-vscode: sendCode');
-	});
+	// let sendCode = vscode.commands.registerCommand('db-12-vscode.sendCode', () => {
+	// 	console.info('db-12-vscode: sendCode');
+	// });
 
 	let sendSelectionOrLine = vscode.commands.registerCommand('db-12-vscode.sendSelectionOrLine', async () => {
-		const editor = vscode.window.activeTextEditor;
+		const editor = window.activeTextEditor;
 		if (!editor) {
 			return;
 		}
 
-		execution_id++;
+		executionId++;
 		let code = "";
 		let selection = editor.selection;
 		if (selection.isEmpty) {
@@ -104,39 +109,48 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			code = editor.document.getText(selection);
 		}
-		console.log(`In[${execution_id}]:\n` + code);
+		const prompt1 = `In[${executionId}]: `;
+		const prompt2 = " ".repeat(prompt1.length - 5) + "...: ";
+		code.split("\n").forEach((line, index) => {
+			if (index === 0) {
+				output.append("\n" + prompt1);
+			} else {
+				output.append(prompt2);
+			}
+			output.appendLine(line);
+		});
 
 		try {
 			const uri = url.resolve(host, 'api/1.2/commands/execute');
-			const data = { "language": language, "clusterId": cluster, "contextId": context_id, "command": code };
-			const response = await axios.post(uri, data, http_config);
-			command_id = (response as Response)["data"].id;
+			const data = { "language": language, "clusterId": cluster, "contextId": contextId, "command": code };
+			const response = await axios.post(uri, data, httpConfig);
+			commandId = (response as Response)["data"].id;
 		} catch (error) {
-			window.showErrorMessage(`ERROR received: ${error}\n`);
+			output.appendLine(`ERROR: ${error}\n`);
 		}
 
 		try {
-			const path = `api/1.2/commands/status?clusterId=${cluster}&contextId=${context_id}&commandId=${command_id}`;
+			const path = `api/1.2/commands/status?clusterId=${cluster}&contextId=${contextId}&commandId=${commandId}`;
 			const uri = url.resolve(host, path);
 			const condition = (value: string) => ["Queued", "Running", "Cancelling"].indexOf(value) !== -1;
-			let response = await poll(uri, http_config, condition, 1000) as Response;
+			let response = await poll(uri, httpConfig, condition, 1000, output) as Response;
 
 			if (response["data"].status === "Finished") {
 				let resultType = (response["data"] as Response)["results"]["resultType"];
 				if (resultType === "error") {
 					const out = response["data"]["results"]["cause"];
-					window.showErrorMessage("Out (ERROR):\n" + out);
+					output.appendLine("ERROR:\n" + out);
 				} else {
 					const out = response["data"]["results"]["data"];
-					console.log(out);
+					output.appendLine(out);
 				}
 			} else if (response["data"].status === "Cancelled") {
-				window.showErrorMessage("Command execution cancelled");
+				output.appendLine("Error: Command execution cancelled");
 			} else {
-				window.showErrorMessage("Command execution failed");
+				output.appendLine("Error: Command execution failed");
 			}
 		} catch (error) {
-			window.showErrorMessage(`ERROR received: ${error}\n`);
+			output.appendLine(`ERROR: ${error}\n`);
 		}
 	});
 
@@ -147,18 +161,19 @@ export function activate(context: vscode.ExtensionContext) {
 
 async function poll(
 	uri: string,
-	http_config: any,
+	httpConfig: any,
 	condition: (value: string) => boolean,
-	ms: number) {
+	ms: number,
+	output: OutputChannel) {
 
-	const fn = () => axios.get(uri, http_config);
+	const fn = () => axios.get(uri, httpConfig);
 	let response = await fn();
 	while (condition((response as Response)["data"].status)) {
-		process.stdout.write(".");
+		output.append("»");
 		await wait(ms);
 		response = await fn();
 	}
-	process.stdout.write("\n");
+	output.append("\n");
 	return response;
 }
 
