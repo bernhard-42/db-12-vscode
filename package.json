@@ -1,6 +1,7 @@
 {
 	"name": "db-12-vscode",
 	"displayName": "db-12-vscode",
+	"publisher": "bernhardwalter",
 	"description": "Commands to send code to Databricks cluster",
 	"version": "0.0.1",
 	"engines": {
@@ -11,7 +12,6 @@
 	],
 	"activationEvents": [
 		"onCommand:db-12-vscode.initialize",
-		"onCommand:db-12-vscode.sendCode",
 		"onCommand:db-12-vscode.sendSelectionOrLine"
 	],
 	"main": "./out/extension.js",
@@ -19,10 +19,6 @@
 		"commands": [{
 				"command": "db-12-vscode.initialize",
 				"title": "Databricks (API 1.2): Initialize Databricks Connections"
-			},
-			{
-				"command": "db-12-vscode.sendCode",
-				"title": "Databricks (API 1.2): Send code to Databricks"
 			},
 			{
 				"command": "db-12-vscode.sendSelectionOrLine",

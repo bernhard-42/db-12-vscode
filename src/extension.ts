@@ -155,7 +155,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(initialize);
-	context.subscriptions.push(sendCode);
+	// context.subscriptions.push(sendCode);
 	context.subscriptions.push(sendSelectionOrLine);
 }
 
