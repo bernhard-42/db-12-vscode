@@ -1,0 +1,64 @@
+{
+	"name": "db-12-vscode",
+	"displayName": "db-12-vscode",
+	"description": "Commands to send code to Databricks cluster",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.44.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:db-12-vscode.initialize",
+		"onCommand:db-12-vscode.sendCode",
+		"onCommand:db-12-vscode.sendSelectionOrLine"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [{
+				"command": "db-12-vscode.initialize",
+				"title": "Databricks (API 1.2): Initialize Databricks Connections"
+			},
+			{
+				"command": "db-12-vscode.sendCode",
+				"title": "Databricks (API 1.2): Send code to Databricks"
+			},
+			{
+				"command": "db-12-vscode.sendSelectionOrLine",
+				"title": "Databricks (API 1.2): Send selection or line to Databricks"
+			}
+		],
+		"keybindings": [{
+			"command": "db-12-vscode.sendSelectionOrLine",
+			"key": "ctrl+k shift+enter",
+			"mac": "cmd+k shift+enter"
+		}]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint src --ext ts",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/mocha": "^7.0.2",
+		"@types/node": "^13.13.2",
+		"@types/vscode": "^1.44.0",
+		"@types/ini": "^1.3.30",
+		"@typescript-eslint/eslint-plugin": "^2.26.0",
+		"@typescript-eslint/parser": "^2.26.0",
+		"eslint": "^6.8.0",
+		"glob": "^7.1.6",
+		"mocha": "^7.1.1",
+		"typescript": "^3.8.3",
+		"vscode-test": "^1.3.0"
+	},
+	"dependencies": {
+		"axios": "^0.19.2",
+		"ini": "^1.3.5"
+	}
+}
