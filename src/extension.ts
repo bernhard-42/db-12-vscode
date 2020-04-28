@@ -10,6 +10,21 @@ import axios from 'axios';
 interface Response {
 	[key: string]: any;
 }
+interface ExecutionContext {
+	language: string;
+	contextId: string;
+	commandId: string;
+	host: string;
+	token: string;
+	cluster: string;
+	executionId: number;
+}
+
+let executionContexts = new Map<string, ExecutionContext>();
+
+function headers(token: string) {
+	return { headers: { "Authorization": `Bearer ${token}` } };
+};
 
 export function activate(context: vscode.ExtensionContext) {
 	let homedir = os.homedir();
@@ -17,91 +32,140 @@ export function activate(context: vscode.ExtensionContext) {
 	let config = ini.parse(databrickscfg);
 	let profiles = Object.keys(config);
 	let languages: Array<string> = ["Python", "SQL", "Scala", "R"];
-	let language = "";
-	let contextId = "";
-	let commandId = "";
-	let host = "";
-	let token = "";
-	let cluster = "";
-	let httpConfig: any;
-	let executionId = 0;
 	let output: vscode.OutputChannel;
 
 	let initialize = vscode.commands.registerCommand('db-12-vscode.initialize', async () => {
+		let language = "";
+		let contextId = "";
+		let host = "";
+		let token = "";
+		let cluster = "";
+
+		// Get editor
+
 		const editor = window.activeTextEditor;
 		if (!editor) {
+			window.showErrorMessage("No editor widow open");
 			return;
 		}
+
+		// Create output if not exists
 
 		if (output === undefined) {
 			output = window.createOutputChannel("Databricks");
 			output.show(true);
 		}
 
+		// Select Databricks CLI Profile
+
 		const profile = await window.showQuickPick(profiles, {
 			placeHolder: 'Select Databricks CLI profile'
-		});
-		if (profile !== undefined) {
-			host = config[profile]["host"];
-			token = config[profile]["token"];
-			httpConfig = { headers: { "Authorization": `Bearer ${token}` } };
+		}) || "";
 
-			try {
-				const uri = url.resolve(host, 'api/2.0/clusters/list');
-				const response = await axios.get(uri, httpConfig);
-				const clusterConfig: Response[] = response["data"]["clusters"];
-				let clusters: string[] = [];
-				clusterConfig.forEach(cluster => {
-					clusters.push(cluster["cluster_id"]);
-				});
-				cluster = await window.showQuickPick(clusters, {
-					placeHolder: 'Select Databricks cluster'
-				}) || "";
-			} catch (error) {
-				output.appendLine(`ERROR: ${error}\n`);
-			}
-
-			const lang = await window.showQuickPick(languages, {
-				placeHolder: 'Select language'
-			}) || "python";
-			language = (lang || "Python").toLowerCase();
-
-			try {
-				const uri = url.resolve(host, 'api/1.2/contexts/create');
-				const data = { "language": language, "clusterId": cluster };
-				const response = await axios.post(uri, data, httpConfig);
-				contextId = (response as Response)["data"].id;
-			} catch (error) {
-				output.appendLine(`ERROR: ${error}\n`);
-			}
-
-			try {
-				const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${contextId}`;
-				const uri = url.resolve(host, path);
-				const condition = (value: string) => value === "PENDING";
-				let response = await poll(uri, httpConfig, condition, 1000, output);
-				output.appendLine(`Execution Context created for profile '${profile}' and cluster '${cluster}'`);
-			} catch (error) {
-				output.appendLine(`ERROR: ${error}\n`);
-			}
-
-			executionId = 0;
-		} else {
-			output.appendLine("Error: Wrong profile selected");
+		if (profile === "") {
+			output.appendLine("Profile selection cancelled");
+			return;
 		}
+
+		host = config[profile]["host"];
+		token = config[profile]["token"];
+
+		// Get clusters for profile
+
+		let clusters: string[] = [];
+		try {
+			const uri = url.resolve(host, 'api/2.0/clusters/list');
+			const response = await axios.get(uri, headers(token));
+			const clusterConfig: Response[] = response["data"]["clusters"];
+			clusterConfig.forEach(cluster => {
+				clusters.push(cluster["cluster_id"]);
+			});
+		} catch (error) {
+			window.showErrorMessage(`ERROR: ${error}\n`);
+			return;
+		}
+
+		// Select cluster
+
+		cluster = await window.showQuickPick(clusters, {
+			placeHolder: 'Select Databricks cluster'
+		}) || "";
+		if (cluster === "") {
+			output.appendLine("Cluster selection cancelled");
+			return;
+		}
+
+		// Select language
+
+		language = await window.showQuickPick(languages, {
+			placeHolder: 'Select language'
+		}) || "";
+		if (language === "") {
+			output.appendLine("Language selection cancelled");
+			return;
+		}
+		language = language.toLowerCase();
+
+		// Create Execution Context
+
+		try {
+			const uri = url.resolve(host, 'api/1.2/contexts/create');
+			const data = { "language": language, "clusterId": cluster };
+			const response = await axios.post(uri, data, headers(token));
+			contextId = (response as Response)["data"].id;
+		} catch (error) {
+			window.showErrorMessage(`ERROR: ${error}\n`);
+			return;
+		}
+
+		// Poll context until it is created
+
+		try {
+			const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${contextId}`;
+			const uri = url.resolve(host, path);
+			const condition = (value: string) => value === "PENDING";
+			let response = await poll(uri, token, condition, 1000, output);
+			output.appendLine(`Execution Context created for profile '${profile}' and cluster '${cluster}'`);
+		} catch (error) {
+			window.showErrorMessage(`ERROR: ${error}\n`);
+			return;
+		}
+
+		// Create Execution Context
+
+		executionContexts.set(editor.document.fileName, {
+			language: language,
+			contextId: contextId,
+			commandId: "",
+			host: host,
+			token: token,
+			cluster: cluster,
+			executionId: 0
+		});
 	});
 
-	// let sendCode = vscode.commands.registerCommand('db-12-vscode.sendCode', () => {
-	// 	console.info('db-12-vscode: sendCode');
-	// });
-
 	let sendSelectionOrLine = vscode.commands.registerCommand('db-12-vscode.sendSelectionOrLine', async () => {
+
+		// Create output if not exists
+
 		const editor = window.activeTextEditor;
 		if (!editor) {
 			return;
 		}
 
-		executionId++;
+		// Verify execution context exists
+
+		let context = executionContexts.get(editor.document.fileName);
+		if (context === undefined) {
+			window.showErrorMessage("No Databricks context available");
+			return;
+		}
+
+		// Prepare and print the input code
+
+		context.executionId++;
+		const parts = editor.document.fileName.split("/");
+		const editorPrefix = `[${parts[parts.length - 1]}] `;
 		let code = "";
 		let selection = editor.selection;
 		if (selection.isEmpty) {
@@ -109,40 +173,47 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			code = editor.document.getText(selection);
 		}
-		const prompt1 = `In[${executionId}]: `;
+		const prompt1 = `In[${context.executionId}]: `;
 		const prompt2 = " ".repeat(prompt1.length - 5) + "...: ";
 		code.split("\n").forEach((line, index) => {
 			if (index === 0) {
-				output.append("\n" + prompt1);
+				output.append("\n" + editorPrefix + prompt1);
 			} else {
-				output.append(prompt2);
+				output.append(editorPrefix + prompt2);
 			}
 			output.appendLine(line);
 		});
 
-		try {
-			const uri = url.resolve(host, 'api/1.2/commands/execute');
-			const data = { "language": language, "clusterId": cluster, "contextId": contextId, "command": code };
-			const response = await axios.post(uri, data, httpConfig);
-			commandId = (response as Response)["data"].id;
-		} catch (error) {
-			output.appendLine(`ERROR: ${error}\n`);
-		}
+		// Send code as a command
 
 		try {
-			const path = `api/1.2/commands/status?clusterId=${cluster}&contextId=${contextId}&commandId=${commandId}`;
-			const uri = url.resolve(host, path);
+			const uri = url.resolve(context.host, 'api/1.2/commands/execute');
+			const data = { "language": context.language, "clusterId": context.cluster, "contextId": context.contextId, "command": code };
+			const response = await axios.post(uri, data, headers(context.token));
+			context.commandId = (response as Response)["data"].id;
+		} catch (error) {
+			output.appendLine(editorPrefix + ` ERROR: ${error}\n`);
+		}
+
+		// Poll command until it is finished
+
+		try {
+			const path = `api/1.2/commands/status?clusterId=${context.cluster}&contextId=${context.contextId}&commandId=${context.commandId}`;
+			const uri = url.resolve(context.host, path);
 			const condition = (value: string) => ["Queued", "Running", "Cancelling"].indexOf(value) !== -1;
-			let response = await poll(uri, httpConfig, condition, 1000, output) as Response;
+			let response = await poll(uri, context.token, condition, 1000, output) as Response;
 
 			if (response["data"].status === "Finished") {
 				let resultType = (response["data"] as Response)["results"]["resultType"];
 				if (resultType === "error") {
 					const out = response["data"]["results"]["cause"];
-					output.appendLine("ERROR:\n" + out);
+					output.appendLine(editorPrefix + " ERROR:\n" + out);
 				} else {
-					const out = response["data"]["results"]["data"];
-					output.appendLine(out);
+					const out = response["data"]["results"]["data"] as string;
+					out.split("\n").forEach((line) => {
+						output.append(editorPrefix);
+						output.appendLine(line);
+					});
 				}
 			} else if (response["data"].status === "Cancelled") {
 				output.appendLine("Error: Command execution cancelled");
@@ -155,18 +226,17 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(initialize);
-	// context.subscriptions.push(sendCode);
 	context.subscriptions.push(sendSelectionOrLine);
 }
 
 async function poll(
 	uri: string,
-	httpConfig: any,
+	token: string,
 	condition: (value: string) => boolean,
 	ms: number,
 	output: OutputChannel) {
 
-	const fn = () => axios.get(uri, httpConfig);
+	const fn = () => axios.get(uri, headers(token));
 	let response = await fn();
 	while (condition((response as Response)["data"].status)) {
 		output.append("»");
