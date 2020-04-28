@@ -12,7 +12,9 @@
 	],
 	"activationEvents": [
 		"onCommand:db-12-vscode.initialize",
-		"onCommand:db-12-vscode.sendSelectionOrLine"
+		"onCommand:db-12-vscode.sendSelectionOrLine",
+		"onCommand:db-12-vscode.cancel",
+		"onCommand:db-12-vscode.stop"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -22,7 +24,15 @@
 			},
 			{
 				"command": "db-12-vscode.sendSelectionOrLine",
-				"title": "Databricks (API 1.2): Send selection or line to Databricks"
+				"title": "Databricks (API 1.2): Send selection or line"
+			},
+			{
+				"command": "db-12-vscode.cancel",
+				"title": "Databricks (API 1.2): Cancel the currently running command"
+			},
+			{
+				"command": "db-12-vscode.stop",
+				"title": "Databricks (API 1.2): Stop the current exection context"
 			}
 		],
 		"keybindings": [{

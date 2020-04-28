@@ -26,6 +26,31 @@ function headers(token: string) {
 	return { headers: { "Authorization": `Bearer ${token}` } };
 };
 
+function getEditor() {
+	const editor = window.activeTextEditor;
+	if (!editor) {
+		window.showErrorMessage("No editor widow open");
+	}
+	return editor;
+}
+
+function getContext(editor: vscode.TextEditor) {
+	let context = executionContexts.get(editor.document.fileName);
+	if (context === undefined) {
+		window.showErrorMessage("No Databricks context available");
+	}
+	return context;
+}
+
+function clearContext(editor: vscode.TextEditor) {
+	executionContexts.delete(editor.document.fileName);
+}
+
+function getEditorPrefix(fileName: string) {
+	const parts = fileName.split("/");
+	return `[${parts[parts.length - 1]}] `;
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	let homedir = os.homedir();
 	let databrickscfg = fs.readFileSync(path.join(homedir, '.databrickscfg'), 'utf8');
@@ -43,11 +68,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Get editor
 
-		const editor = window.activeTextEditor;
-		if (!editor) {
-			window.showErrorMessage("No editor widow open");
-			return;
-		}
+		const editor = getEditor();
+		if (!editor) { return; }
 
 		// Create output if not exists
 
@@ -81,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
 				clusters.push(cluster["cluster_id"]);
 			});
 		} catch (error) {
-			window.showErrorMessage(`ERROR: ${error}\n`);
+			window.showErrorMessage(`ERROR[1]: ${error}\n`);
 			return;
 		}
 
@@ -110,11 +132,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 		try {
 			const uri = url.resolve(host, 'api/1.2/contexts/create');
-			const data = { "language": language, "clusterId": cluster };
+			const data = {
+				"language": language,
+				"clusterId": cluster
+			};
 			const response = await axios.post(uri, data, headers(token));
 			contextId = (response as Response)["data"].id;
 		} catch (error) {
-			window.showErrorMessage(`ERROR: ${error}\n`);
+			window.showErrorMessage(`ERROR[2]: ${error}\n`);
 			return;
 		}
 
@@ -127,7 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
 			let response = await poll(uri, token, condition, 1000, output);
 			output.appendLine(`Execution Context created for profile '${profile}' and cluster '${cluster}'`);
 		} catch (error) {
-			window.showErrorMessage(`ERROR: ${error}\n`);
+			window.showErrorMessage(`ERROR[3]: ${error}\n`);
 			return;
 		}
 
@@ -144,28 +169,50 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	let sendSelectionOrLine = vscode.commands.registerCommand('db-12-vscode.sendSelectionOrLine', async () => {
+	let stop = vscode.commands.registerCommand('db-12-vscode.stop', async () => {
+		// Get editor
 
-		// Create output if not exists
-
-		const editor = window.activeTextEditor;
-		if (!editor) {
-			return;
-		}
+		const editor = getEditor();
+		if (!editor) { return; }
 
 		// Verify execution context exists
 
-		let context = executionContexts.get(editor.document.fileName);
-		if (context === undefined) {
-			window.showErrorMessage("No Databricks context available");
-			return;
+		let context = getContext(editor);
+		if (!context) { return; }
+
+		const editorPrefix = getEditorPrefix(editor.document.fileName);
+
+		// Send cancel command
+		try {
+			const uri = url.resolve(context.host, 'api/1.2/contexts/destroy');
+			const data = {
+				"clusterId": context.cluster,
+				"contextId": context.contextId
+			};
+			await axios.post(uri, data, headers(context.token));
+			output.appendLine(editorPrefix + "Execution context stopped");
+			clearContext(editor);
+		} catch (error) {
+			output.appendLine(editorPrefix + ` ERROR[4]: ${error}\n`);
 		}
+	});
+
+	let sendSelectionOrLine = vscode.commands.registerCommand('db-12-vscode.sendSelectionOrLine', async () => {
+		// Get editor
+
+		const editor = getEditor();
+		if (!editor) { return; }
+
+		// Verify execution context exists
+
+		let context = getContext(editor);
+		if (!context) { return; }
 
 		// Prepare and print the input code
 
 		context.executionId++;
-		const parts = editor.document.fileName.split("/");
-		const editorPrefix = `[${parts[parts.length - 1]}] `;
+		const editorPrefix = getEditorPrefix(editor.document.fileName);
+
 		let code = "";
 		let selection = editor.selection;
 		if (selection.isEmpty) {
@@ -188,11 +235,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 		try {
 			const uri = url.resolve(context.host, 'api/1.2/commands/execute');
-			const data = { "language": context.language, "clusterId": context.cluster, "contextId": context.contextId, "command": code };
+			const data = {
+				"language": context.language,
+				"clusterId": context.cluster,
+				"contextId": context.contextId,
+				"command": code
+			};
 			const response = await axios.post(uri, data, headers(context.token));
 			context.commandId = (response as Response)["data"].id;
 		} catch (error) {
-			output.appendLine(editorPrefix + ` ERROR: ${error}\n`);
+			output.appendLine(editorPrefix + ` ERROR[5]: ${error}\n`);
 		}
 
 		// Poll command until it is finished
@@ -207,7 +259,9 @@ export function activate(context: vscode.ExtensionContext) {
 				let resultType = (response["data"] as Response)["results"]["resultType"];
 				if (resultType === "error") {
 					const out = response["data"]["results"]["cause"];
-					output.appendLine(editorPrefix + " ERROR:\n" + out);
+					if (out.indexOf("CommandCancelledException") === -1) {
+						output.appendLine(editorPrefix + " ERROR[6]:\n" + out);
+					}
 				} else {
 					const out = response["data"]["results"]["data"] as string;
 					out.split("\n").forEach((line) => {
@@ -221,12 +275,42 @@ export function activate(context: vscode.ExtensionContext) {
 				output.appendLine("Error: Command execution failed");
 			}
 		} catch (error) {
-			output.appendLine(`ERROR: ${error}\n`);
+			output.appendLine(`ERROR7: ${error}\n`);
+		}
+	});
+
+	let cancel = vscode.commands.registerCommand('db-12-vscode.cancel', async () => {
+		// Get editor
+
+		const editor = getEditor();
+		if (!editor) { return; }
+
+		// Verify execution context exists
+
+		let context = getContext(editor);
+		if (!context) { return; }
+
+		const editorPrefix = getEditorPrefix(editor.document.fileName);
+
+		// Send cancel command
+		try {
+			const uri = url.resolve(context.host, 'api/1.2/commands/cancel');
+			const data = {
+				"clusterId": context.cluster,
+				"contextId": context.contextId,
+				"commandId": context.commandId
+			};
+			await axios.post(uri, data, headers(context.token));
+			output.appendLine("\n" + editorPrefix + "=> Command cancelled");
+		} catch (error) {
+			output.appendLine(editorPrefix + ` ERROR8: ${error}\n`);
 		}
 	});
 
 	context.subscriptions.push(initialize);
 	context.subscriptions.push(sendSelectionOrLine);
+	context.subscriptions.push(cancel);
+	context.subscriptions.push(stop);
 }
 
 async function poll(
