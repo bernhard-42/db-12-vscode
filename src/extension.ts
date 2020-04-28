@@ -213,6 +213,8 @@ export function activate(context: vscode.ExtensionContext) {
 		context.executionId++;
 		const editorPrefix = getEditorPrefix(editor.document.fileName);
 
+		output.show(true);
+
 		let code = "";
 		let selection = editor.selection;
 		if (selection.isEmpty) {
