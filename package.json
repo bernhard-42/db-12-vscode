@@ -17,10 +17,10 @@
 		"onCommand:db-12-vscode.stop",
 		"onView:databricksVariableExplorer"
 	],
-
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [{
+		"commands": [
+			{
 				"command": "db-12-vscode.initialize",
 				"title": "Databricks (API 1.2): Initialize Databricks Connections"
 			},
@@ -37,23 +37,29 @@
 				"title": "Databricks (API 1.2): Stop the current exection context"
 			}
 		],
-		"keybindings": [{
-			"command": "db-12-vscode.sendSelectionOrLine",
-			"key": "ctrl+k shift+enter",
-			"mac": "cmd+k shift+enter"
-		}],
+		"keybindings": [
+			{
+				"command": "db-12-vscode.sendSelectionOrLine",
+				"key": "ctrl+k shift+enter",
+				"mac": "cmd+k shift+enter"
+			}
+		],
 		"viewsContainers": {
-			"activitybar": [{
-				"id": "databricksExplorer",
-				"title": "Databricks",
-				"icon": "media/dep.png"
-			}]
+			"activitybar": [
+				{
+					"id": "databricksExplorer",
+					"title": "Databricks",
+					"icon": "media/dep.png"
+				}
+			]
 		},
 		"views": {
-			"databricksExplorer": [{
-				"id": "databricksVariableExplorer",
-				"name": "Variables"
-			}]
+			"databricksExplorer": [
+				{
+					"id": "databricksVariableExplorer",
+					"name": "Variables"
+				}
+			]
 		}
 	},
 	"scripts": {
@@ -76,7 +82,8 @@
 		"glob": "^7.1.6",
 		"mocha": "^7.1.1",
 		"typescript": "^3.8.3",
-		"vscode-test": "^1.3.0"
+		"vscode-test": "^1.3.0",
+		"vsce": "^1.75.0"
 	},
 	"dependencies": {
 		"axios": "^0.19.2",
