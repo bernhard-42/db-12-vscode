@@ -140,10 +140,8 @@ export function activate(context: vscode.ExtensionContext) {
 		// Create Execution Context
 		var rest = new Rest12(output);
 		var result = await rest.createContext(profile, host, token, language, cluster) as Response;
-		if (result["status"] === "success") {
-			output.append(format(editorPrefix, result["data"] + "\n"));
-		} else {
-			output.append(format(editorPrefix, result["data"] + "\n"));
+		output.appendLine(format(editorPrefix, result["data"]));
+		if (result["status"] !== "success") {
 			return;
 		}
 
@@ -167,13 +165,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 		vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
 
-		var result = await rest.execute(explorerCode) as Response;
-		if (result["status"] === "success") {
-			output.append(format(editorPrefix, result["data"]));
-			variableExplorer.refresh(rest);
-		} else {
-			output.append(format(editorPrefix, result["data"]));
+		if (language === "python") {
+			var result = await rest.execute(explorerCode) as Response;
+			if (result["status"] === "success") {
+				output.appendLine(format(editorPrefix, result["data"]));
+			} else {
+				output.append(format(editorPrefix, result["data"]));
+			}
 		}
+		output.appendLine(format(editorPrefix, "= = = = = = = = = = ="));
+		variableExplorer.refresh(rest, language);
 	});
 
 	let stop = vscode.commands.registerCommand('db-12-vscode.stop', async () => {
@@ -203,6 +204,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 		context.executionId++;
 		const editorPrefix = getEditorPrefix(editor.document.fileName);
+		const isPython = (context.language === "python");
+		const isR = (context.language === "r");
 
 		output.show(true);
 
@@ -213,27 +216,41 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			code = editor.document.getText(selection);
 		}
-		const prompt1 = `In[${context.executionId}]: `;
-		const prompt2 = " ".repeat(prompt1.length - 5) + "...: ";
-		code.split("\n").forEach((line, index) => {
-			if (index === 0) {
-				output.append(format("\n" + editorPrefix, prompt1));
-			} else {
-				output.append(format(editorPrefix, prompt2));
-			}
-			output.appendLine(line);
+
+		var inPrompt = "";
+		var outPrompt = "";
+		if (isPython) {
+			inPrompt = format(editorPrefix, `In[${context.executionId}]:`);
+			outPrompt = `Out[${context.executionId}]: `;
+			output.appendLine(inPrompt);
+		}
+		code.split("\n").forEach((line) => {
+			output.appendLine(format(editorPrefix, line));
 		});
+		output.appendLine(format(editorPrefix, "- - - - - - - - - - -"));
 
 		// Send code as a command
 		var result = await context.rest.execute(code) as Response;
 		if (result["status"] === "success") {
-			result["data"].split("\n").forEach((line: string, index: number) => {
+			var data = result["data"];
+
+			// strip R output HTML tags
+			if (isR) {
+				data = data.replace(/<pre[^>]+>/g, "").replace(/<\/pre>/g, "");
+			}
+			data.split("\n").forEach((line: string) => {
+				if (isPython && (line.search(/^Out\[\d+\]:\s/) === 0)) {
+					// "In" and "Out" numbers are out of sync because of the variable explorer execution
+					// So patch "Out" number to match "In" number
+					line = line.replace(/^Out\[\d+\]:\s/, outPrompt);
+				}
 				output.appendLine(format(editorPrefix, line));
 			});
 		} else {
-			output.append(format(editorPrefix, result["data"]));
+			output.appendLine(format(editorPrefix, result["data"]));
 		}
-		variableExplorer.refresh(context.rest);
+		output.appendLine(format(editorPrefix, "= = = = = = = = = = ="));
+		variableExplorer.refresh(context.rest, context.language);
 	});
 
 	let cancel = vscode.commands.registerCommand('db-12-vscode.cancel', async () => {
@@ -246,11 +263,11 @@ export function activate(context: vscode.ExtensionContext) {
 		// Send cancel command
 		var result = await context.rest.cancel() as Response;
 		if (result["status"] === "success") {
-			output.append(format(context.editorPrefix, "Command cancelled"));
+			output.appendLine(format(context.editorPrefix, "Command cancelled"));
 		} else {
-			output.append(format(context.editorPrefix, result["data"]));
+			output.appendLine(format(context.editorPrefix, result["data"]));
 		}
-		variableExplorer.refresh(context.rest);
+		variableExplorer.refresh(context.rest, context.language);
 	});
 
 	context.subscriptions.push(initialize);

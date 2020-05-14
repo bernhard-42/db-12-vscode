@@ -1,13 +1,16 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Rest12 } from './rest';
+import { timingSafeEqual } from 'crypto';
 
 export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
     rest: Rest12 = <Rest12>{};
+    language = "";
 
     getTreeItem(variable: Variable): vscode.TreeItem {
         return variable;
     }
+
     parse(jsonData: string) {
         var data = JSON.parse(jsonData);
         return Object.keys((data)).map(key => new Variable(
@@ -20,6 +23,9 @@ export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvid
     }
 
     getChildren(variable?: Variable): Thenable<Variable[]> {
+        if (this.language !== "python") {
+            return Promise.resolve([new Variable("No implmented", `for ${this.language}`, "", "", vscode.TreeItemCollapsibleState.None)]);
+        }
         if (Object.keys(this.rest).length > 0) {
             if (variable) {
                 return Promise.resolve(this.getAttributes(variable));
@@ -27,7 +33,7 @@ export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvid
                 return Promise.resolve(this.getVariables());
             }
         } else {
-            return Promise.resolve([new Variable("No context", "No context", "", "", vscode.TreeItemCollapsibleState.Collapsed)]);
+            return Promise.resolve([new Variable("No context", "No context", "", "", vscode.TreeItemCollapsibleState.None)]);
         }
     }
 
@@ -54,8 +60,9 @@ export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvid
 
     readonly onDidChangeTreeData: vscode.Event<Variable | undefined> = this._onDidChangeTreeData.event;
 
-    refresh(rest: Rest12): void {
+    refresh(rest: Rest12, language: string): void {
         this.rest = rest;
+        this.language = language;
         this._onDidChangeTreeData.fire();
     }
 }
