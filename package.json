@@ -46,7 +46,7 @@
 			"activitybar": [{
 				"id": "databricksExplorer",
 				"title": "Databricks",
-				"icon": "media/dep.png"
+				"icon": "media/symbol.svg"
 			}]
 		},
 		"views": {

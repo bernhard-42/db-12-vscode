@@ -85,9 +85,4 @@ class Variable extends vscode.TreeItem {
     get description(): string {
         return `${this.type}  ${this.value}`;
     }
-
-    iconPath = {
-        light: path.join(__filename, '..', '..', 'resources', 'light', 'Variable.svg'),
-        dark: path.join(__filename, '..', '..', 'resources', 'dark', 'Variable.svg')
-    };
 }

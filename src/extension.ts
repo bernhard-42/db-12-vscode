@@ -173,6 +173,7 @@ export function activate(context: vscode.ExtensionContext) {
 				output.append(format(editorPrefix, result["data"]));
 			}
 		}
+
 		output.appendLine(format(editorPrefix, "= = = = = = = = = = ="));
 		variableExplorer.refresh(rest, language);
 	});
