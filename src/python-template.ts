@@ -3,6 +3,7 @@ import inspect
 import itertools
 import json
 from IPython import get_ipython
+from types import ModuleType
 
 
 def __db_type__(t):
@@ -28,11 +29,13 @@ def __db_split__(variable):
 def __db_get_variables__():
     from IPython import get_ipython
 
-    return {
-        v: {"type": __db_type__(t), "value": t, "parent": ""}
+    print(json.dumps({
+        v: {"type": __db_type__(t), "value": str(t), "parent": "", "leaf": __db_is_leaf__(t)}
         for v, t in get_ipython().user_ns.items()
-        if (not v.startswith("_")) and (not v in ["In", "Out"]) and (not callable(t))
-    }
+        if (not v.startswith("_")) and 
+           (not v in ["In", "Out"]) and 
+           (not callable(t)) and 
+           (not isinstance(t, ModuleType))}))
 
 
 def __db_get_attributes__(variable):
@@ -58,11 +61,11 @@ def __db_get_attributes__(variable):
     else:
         objs = inspect.getmembers(var)
 
-    return {
+    print(json.dumps({
         v: {"type": __db_type__(t), "value": str(t), "parent": variable, "leaf": __db_is_leaf__(t)}
         for v, t in objs
         if (not v.startswith("_")) and (not callable(t))
-    }
+    }))
 
 print("Variable explorer code loaded")
 `;

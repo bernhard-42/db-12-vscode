@@ -8,23 +8,46 @@ export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvid
     getTreeItem(variable: Variable): vscode.TreeItem {
         return variable;
     }
+    parse(jsonData: string) {
+        var data = JSON.parse(jsonData);
+        return Object.keys((data)).map(key => new Variable(
+            key,
+            data[key]["type"],
+            data[key]["value"],
+            data[key]["parent"],
+            (!data[key]["leaf"]) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
+        ));
+    }
 
     getChildren(variable?: Variable): Thenable<Variable[]> {
-        if (variable) {
-            return Promise.resolve(this.getAttributes(variable));
+        if (Object.keys(this.rest).length > 0) {
+            if (variable) {
+                return Promise.resolve(this.getAttributes(variable));
+            } else {
+                return Promise.resolve(this.getVariables());
+            }
         } else {
-            return Promise.resolve(this.getVariables());
+            return Promise.resolve([new Variable("No context", "No context", "", "", vscode.TreeItemCollapsibleState.Collapsed)]);
         }
     }
 
     private async getVariables(): Promise<Variable[]> {
-        console.log(this.rest);
         let result = await this.rest.execute("__db_get_variables__()");
-        return Promise.resolve([new Variable("test", "str", "abc", "", vscode.TreeItemCollapsibleState.Collapsed)]);
+        if (result["status"] === "success") {
+            return Promise.resolve(this.parse(result["data"]));
+        } else {
+            return Promise.resolve([new Variable("missing", "", "", "", vscode.TreeItemCollapsibleState.None)]);
+        }
     }
 
-    private getAttributes(variable: Variable): Variable[] {
-        return [new Variable("", "", "", "", vscode.TreeItemCollapsibleState.Collapsed)];
+    private async getAttributes(variable: Variable): Promise<Variable[]> {
+        var pythonVar = (variable.parent === "") ? variable.name : `${variable.parent}.${variable.name}`;
+        let result = await this.rest.execute(`__db_get_attributes__("${pythonVar}")`);
+        if (result["status"] === "success") {
+            return Promise.resolve(this.parse(result["data"]));
+        } else {
+            return Promise.resolve([new Variable("Missing", "Missing", "", "", vscode.TreeItemCollapsibleState.None)]);
+        }
     }
 
     private _onDidChangeTreeData: vscode.EventEmitter<Variable | undefined> = new vscode.EventEmitter<Variable | undefined>();
@@ -49,11 +72,11 @@ class Variable extends vscode.TreeItem {
     }
 
     get tooltip(): string {
-        return `${this.name} <${this.type}>`;
+        return `${this.type}`;
     }
 
     get description(): string {
-        return this.name;
+        return `${this.type}  ${this.value}`;
     }
 
     iconPath = {

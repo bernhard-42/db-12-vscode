@@ -2,27 +2,15 @@ import url from 'url';
 import axios from 'axios';
 import { window, OutputChannel } from 'vscode';
 
-interface Response {
+export interface Response {
     [key: string]: any;
 }
-
-interface ExecutionContext {
-    language: string;
-    contextId: string;
-    commandId: string;
-    host: string;
-    token: string;
-    cluster: string;
-    executionId: number;
-}
-
 function headers(token: string) {
     return { headers: { "Authorization": `Bearer ${token}` } };
 };
 
 export class Rest12 {
     output: OutputChannel;
-    editorPrefix: string;
     profile: string = "";
     host: string = "";
     token: string = "";
@@ -31,12 +19,11 @@ export class Rest12 {
     commandId: string = "";
     contextId: string = "";
 
-    constructor(output: OutputChannel, editorPrefix: string) {
+    constructor(output: OutputChannel) {
         this.output = output;
-        this.editorPrefix = editorPrefix;
     }
 
-    async createContext(profile: string, host: string, token: string, language: string, cluster: string): Promise<boolean> {
+    async createContext(profile: string, host: string, token: string, language: string, cluster: string): Promise<Response> {
         this.profile = profile;
         this.host = host;
         this.token = token;
@@ -52,8 +39,7 @@ export class Rest12 {
             const response = await axios.post(uri, data, headers(token));
             this.contextId = (response as Response)["data"].id;
         } catch (error) {
-            window.showErrorMessage(`ERROR[2]: ${error}\n`);
-            return Promise.resolve(false);
+            return Promise.resolve({ "status": "error", "data": error });
         }
 
         // Poll context until it is created
@@ -63,19 +49,14 @@ export class Rest12 {
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => value === "PENDING";
             let response = await this.poll(uri, token, condition, 1000, this.output);
-            this.output.appendLine(`Execution Context created for profile '${this.profile}' and cluster '${this.cluster}'`);
-            return Promise.resolve(true);
+            var msg = `Execution Context created for profile '${this.profile}' and cluster '${this.cluster}'`;
+            return Promise.resolve({ "status": "success", "data": msg });
         } catch (error) {
-            window.showErrorMessage(`ERROR[3]: ${error}\n`);
-            return Promise.resolve(false);
+            return Promise.resolve({ "status": "error", "data": error });
         }
     }
 
-    getContextId(): string {
-        return this.contextId;
-    }
-
-    async stop() {
+    async stop(): Promise<Response> {
         try {
             const uri = url.resolve(this.host, 'api/1.2/contexts/destroy');
             const data = {
@@ -83,13 +64,13 @@ export class Rest12 {
                 "contextId": this.contextId
             };
             await axios.post(uri, data, headers(this.token));
-            this.output.appendLine(this.editorPrefix + "Execution context stopped");
+            return Promise.resolve({ "status": "success", "data": "Execution context stopped" });
         } catch (error) {
-            this.output.appendLine(this.editorPrefix + ` ERROR[4]: ${error}\n`);
+            return Promise.resolve({ "status": "error", "data": error });
         }
     }
 
-    async execute(code: string): Promise<boolean> {
+    async execute(code: string): Promise<Response> {
         try {
             const uri = url.resolve(this.host, 'api/1.2/commands/execute');
             const data = {
@@ -101,8 +82,7 @@ export class Rest12 {
             const response = await axios.post(uri, data, headers(this.token));
             this.commandId = (response as Response)["data"].id;
         } catch (error) {
-            this.output.appendLine(this.editorPrefix + ` ERROR[5]: ${error}\n`);
-            return Promise.resolve(false);
+            return Promise.resolve({ "status": "error", "data": error });
         }
 
         // Poll command until it is finished
@@ -118,31 +98,24 @@ export class Rest12 {
                 if (resultType === "error") {
                     const out = response["data"]["results"]["cause"];
                     if (out.indexOf("CommandCancelledException") === -1) {
-                        this.output.appendLine(this.editorPrefix + " ERROR[6]:\n" + out);
+                        return Promise.resolve({ "status": "error", "data": out });
                     }
-                    return Promise.resolve(false);
+                    return Promise.resolve({ "status": "warning", "data": "Command cancelled" });
                 } else {
-                    const out = response["data"]["results"]["data"] as string;
-                    out.split("\n").forEach((line) => {
-                        this.output.append(this.editorPrefix);
-                        this.output.appendLine(line);
-                    });
-                    return Promise.resolve(true);
+                    const result = response["data"]["results"]["data"] as string;
+                    return Promise.resolve({ "status": "success", "data": result });
                 }
             } else if (response["data"].status === "Cancelled") {
-                this.output.appendLine("Error: Command execution cancelled");
-                return Promise.resolve(false);
+                return Promise.resolve({ "status": "error", "data": "Command execution cancelled" });
             } else {
-                this.output.appendLine("Error: Command execution failed");
-                return Promise.resolve(false);
+                return Promise.resolve({ "status": "error", "data": "Command execution failed" });
             }
         } catch (error) {
-            this.output.appendLine(`Error: ${error}\n`);
-            return Promise.resolve(false);
+            return Promise.resolve({ "status": "error", "data": error });
         }
     }
 
-    async cancel() {
+    async cancel(): Promise<Response> {
         try {
             const uri = url.resolve(this.host, 'api/1.2/commands/cancel');
             const data = {
@@ -151,9 +124,9 @@ export class Rest12 {
                 "commandId": this.commandId
             };
             await axios.post(uri, data, headers(this.token));
-            this.output.appendLine("\n" + this.editorPrefix + "=> Command cancelled");
+            return Promise.resolve({ "status": "success", "data": "Command cancelled" });
         } catch (error) {
-            this.output.appendLine(this.editorPrefix + ` ERROR8: ${error}\n`);
+            return Promise.resolve({ "status": "error", "data": error });
         }
     }
 

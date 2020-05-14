@@ -6,13 +6,10 @@ import path from 'path';
 import ini from 'ini';
 import url from 'url';
 import axios from 'axios';
-import { Rest12 } from './rest';
+import { Rest12, Response } from './rest';
 import { DatabricksVariableExplorerProvider } from './explorer';
 import { explorerCode } from "./python-template";
 
-interface Response {
-	[key: string]: any;
-}
 export interface ExecutionContext {
 	language: string;
 	rest: Rest12;
@@ -20,6 +17,7 @@ export interface ExecutionContext {
 	host: string;
 	token: string;
 	cluster: string;
+	editorPrefix: string;
 	executionId: number;
 }
 
@@ -64,6 +62,9 @@ export function activate(context: vscode.ExtensionContext) {
 	let output: vscode.OutputChannel;
 	let rest: Rest12;
 
+	function format(editorPrefix: string, msg: string) {
+		return `${editorPrefix} ${msg}`;
+	}
 
 	let initialize = vscode.commands.registerCommand('db-12-vscode.initialize', async () => {
 		let language = "";
@@ -93,7 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}) || "";
 
 		if (profile === "") {
-			output.appendLine("Profile selection cancelled");
+			output.appendLine(format(editorPrefix, "Profile selection cancelled"));
 			return;
 		}
 
@@ -121,7 +122,7 @@ export function activate(context: vscode.ExtensionContext) {
 			placeHolder: 'Select Databricks cluster'
 		}) || "";
 		if (cluster === "") {
-			output.appendLine("Cluster selection cancelled");
+			output.appendLine(format(editorPrefix, "Cluster selection cancelled"));
 			return;
 		}
 
@@ -137,11 +138,14 @@ export function activate(context: vscode.ExtensionContext) {
 		language = language.toLowerCase();
 
 		// Create Execution Context
-		var rest = new Rest12(output, editorPrefix);
-		var result: boolean = await rest.createContext(profile, host, token, language, cluster);
-		if (!result) { return; }
-
-		// Create Execution Context
+		var rest = new Rest12(output);
+		var result = await rest.createContext(profile, host, token, language, cluster) as Response;
+		if (result["status"] === "success") {
+			output.append(format(editorPrefix, result["data"] + "\n"));
+		} else {
+			output.append(format(editorPrefix, result["data"] + "\n"));
+			return;
+		}
 
 		executionContexts.set(editor.document.fileName, {
 			language: language,
@@ -150,7 +154,8 @@ export function activate(context: vscode.ExtensionContext) {
 			host: host,
 			token: token,
 			cluster: cluster,
-			executionId: 0
+			editorPrefix: editorPrefix,
+			executionId: 1
 		});
 
 		// Register Variable explorer
@@ -162,8 +167,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 		vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
 
-		rest.execute(explorerCode);
-		variableExplorer.refresh(rest);
+		var result = await rest.execute(explorerCode) as Response;
+		if (result["status"] === "success") {
+			output.append(format(editorPrefix, result["data"]));
+			variableExplorer.refresh(rest);
+		} else {
+			output.append(format(editorPrefix, result["data"]));
+		}
 	});
 
 	let stop = vscode.commands.registerCommand('db-12-vscode.stop', async () => {
@@ -173,8 +183,13 @@ export function activate(context: vscode.ExtensionContext) {
 		let context = getContext(editor);
 		if (!context) { return; }
 
-		context.rest.stop();
-		clearContext(editor);
+		var result = await context.rest.stop() as Response;
+		if (result["status"] === "success") {
+			clearContext(editor);
+			output.append(format(context.editorPrefix, "Context stopped"));
+		} else {
+			output.append(format(context.editorPrefix, result["data"]));
+		}
 	});
 
 	let sendSelectionOrLine = vscode.commands.registerCommand('db-12-vscode.sendSelectionOrLine', async () => {
@@ -202,15 +217,22 @@ export function activate(context: vscode.ExtensionContext) {
 		const prompt2 = " ".repeat(prompt1.length - 5) + "...: ";
 		code.split("\n").forEach((line, index) => {
 			if (index === 0) {
-				output.append("\n" + editorPrefix + prompt1);
+				output.append(format("\n" + editorPrefix, prompt1));
 			} else {
-				output.append(editorPrefix + prompt2);
+				output.append(format(editorPrefix, prompt2));
 			}
 			output.appendLine(line);
 		});
 
 		// Send code as a command
-		context.rest.execute(code);
+		var result = await context.rest.execute(code) as Response;
+		if (result["status"] === "success") {
+			result["data"].split("\n").forEach((line: string, index: number) => {
+				output.appendLine(format(editorPrefix, line));
+			});
+		} else {
+			output.append(format(editorPrefix, result["data"]));
+		}
 		variableExplorer.refresh(context.rest);
 	});
 
@@ -222,7 +244,12 @@ export function activate(context: vscode.ExtensionContext) {
 		if (!context) { return; }
 
 		// Send cancel command
-		context.rest.cancel();
+		var result = await context.rest.cancel() as Response;
+		if (result["status"] === "success") {
+			output.append(format(context.editorPrefix, "Command cancelled"));
+		} else {
+			output.append(format(context.editorPrefix, result["data"]));
+		}
 		variableExplorer.refresh(context.rest);
 	});
 
