@@ -14,8 +14,10 @@
 		"onCommand:db-12-vscode.initialize",
 		"onCommand:db-12-vscode.sendSelectionOrLine",
 		"onCommand:db-12-vscode.cancel",
-		"onCommand:db-12-vscode.stop"
+		"onCommand:db-12-vscode.stop",
+		"onView:databricksVariableExplorer"
 	],
+
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [{
@@ -39,7 +41,20 @@
 			"command": "db-12-vscode.sendSelectionOrLine",
 			"key": "ctrl+k shift+enter",
 			"mac": "cmd+k shift+enter"
-		}]
+		}],
+		"viewsContainers": {
+			"activitybar": [{
+				"id": "databricksExplorer",
+				"title": "Databricks",
+				"icon": "media/dep.png"
+			}]
+		},
+		"views": {
+			"databricksExplorer": [{
+				"id": "databricksVariableExplorer",
+				"name": "Variables"
+			}]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

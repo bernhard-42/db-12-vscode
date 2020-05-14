@@ -6,13 +6,16 @@ import path from 'path';
 import ini from 'ini';
 import url from 'url';
 import axios from 'axios';
+import { Rest12 } from './rest';
+import { DatabricksVariableExplorerProvider } from './explorer';
+import { explorerCode } from "./python-template";
 
 interface Response {
 	[key: string]: any;
 }
-interface ExecutionContext {
+export interface ExecutionContext {
 	language: string;
-	contextId: string;
+	rest: Rest12;
 	commandId: string;
 	host: string;
 	token: string;
@@ -21,6 +24,7 @@ interface ExecutionContext {
 }
 
 let executionContexts = new Map<string, ExecutionContext>();
+let variableExplorer = new DatabricksVariableExplorerProvider();
 
 function headers(token: string) {
 	return { headers: { "Authorization": `Bearer ${token}` } };
@@ -58,6 +62,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let profiles = Object.keys(config);
 	let languages: Array<string> = ["Python", "SQL", "Scala", "R"];
 	let output: vscode.OutputChannel;
+	let rest: Rest12;
+
 
 	let initialize = vscode.commands.registerCommand('db-12-vscode.initialize', async () => {
 		let language = "";
@@ -65,11 +71,13 @@ export function activate(context: vscode.ExtensionContext) {
 		let host = "";
 		let token = "";
 		let cluster = "";
+		let editorPrefix = "";
 
 		// Get editor
 
 		const editor = getEditor();
 		if (!editor) { return; }
+		editorPrefix = getEditorPrefix(editor.document.fileName);
 
 		// Create output if not exists
 
@@ -129,81 +137,49 @@ export function activate(context: vscode.ExtensionContext) {
 		language = language.toLowerCase();
 
 		// Create Execution Context
-
-		try {
-			const uri = url.resolve(host, 'api/1.2/contexts/create');
-			const data = {
-				"language": language,
-				"clusterId": cluster
-			};
-			const response = await axios.post(uri, data, headers(token));
-			contextId = (response as Response)["data"].id;
-		} catch (error) {
-			window.showErrorMessage(`ERROR[2]: ${error}\n`);
-			return;
-		}
-
-		// Poll context until it is created
-
-		try {
-			const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${contextId}`;
-			const uri = url.resolve(host, path);
-			const condition = (value: string) => value === "PENDING";
-			let response = await poll(uri, token, condition, 1000, output);
-			output.appendLine(`Execution Context created for profile '${profile}' and cluster '${cluster}'`);
-		} catch (error) {
-			window.showErrorMessage(`ERROR[3]: ${error}\n`);
-			return;
-		}
+		var rest = new Rest12(output, editorPrefix);
+		var result: boolean = await rest.createContext(profile, host, token, language, cluster);
+		if (!result) { return; }
 
 		// Create Execution Context
 
 		executionContexts.set(editor.document.fileName, {
 			language: language,
-			contextId: contextId,
+			rest: rest,
 			commandId: "",
 			host: host,
 			token: token,
 			cluster: cluster,
 			executionId: 0
 		});
+
+		// Register Variable explorer
+
+		vscode.window.registerTreeDataProvider(
+			'databricksVariableExplorer',
+			new DatabricksVariableExplorerProvider()
+		);
+
+		vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
+
+		rest.execute(explorerCode);
+		variableExplorer.refresh(rest);
 	});
 
 	let stop = vscode.commands.registerCommand('db-12-vscode.stop', async () => {
-		// Get editor
-
 		const editor = getEditor();
 		if (!editor) { return; }
-
-		// Verify execution context exists
 
 		let context = getContext(editor);
 		if (!context) { return; }
 
-		const editorPrefix = getEditorPrefix(editor.document.fileName);
-
-		// Send cancel command
-		try {
-			const uri = url.resolve(context.host, 'api/1.2/contexts/destroy');
-			const data = {
-				"clusterId": context.cluster,
-				"contextId": context.contextId
-			};
-			await axios.post(uri, data, headers(context.token));
-			output.appendLine(editorPrefix + "Execution context stopped");
-			clearContext(editor);
-		} catch (error) {
-			output.appendLine(editorPrefix + ` ERROR[4]: ${error}\n`);
-		}
+		context.rest.stop();
+		clearContext(editor);
 	});
 
 	let sendSelectionOrLine = vscode.commands.registerCommand('db-12-vscode.sendSelectionOrLine', async () => {
-		// Get editor
-
 		const editor = getEditor();
 		if (!editor) { return; }
-
-		// Verify execution context exists
 
 		let context = getContext(editor);
 		if (!context) { return; }
@@ -234,109 +210,26 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 
 		// Send code as a command
-
-		try {
-			const uri = url.resolve(context.host, 'api/1.2/commands/execute');
-			const data = {
-				"language": context.language,
-				"clusterId": context.cluster,
-				"contextId": context.contextId,
-				"command": code
-			};
-			const response = await axios.post(uri, data, headers(context.token));
-			context.commandId = (response as Response)["data"].id;
-		} catch (error) {
-			output.appendLine(editorPrefix + ` ERROR[5]: ${error}\n`);
-		}
-
-		// Poll command until it is finished
-
-		try {
-			const path = `api/1.2/commands/status?clusterId=${context.cluster}&contextId=${context.contextId}&commandId=${context.commandId}`;
-			const uri = url.resolve(context.host, path);
-			const condition = (value: string) => ["Queued", "Running", "Cancelling"].indexOf(value) !== -1;
-			let response = await poll(uri, context.token, condition, 1000, output) as Response;
-
-			if (response["data"].status === "Finished") {
-				let resultType = (response["data"] as Response)["results"]["resultType"];
-				if (resultType === "error") {
-					const out = response["data"]["results"]["cause"];
-					if (out.indexOf("CommandCancelledException") === -1) {
-						output.appendLine(editorPrefix + " ERROR[6]:\n" + out);
-					}
-				} else {
-					const out = response["data"]["results"]["data"] as string;
-					out.split("\n").forEach((line) => {
-						output.append(editorPrefix);
-						output.appendLine(line);
-					});
-				}
-			} else if (response["data"].status === "Cancelled") {
-				output.appendLine("Error: Command execution cancelled");
-			} else {
-				output.appendLine("Error: Command execution failed");
-			}
-		} catch (error) {
-			output.appendLine(`ERROR7: ${error}\n`);
-		}
+		context.rest.execute(code);
+		variableExplorer.refresh(context.rest);
 	});
 
 	let cancel = vscode.commands.registerCommand('db-12-vscode.cancel', async () => {
-		// Get editor
-
 		const editor = getEditor();
 		if (!editor) { return; }
-
-		// Verify execution context exists
 
 		let context = getContext(editor);
 		if (!context) { return; }
 
-		const editorPrefix = getEditorPrefix(editor.document.fileName);
-
 		// Send cancel command
-		try {
-			const uri = url.resolve(context.host, 'api/1.2/commands/cancel');
-			const data = {
-				"clusterId": context.cluster,
-				"contextId": context.contextId,
-				"commandId": context.commandId
-			};
-			await axios.post(uri, data, headers(context.token));
-			output.appendLine("\n" + editorPrefix + "=> Command cancelled");
-		} catch (error) {
-			output.appendLine(editorPrefix + ` ERROR8: ${error}\n`);
-		}
+		context.rest.cancel();
+		variableExplorer.refresh(context.rest);
 	});
 
 	context.subscriptions.push(initialize);
 	context.subscriptions.push(sendSelectionOrLine);
 	context.subscriptions.push(cancel);
 	context.subscriptions.push(stop);
-}
-
-async function poll(
-	uri: string,
-	token: string,
-	condition: (value: string) => boolean,
-	ms: number,
-	output: OutputChannel) {
-
-	const fn = () => axios.get(uri, headers(token));
-	let response = await fn();
-	while (condition((response as Response)["data"].status)) {
-		output.append("»");
-		await wait(ms);
-		response = await fn();
-	}
-	output.append("\n");
-	return response;
-}
-
-function wait(ms = 1000) {
-	return new Promise(resolve => {
-		setTimeout(resolve, ms);
-	});
 }
 
 export function deactivate() {
