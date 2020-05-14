@@ -3,7 +3,8 @@
 	"displayName": "db-12-vscode",
 	"publisher": "bernhardwalter",
 	"description": "Commands to send code to Databricks cluster",
-	"version": "0.0.1",
+	"version": "0.1.0",
+	"repository": "https://github.com/bernhard-42/db-12-vscode",
 	"engines": {
 		"vscode": "^1.44.0"
 	},
@@ -19,8 +20,7 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
+		"commands": [{
 				"command": "db-12-vscode.initialize",
 				"title": "Databricks (API 1.2): Initialize Databricks Connections"
 			},
@@ -37,29 +37,23 @@
 				"title": "Databricks (API 1.2): Stop the current exection context"
 			}
 		],
-		"keybindings": [
-			{
-				"command": "db-12-vscode.sendSelectionOrLine",
-				"key": "ctrl+k shift+enter",
-				"mac": "cmd+k shift+enter"
-			}
-		],
+		"keybindings": [{
+			"command": "db-12-vscode.sendSelectionOrLine",
+			"key": "ctrl+k shift+enter",
+			"mac": "cmd+k shift+enter"
+		}],
 		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "databricksExplorer",
-					"title": "Databricks",
-					"icon": "media/dep.png"
-				}
-			]
+			"activitybar": [{
+				"id": "databricksExplorer",
+				"title": "Databricks",
+				"icon": "media/dep.png"
+			}]
 		},
 		"views": {
-			"databricksExplorer": [
-				{
-					"id": "databricksVariableExplorer",
-					"name": "Variables"
-				}
-			]
+			"databricksExplorer": [{
+				"id": "databricksVariableExplorer",
+				"name": "Variables"
+			}]
 		}
 	},
 	"scripts": {
