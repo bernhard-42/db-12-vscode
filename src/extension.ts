@@ -9,6 +9,7 @@ import axios from 'axios';
 import { Rest12, Response } from './rest';
 import { DatabricksVariableExplorerProvider } from './explorer';
 import { explorerCode, importCode } from "./python-template";
+import { task } from "./task";
 
 export interface ExecutionContext {
 	language: string;
@@ -245,6 +246,11 @@ export function activate(context: vscode.ExtensionContext) {
 			} else {
 				output.append(format(editorPrefix, result["data"]));
 			}
+
+			// create task.json
+			const taskJson = (vscode.workspace.rootPath || ".") + "/.vscode/task2.json";
+			fs.writeFileSync(taskJson, JSON.stringify(task))
+			output.appendLine(format(editorPrefix, `Created .vscode/task.json $(taskJson)`));
 		}
 
 		output.appendLine(format(editorPrefix, "= = = = = = = = = = ="));
