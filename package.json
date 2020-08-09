@@ -3,7 +3,7 @@
 	"displayName": "db-12-vscode",
 	"publisher": "bernhardwalter",
 	"description": "Commands to send code to Databricks cluster",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"repository": "https://github.com/bernhard-42/db-12-vscode",
 	"engines": {
 		"vscode": "^1.44.0"
@@ -12,11 +12,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:db-12-vscode.initialize",
-		"onCommand:db-12-vscode.sendSelectionOrLine",
-		"onCommand:db-12-vscode.cancel",
-		"onCommand:db-12-vscode.stop",
-		"onView:databricksVariableExplorer"
+		"onCommand:db-12-vscode.initialize"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -42,6 +38,46 @@
 			"key": "ctrl+k shift+enter",
 			"mac": "cmd+k shift+enter"
 		}],
+		"configuration": {
+			"title": "DB-12",
+			"properties": {
+				"db-12-vscode.zip-command": {
+					"type": "string",
+					"default": "zip -r -FS --exclude=*.DS_Store* --exclude=*__pycache__*",
+					"description": "Shell command to recursively create a zip file"
+				},
+				"db-12-vscode.databricks-cli": {
+					"type": "string",
+					"default": "/opt/miniconda/bin/databricks",
+					"description": "Fully qualified path to databricks cli"
+				},
+				"db-12-vscode.profile": {
+					"type": "string",
+					"default": "",
+					"description": "Databricks CLI profile"
+				},
+				"db-12-vscode.cluster": {
+					"type": "string",
+					"default": "",
+					"description": "Databricks cluster"
+				},
+				"db-12-vscode.language": {
+					"type": "string",
+					"default": "",
+					"description": "Databricks programming language (python, SQL, scala, r)"
+				},
+				"db-12-vscode.lib-folder": {
+					"type": "string",
+					"default": "",
+					"description": "Local library folder"
+				},
+				"db-12-vscode.remote-folder": {
+					"type": "string",
+					"default": "",
+					"description": "Remote dbfs folder"
+				}
+			}
+		},
 		"viewsContainers": {
 			"activitybar": [{
 				"id": "databricksExplorer",

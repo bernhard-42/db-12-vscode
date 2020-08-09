@@ -70,4 +70,11 @@ def __db_get_attributes__(variable):
 print("Variable explorer code loaded")
 `;
 
-export { explorerCode };
+function importCode(remoteFolder: string, libFolder: string) {
+    return `
+import sys
+if not "${remoteFolder}/${libFolder}.zip" in sys.path: sys.path.insert(0, "${remoteFolder}/${libFolder}.zip")
+`;
+}
+
+export { explorerCode, importCode };
