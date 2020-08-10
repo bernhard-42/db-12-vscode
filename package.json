@@ -36,7 +36,23 @@
 		"keybindings": [{
 			"command": "db-12-vscode.sendSelectionOrLine",
 			"key": "ctrl+k shift+enter",
-			"mac": "cmd+k shift+enter"
+			"mac": "cmd+k shift+enter",
+			"when": "editorTextFocus"
+		}, {
+			"command": "db-12-vscode.initialize",
+			"key": "ctrl+k shift+i",
+			"mac": "cmd+k shift+i",
+			"when": "editorTextFocus"
+		}, {
+			"command": "db-12-vscode.stop",
+			"key": "ctrl+k shift+s",
+			"mac": "cmd+k shift+s",
+			"when": "editorTextFocus"
+		}, {
+			"command": "db-12-vscode.cancel",
+			"key": "ctrl+k shift+c",
+			"mac": "cmd+k shift+c",
+			"when": "editorTextFocus"
 		}],
 		"configuration": {
 			"title": "DB-12",
