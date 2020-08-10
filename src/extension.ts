@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { window, OutputChannel, WorkspaceConfiguration, ConfigurationTarget } from 'vscode';
+
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -7,6 +8,7 @@ import ini from 'ini';
 import url from 'url';
 import axios from 'axios';
 import decomment from 'decomment';
+
 import { Rest12, Response } from './rest';
 import { DatabricksVariableExplorerProvider } from './explorer';
 import { explorerCode, importCode } from "./python-template";
@@ -57,12 +59,12 @@ function getEditorPrefix(fileName: string) {
 
 export function activate(context: vscode.ExtensionContext) {
 	let editorPrefix = "";
-	let homedir = os.homedir();
+	const homedir = os.homedir();
 	let databrickscfg: string;
 	let dbConfig: { [key: string]: any };
 	let userConfig: WorkspaceConfiguration;
 	let profiles: Array<string>;
-	let languages: Array<string> = ["Python", "SQL", "Scala", "R"];
+	const languages: Array<string> = ["Python", "SQL", "Scala", "R"];
 	let output: vscode.OutputChannel;
 	let profile = "";
 	let cluster = "";
@@ -124,12 +126,15 @@ export function activate(context: vscode.ExtensionContext) {
 				libFolder = userConfig.get("lib-folder") || "";
 				remoteFolder = userConfig.get("remote-folder") || "";
 			}
-		} else {
+		} else if (useSettings === "no") {
 			profile = "";
 			cluster = "";
 			language = "";
 			libFolder = "";
 			remoteFolder = "";
+		} else {
+			output.appendLine(format(editorPrefix, `Cancelled`));
+			return;
 		}
 
 		// Select profile
@@ -204,7 +209,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		if ((libFolder !== "") && (remoteFolder === "")) {
-			let remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
+			remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
 			if (remoteFolder === "") {
 				output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
 				return;
@@ -241,6 +246,7 @@ export function activate(context: vscode.ExtensionContext) {
 				output.appendLine(format(editorPrefix, result["data"]));
 			} else {
 				output.append(format(editorPrefix, result["data"]));
+				return;
 			}
 
 			// Set import path
@@ -402,6 +408,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	vscode.workspace.onDidSaveTextDocument((document) => {
+		const userConfig = vscode.workspace.getConfiguration("db-12-vscode");
 		const libFolder: string = userConfig.get("lib-folder") || "";
 		const remoteFolder: string = userConfig.get("remote-folder") || "";
 		const file = vscode.workspace.asRelativePath(document.fileName);
