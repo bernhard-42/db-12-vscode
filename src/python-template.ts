@@ -42,12 +42,13 @@ def __db_get_attributes__(variable):
     parts = __db_split__(variable)
     var = get_ipython().user_ns[parts[0]]
     for p in parts[1:]:
-        if p[0] == "[":
-            index = p[1:-1]
-            if isinstance(var, (tuple, list)):
-                index = int(index)
-            if index.startswith("'") or index.startswith('"'):
-                index = index[1:-1]
+        if isinstance(var, (list, tuple, dict)):
+            if isinstance(var, (list, tuple)):
+                index = int(p)
+            else:
+                index = p
+                if index.startswith("'") or index.startswith('"'):
+                    index = index[1:-1]
             var = var[index]
         else:
             var = getattr(var, p)
@@ -57,7 +58,7 @@ def __db_get_attributes__(variable):
     elif isinstance(var, dict):
         objs = var.items()
     elif type(var).__module__ == "builtins":
-        objs = [(var, type(var))]
+        objs = [(str(var), type(var))]
     else:
         objs = inspect.getmembers(var)
 
@@ -65,7 +66,7 @@ def __db_get_attributes__(variable):
         v: {"type": __db_type__(t), "value": str(t), "parent": variable, "leaf": __db_is_leaf__(t)}
         for v, t in objs
         if (not v.startswith("_")) and (not callable(t))
-    }))
+    }, indent=2))
 
 print("Variable explorer code loaded")
 `;
