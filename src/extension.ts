@@ -6,10 +6,11 @@ import path from 'path';
 import ini from 'ini';
 import url from 'url';
 import axios from 'axios';
+import decomment from 'decomment';
 import { Rest12, Response } from './rest';
 import { DatabricksVariableExplorerProvider } from './explorer';
 import { explorerCode, importCode } from "./python-template";
-import { task } from "./task";
+import { tasks } from "./task";
 
 export interface ExecutionContext {
 	language: string;
@@ -57,13 +58,12 @@ function getEditorPrefix(fileName: string) {
 export function activate(context: vscode.ExtensionContext) {
 	let editorPrefix = "";
 	let homedir = os.homedir();
-	let databrickscfg = fs.readFileSync(path.join(homedir, '.databrickscfg'), 'utf8');
-	let dbConfig = ini.parse(databrickscfg);
-	let userConfig = vscode.workspace.getConfiguration("db-12-vscode");
-	let profiles = Object.keys(dbConfig);
+	let databrickscfg: string;
+	let dbConfig: { [key: string]: any };
+	let userConfig: WorkspaceConfiguration;
+	let profiles: Array<string>;
 	let languages: Array<string> = ["Python", "SQL", "Scala", "R"];
 	let output: vscode.OutputChannel;
-	let doSync = false;
 	let profile = "";
 	let cluster = "";
 	let language = "";
@@ -87,11 +87,15 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	let initialize = vscode.commands.registerCommand('db-12-vscode.initialize', async () => {
-		let language = "";
+
+		databrickscfg = fs.readFileSync(path.join(homedir, '.databrickscfg'), 'utf8');
+		dbConfig = ini.parse(databrickscfg);
+		userConfig = vscode.workspace.getConfiguration("db-12-vscode");
+		profiles = Object.keys(dbConfig);
+
 		// let contextId = "";
 		let host = "";
 		let token = "";
-		let cluster = "";
 
 		// Get editor
 
@@ -188,16 +192,18 @@ export function activate(context: vscode.ExtensionContext) {
 				.filter(dirent => dirent.isDirectory())
 				.filter(dirent => ![".vscode", ".git"].includes(dirent.name))
 				.map(dirent => dirent.name);
-			libFolder = await window.showQuickPick(folders, { placeHolder: 'Select local library folder' }) || "";
-			if (libFolder === "") {
-				output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
-				return;
-			} else {
-				updateConfig(libFolder, "lib-folder");
+			if (folders.length > 0) {
+				libFolder = await window.showQuickPick(folders, { placeHolder: 'Select local library folder' }) || "";
+				if (libFolder === "") {
+					output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
+					return;
+				} else {
+					updateConfig(libFolder, "lib-folder");
+				}
 			}
 		}
 
-		if (remoteFolder === "") {
+		if ((libFolder !== "") && (remoteFolder === "")) {
 			let remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
 			if (remoteFolder === "") {
 				output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
@@ -228,6 +234,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (language === "python") {
 
 			// Register Variable explorer
+
 			output.appendLine(format(editorPrefix, "Register variable explorer"));
 			var result = await rest.execute(explorerCode) as Response;
 			if (result["status"] === "success") {
@@ -237,9 +244,10 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			// Set import path
+
 			const importPath = remoteFolder.replace("dbfs:", "/dbfs");
 			const code = importCode(importPath, libFolder);
-			output.appendLine(format(editorPrefix, "Set import path: " + importPath));
+			output.appendLine(format(editorPrefix, "Added import path: " + importPath + "/" + libFolder + ".zip"));
 			var result = await rest.execute(code) as Response;
 			if (result["status"] === "success") {
 				output.appendLine(format(editorPrefix, result["data"]));
@@ -247,10 +255,42 @@ export function activate(context: vscode.ExtensionContext) {
 				output.append(format(editorPrefix, result["data"]));
 			}
 
-			// create task.json
-			const taskJson = (vscode.workspace.rootPath || ".") + "/.vscode/task2.json";
-			fs.writeFileSync(taskJson, JSON.stringify(task))
-			output.appendLine(format(editorPrefix, `Created .vscode/task.json $(taskJson)`));
+
+			// create tasks.json
+
+			let vscodeFolder = (vscode.workspace.rootPath || ".") + "/.vscode";
+			let taskJson = vscodeFolder + "/tasks.json";
+			const dbTasks = tasks();
+			if (!fs.existsSync(vscodeFolder)) {
+				fs.mkdirSync(vscodeFolder);
+			}
+			if (fs.existsSync(taskJson)) {
+				const tasksStr = decomment(fs.readFileSync(taskJson, "utf8"));
+				const exTaskJson = JSON.parse(tasksStr);
+				let addZip = true;
+				let addUpload = true;
+				for (const task of exTaskJson["tasks"]) {
+					let label = ("label" in task) ? task["label"] as string : "";
+					if (label === "Zip library") {
+						addZip = false;
+					} else if (label === "Upload library") {
+						addUpload = false;
+					}
+				}
+				if (addZip) {
+					exTaskJson["tasks"].push(dbTasks["tasks"][0]);
+				}
+				if (addUpload) {
+					exTaskJson["tasks"].push(dbTasks["tasks"][1]);
+				}
+				if (addZip || addUpload) {
+					fs.writeFileSync(taskJson, JSON.stringify(exTaskJson, null, 2));
+					output.appendLine(format(editorPrefix, `Updated ${taskJson}`));
+				}
+			} else {
+				fs.writeFileSync(taskJson, JSON.stringify(dbTasks, null, 2));
+				output.appendLine(format(editorPrefix, `Created ${taskJson}`));
+			}
 		}
 
 		output.appendLine(format(editorPrefix, "= = = = = = = = = = ="));
