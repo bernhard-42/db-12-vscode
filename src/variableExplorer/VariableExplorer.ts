@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { RemoteCommand } from './remote-command';
+import { RemoteCommand } from '../rest/RemoteCommand';
 import { timingSafeEqual } from 'crypto';
 
 export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvider<Variable> {

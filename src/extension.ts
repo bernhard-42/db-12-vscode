@@ -9,62 +9,27 @@ import url from 'url';
 import axios from 'axios';
 import decomment from 'decomment';
 
-import { RemoteCommand, Response } from './remote-command';
-import { DatabricksVariableExplorerProvider } from './explorer';
-import { explorerCode, importCode } from "./python-template";
-import { tasks } from "./tasks";
+import { Response, headers } from './rest/Helpers';
+import { RemoteCommand } from './rest/RemoteCommand';
+import { DatabricksVariableExplorerProvider } from './variableExplorer/VariableExplorer';
+import { explorerCode, importCode } from "./python/PythonTemplate";
+import { tasks } from "./python/Tasks";
+import { ExecutionContexts } from './context/ExecutionContext';
 
-export interface ExecutionContext {
-	language: string;
-	rest: RemoteCommand;
-	commandId: string;
-	host: string;
-	token: string;
-	cluster: string;
-	editorPrefix: string;
-	executionId: number;
-}
-
-let executionContexts = new Map<string, ExecutionContext>();
-let variableExplorer = new DatabricksVariableExplorerProvider();
-
-function headers(token: string) {
-	return { headers: { "Authorization": `Bearer ${token}` } };
-};
-
-function getEditor() {
-	const editor = window.activeTextEditor;
-	if (!editor) {
-		window.showErrorMessage("No editor widow open");
-	}
-	return editor;
-}
-
-function getContext(editor: vscode.TextEditor) {
-	let context = executionContexts.get(editor.document.fileName);
-	if (context === undefined) {
-		window.showErrorMessage("No Databricks context available");
-	}
-	return context;
-}
-
-function clearContext(editor: vscode.TextEditor) {
-	executionContexts.delete(editor.document.fileName);
-}
-
-function getEditorPrefix(fileName: string) {
-	const parts = fileName.split("/");
-	return `[${parts[parts.length - 1]}] `;
-}
+let executionContexts = new ExecutionContexts();
 
 export function activate(context: vscode.ExtensionContext) {
+	const output = window.createOutputChannel("Databricks");
+	output.show(true);
+
+	let variableExplorer = new DatabricksVariableExplorerProvider();
+
 	let editorPrefix = "";
 	const homedir = os.homedir();
 	let databrickscfg: string;
 	let dbConfig: { [key: string]: any };
 	let userConfig: WorkspaceConfiguration;
 	let profiles: Array<string>;
-	let output: vscode.OutputChannel;
 	let profile = "";
 	let cluster = "";
 	let language = "";
@@ -89,27 +54,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let initialize = vscode.commands.registerCommand('databricks-run.initialize', async () => {
 
+		const editor = executionContexts.getEditor();
+		if (!editor) { return; }
+
+		editorPrefix = executionContexts.getEditorPrefix();
+
+		// Get config
+
 		databrickscfg = fs.readFileSync(path.join(homedir, '.databrickscfg'), 'utf8');
 		dbConfig = ini.parse(databrickscfg);
 		userConfig = vscode.workspace.getConfiguration("databricks-run");
 		profiles = Object.keys(dbConfig);
-
-		// let contextId = "";
-		let host = "";
-		let token = "";
-
-		// Get editor
-
-		const editor = getEditor();
-		if (!editor) { return; }
-		editorPrefix = getEditorPrefix(editor.document.fileName);
-
-		// Create output if not exists
-
-		if (output === undefined) {
-			output = window.createOutputChannel("Databricks");
-			output.show(true);
-		}
 
 		// Use workspace settings?
 
@@ -146,8 +101,8 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 
-		host = dbConfig[profile]["host"];
-		token = dbConfig[profile]["token"];
+		const host = dbConfig[profile]["host"];
+		const token = dbConfig[profile]["token"];
 
 		// Select cluster
 
@@ -190,33 +145,6 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		output.appendLine(format(editorPrefix, `Language: ${language}`));
 
-		if (libFolder === "") {
-			const wsFolder = vscode.workspace.rootPath || ".";
-			const folders = fs.readdirSync(wsFolder, { withFileTypes: true })
-				.filter(dirent => dirent.isDirectory())
-				.filter(dirent => ![".vscode", ".git"].includes(dirent.name))
-				.map(dirent => dirent.name);
-			if (folders.length > 0) {
-				libFolder = await window.showQuickPick(folders, { placeHolder: 'Select local library folder' }) || "";
-				if (libFolder === "") {
-					output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
-					return;
-				} else {
-					updateConfig(libFolder, "lib-folder");
-				}
-			}
-		}
-
-		if ((libFolder !== "") && (remoteFolder === "")) {
-			remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
-			if (remoteFolder === "") {
-				output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
-				return;
-			} else {
-				updateConfig(remoteFolder, "remote-folder");
-			}
-		}
-
 		// Create Execution Context
 
 		var rest = new RemoteCommand(output);
@@ -226,27 +154,53 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		// Register Variable explorer
-
-		vscode.window.registerTreeDataProvider(
-			'databricksVariableExplorer',
-			new DatabricksVariableExplorerProvider()
-		);
-
-		vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
-
 		if (language === "python") {
+			if (libFolder === "") {
+				const wsFolder = vscode.workspace.rootPath || ".";
+				const folders = fs.readdirSync(wsFolder, { withFileTypes: true })
+					.filter(dirent => dirent.isDirectory())
+					.filter(dirent => ![".vscode", ".git"].includes(dirent.name))
+					.map(dirent => dirent.name);
+				if (folders.length > 0) {
+					libFolder = await window.showQuickPick(folders, { placeHolder: 'Select local library folder' }) || "";
+					if (libFolder === "") {
+						output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
+						return;
+					} else {
+						updateConfig(libFolder, "lib-folder");
+					}
+				}
+			}
+
+			if ((libFolder !== "") && (remoteFolder === "")) {
+				remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
+				if (remoteFolder === "") {
+					output.appendLine(format(editorPrefix, `Selection of library folder cancelled`));
+					return;
+				} else {
+					updateConfig(remoteFolder, "remote-folder");
+				}
+			}
 
 			// Register Variable explorer
 
+			vscode.window.registerTreeDataProvider(
+				'databricksVariableExplorer',
+				new DatabricksVariableExplorerProvider()
+			);
+
+			vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
+
 			output.appendLine(format(editorPrefix, "Register variable explorer"));
-			var result = await rest.execute(explorerCode) as Response;
+			var result = await rest.execute(explorerCode()) as Response;
 			if (result["status"] === "success") {
 				output.appendLine(format(editorPrefix, result["data"]));
 			} else {
 				output.append(format(editorPrefix, result["data"]));
 				return;
 			}
+
+			variableExplorer.refresh(rest, language);
 
 			// Set import path
 
@@ -299,30 +253,17 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		output.appendLine(format(editorPrefix, "= = = = = = = = = = ="));
-		variableExplorer.refresh(rest, language);
 
-		executionContexts.set(editor.document.fileName, {
-			language: language,
-			rest: rest,
-			commandId: "",
-			host: host,
-			token: token,
-			cluster: cluster,
-			editorPrefix: editorPrefix,
-			executionId: 1
-		});
+		executionContexts.setContext(language, rest, host, token, cluster, editorPrefix);
 	});
 
 	let stop = vscode.commands.registerCommand('databricks-run.stop', async () => {
-		const editor = getEditor();
-		if (!editor) { return; }
-
-		let context = getContext(editor);
+		let context = executionContexts.getContext();
 		if (!context) { return; }
 
 		var result = await context.rest.stop() as Response;
 		if (result["status"] === "success") {
-			clearContext(editor);
+			executionContexts.clearContext();
 			output.append(format(context.editorPrefix, "Context stopped"));
 		} else {
 			output.append(format(context.editorPrefix, result["data"]));
@@ -330,16 +271,16 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	let sendSelectionOrLine = vscode.commands.registerCommand('databricks-run.sendSelectionOrLine', async () => {
-		const editor = getEditor();
+		const editor = executionContexts.getEditor();
 		if (!editor) { return; }
 
-		let context = getContext(editor);
+		const context = executionContexts.getContext();
 		if (!context) { return; }
 
 		// Prepare and print the input code
 
 		context.executionId++;
-		const editorPrefix = getEditorPrefix(editor.document.fileName);
+		const editorPrefix = context.editorPrefix;
 		const isPython = (context.language === "python");
 		const isR = (context.language === "r");
 
@@ -390,10 +331,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	let cancel = vscode.commands.registerCommand('databricks-run.cancel', async () => {
-		const editor = getEditor();
-		if (!editor) { return; }
-
-		let context = getContext(editor);
+		const context = executionContexts.getContext();
 		if (!context) { return; }
 
 		// Send cancel command

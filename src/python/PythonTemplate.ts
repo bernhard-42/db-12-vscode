@@ -1,4 +1,5 @@
-let explorerCode = `
+function explorerCode() {
+    return `
 import inspect
 import itertools
 import json
@@ -70,6 +71,7 @@ def __db_get_attributes__(variable):
 
 print("Variable explorer code loaded")
 `;
+}
 
 function importCode(remoteFolder: string, libFolder: string) {
     return `

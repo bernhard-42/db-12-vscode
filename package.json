@@ -16,7 +16,8 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [{
+		"commands": [
+			{
 				"command": "databricks-run.initialize",
 				"title": "Databricks Run: Initialize Databricks Connections"
 			},
@@ -33,27 +34,32 @@
 				"title": "Databricks Run: Stop the current exection context"
 			}
 		],
-		"keybindings": [{
-			"command": "databricks-run.sendSelectionOrLine",
-			"key": "ctrl+k shift+enter",
-			"mac": "cmd+k shift+enter",
-			"when": "editorTextFocus"
-		}, {
-			"command": "databricks-run.initialize",
-			"key": "ctrl+k shift+i",
-			"mac": "cmd+k shift+i",
-			"when": "editorTextFocus"
-		}, {
-			"command": "databricks-run.stop",
-			"key": "ctrl+k shift+s",
-			"mac": "cmd+k shift+s",
-			"when": "editorTextFocus"
-		}, {
-			"command": "databricks-run.cancel",
-			"key": "ctrl+k shift+c",
-			"mac": "cmd+k shift+c",
-			"when": "editorTextFocus"
-		}],
+		"keybindings": [
+			{
+				"command": "databricks-run.sendSelectionOrLine",
+				"key": "ctrl+k shift+enter",
+				"mac": "cmd+k shift+enter",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "databricks-run.initialize",
+				"key": "ctrl+k shift+i",
+				"mac": "cmd+k shift+i",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "databricks-run.stop",
+				"key": "ctrl+k shift+s",
+				"mac": "cmd+k shift+s",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "databricks-run.cancel",
+				"key": "ctrl+k shift+c",
+				"mac": "cmd+k shift+c",
+				"when": "editorTextFocus"
+			}
+		],
 		"configuration": {
 			"title": "DB-12",
 			"properties": {
@@ -90,17 +96,21 @@
 			}
 		},
 		"viewsContainers": {
-			"activitybar": [{
-				"id": "databricksExplorer",
-				"title": "Databricks",
-				"icon": "media/databricks-run.png"
-			}]
+			"activitybar": [
+				{
+					"id": "databricksExplorer",
+					"title": "Databricks",
+					"icon": "media/databricks-run.png"
+				}
+			]
 		},
 		"views": {
-			"databricksExplorer": [{
-				"id": "databricksVariableExplorer",
-				"name": "Variables"
-			}]
+			"databricksExplorer": [
+				{
+					"id": "databricksVariableExplorer",
+					"name": "Variables"
+				}
+			]
 		}
 	},
 	"scripts": {

@@ -1,13 +1,7 @@
 import url from 'url';
 import axios from 'axios';
 import { window, OutputChannel } from 'vscode';
-
-export interface Response {
-    [key: string]: any;
-}
-function headers(token: string) {
-    return { headers: { "Authorization": `Bearer ${token}` } };
-};
+import { Response, headers, poll } from './Helpers';
 
 export class RemoteCommand {
     output: OutputChannel;
@@ -48,7 +42,7 @@ export class RemoteCommand {
             const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${this.contextId}`;
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => value === "PENDING";
-            let response = await this.poll(uri, token, condition, 1000, this.output);
+            let response = await poll(uri, token, condition, 1000, this.output);
             var msg = `Execution Context created for profile '${this.profile}' and cluster '${this.cluster}'`;
             return Promise.resolve({ "status": "success", "data": msg });
         } catch (error) {
@@ -91,7 +85,8 @@ export class RemoteCommand {
             const path = `api/1.2/commands/status?clusterId=${this.cluster}&contextId=${this.contextId}&commandId=${this.commandId}`;
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => ["Queued", "Running", "Cancelling"].indexOf(value) !== -1;
-            let response = await this.poll(uri, this.token, condition, 100, this.output) as Response;
+
+            let response = await poll(uri, this.token, condition, 100, this.output) as Response;
 
             if (response["data"].status === "Finished") {
                 let resultType = (response["data"] as Response)["results"]["resultType"];
@@ -128,29 +123,5 @@ export class RemoteCommand {
         } catch (error) {
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
-    }
-
-    async poll(
-        uri: string,
-        token: string,
-        condition: (value: string) => boolean,
-        ms: number,
-        output: OutputChannel) {
-
-        const fn = () => axios.get(uri, headers(token));
-        let response = await fn();
-        while (condition((response as Response)["data"].status)) {
-            output.append("»");
-            await this.wait(ms);
-            response = await fn();
-        }
-        output.append("\n");
-        return response;
-    }
-
-    wait(ms = 100) {
-        return new Promise(resolve => {
-            setTimeout(resolve, ms);
-        });
     }
 }
