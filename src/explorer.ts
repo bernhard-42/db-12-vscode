@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Rest12 } from './rest';
+import { RemoteCommand } from './remote-command';
 import { timingSafeEqual } from 'crypto';
 
 export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
-    rest: Rest12 = <Rest12>{};
+    rest: RemoteCommand = <RemoteCommand>{};
     language = "";
 
     getTreeItem(variable: Variable): vscode.TreeItem {
@@ -60,7 +60,7 @@ export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvid
 
     readonly onDidChangeTreeData: vscode.Event<Variable | undefined> = this._onDidChangeTreeData.event;
 
-    refresh(rest: Rest12, language: string): void {
+    refresh(rest: RemoteCommand, language: string): void {
         this.rest = rest;
         this.language = language;
         this._onDidChangeTreeData.fire();

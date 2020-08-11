@@ -1,10 +1,10 @@
 {
-	"name": "db-12-vscode",
-	"displayName": "db-12-vscode",
+	"name": "databricks-run",
+	"displayName": "databricks-run",
 	"publisher": "bernhardwalter",
 	"description": "Commands to send code to Databricks cluster",
 	"version": "0.2.0",
-	"repository": "https://github.com/bernhard-42/db-12-vscode",
+	"repository": "https://github.com/bernhard-42/databricks-run",
 	"engines": {
 		"vscode": "^1.44.0"
 	},
@@ -12,44 +12,44 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:db-12-vscode.initialize"
+		"onCommand:databricks-run.initialize"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [{
-				"command": "db-12-vscode.initialize",
-				"title": "Databricks (API 1.2): Initialize Databricks Connections"
+				"command": "databricks-run.initialize",
+				"title": "Databricks Run: Initialize Databricks Connections"
 			},
 			{
-				"command": "db-12-vscode.sendSelectionOrLine",
-				"title": "Databricks (API 1.2): Send selection or line"
+				"command": "databricks-run.sendSelectionOrLine",
+				"title": "Databricks Run: Send selection or line"
 			},
 			{
-				"command": "db-12-vscode.cancel",
-				"title": "Databricks (API 1.2): Cancel the currently running command"
+				"command": "databricks-run.cancel",
+				"title": "Databricks Run: Cancel the currently running command"
 			},
 			{
-				"command": "db-12-vscode.stop",
-				"title": "Databricks (API 1.2): Stop the current exection context"
+				"command": "databricks-run.stop",
+				"title": "Databricks Run: Stop the current exection context"
 			}
 		],
 		"keybindings": [{
-			"command": "db-12-vscode.sendSelectionOrLine",
+			"command": "databricks-run.sendSelectionOrLine",
 			"key": "ctrl+k shift+enter",
 			"mac": "cmd+k shift+enter",
 			"when": "editorTextFocus"
 		}, {
-			"command": "db-12-vscode.initialize",
+			"command": "databricks-run.initialize",
 			"key": "ctrl+k shift+i",
 			"mac": "cmd+k shift+i",
 			"when": "editorTextFocus"
 		}, {
-			"command": "db-12-vscode.stop",
+			"command": "databricks-run.stop",
 			"key": "ctrl+k shift+s",
 			"mac": "cmd+k shift+s",
 			"when": "editorTextFocus"
 		}, {
-			"command": "db-12-vscode.cancel",
+			"command": "databricks-run.cancel",
 			"key": "ctrl+k shift+c",
 			"mac": "cmd+k shift+c",
 			"when": "editorTextFocus"
@@ -57,37 +57,37 @@
 		"configuration": {
 			"title": "DB-12",
 			"properties": {
-				"db-12-vscode.zip-command": {
+				"databricks-run.zip-command": {
 					"type": "string",
 					"default": "zip -r -FS --exclude=*.DS_Store* --exclude=*__pycache__*",
 					"description": "Shell command to recursively create a zip file"
 				},
-				"db-12-vscode.databricks-cli": {
+				"databricks-run.databricks-cli": {
 					"type": "string",
 					"default": "/opt/miniconda/bin/databricks",
 					"description": "Fully qualified path to databricks cli"
 				},
-				"db-12-vscode.profile": {
+				"databricks-run.profile": {
 					"type": "string",
 					"default": "",
 					"description": "Databricks CLI profile"
 				},
-				"db-12-vscode.cluster": {
+				"databricks-run.cluster": {
 					"type": "string",
 					"default": "",
 					"description": "Databricks cluster"
 				},
-				"db-12-vscode.language": {
+				"databricks-run.language": {
 					"type": "string",
 					"default": "",
 					"description": "Databricks programming language (python, SQL, scala, r)"
 				},
-				"db-12-vscode.lib-folder": {
+				"databricks-run.lib-folder": {
 					"type": "string",
 					"default": "",
 					"description": "Local library folder"
 				},
-				"db-12-vscode.remote-folder": {
+				"databricks-run.remote-folder": {
 					"type": "string",
 					"default": "",
 					"description": "Remote dbfs folder"

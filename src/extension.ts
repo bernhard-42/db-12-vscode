@@ -9,14 +9,14 @@ import url from 'url';
 import axios from 'axios';
 import decomment from 'decomment';
 
-import { Rest12, Response } from './rest';
+import { RemoteCommand, Response } from './remote-command';
 import { DatabricksVariableExplorerProvider } from './explorer';
 import { explorerCode, importCode } from "./python-template";
-import { tasks } from "./task";
+import { tasks } from "./tasks";
 
 export interface ExecutionContext {
 	language: string;
-	rest: Rest12;
+	rest: RemoteCommand;
 	commandId: string;
 	host: string;
 	token: string;
@@ -88,11 +88,11 @@ export function activate(context: vscode.ExtensionContext) {
 		return value;
 	}
 
-	let initialize = vscode.commands.registerCommand('db-12-vscode.initialize', async () => {
+	let initialize = vscode.commands.registerCommand('databricks-run.initialize', async () => {
 
 		databrickscfg = fs.readFileSync(path.join(homedir, '.databrickscfg'), 'utf8');
 		dbConfig = ini.parse(databrickscfg);
-		userConfig = vscode.workspace.getConfiguration("db-12-vscode");
+		userConfig = vscode.workspace.getConfiguration("databricks-run");
 		profiles = Object.keys(dbConfig);
 
 		// let contextId = "";
@@ -220,7 +220,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Create Execution Context
 
-		var rest = new Rest12(output);
+		var rest = new RemoteCommand(output);
 		var result = await rest.createContext(profile, host, token, language, cluster) as Response;
 		output.appendLine(format(editorPrefix, result["data"]));
 		if (result["status"] !== "success") {
@@ -314,7 +314,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	let stop = vscode.commands.registerCommand('db-12-vscode.stop', async () => {
+	let stop = vscode.commands.registerCommand('databricks-run.stop', async () => {
 		const editor = getEditor();
 		if (!editor) { return; }
 
@@ -330,7 +330,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	let sendSelectionOrLine = vscode.commands.registerCommand('db-12-vscode.sendSelectionOrLine', async () => {
+	let sendSelectionOrLine = vscode.commands.registerCommand('databricks-run.sendSelectionOrLine', async () => {
 		const editor = getEditor();
 		if (!editor) { return; }
 
@@ -390,7 +390,7 @@ export function activate(context: vscode.ExtensionContext) {
 		variableExplorer.refresh(context.rest, context.language);
 	});
 
-	let cancel = vscode.commands.registerCommand('db-12-vscode.cancel', async () => {
+	let cancel = vscode.commands.registerCommand('databricks-run.cancel', async () => {
 		const editor = getEditor();
 		if (!editor) { return; }
 
@@ -408,7 +408,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	vscode.workspace.onDidSaveTextDocument((document) => {
-		const userConfig = vscode.workspace.getConfiguration("db-12-vscode");
+		const userConfig = vscode.workspace.getConfiguration("databricks-run");
 		const libFolder: string = userConfig.get("lib-folder") || "";
 		const remoteFolder: string = userConfig.get("remote-folder") || "";
 		const file = vscode.workspace.asRelativePath(document.fileName);

@@ -1,7 +1,7 @@
-# db-12-vscode
+# Databricks Run
 
 This feature allows to run Python, SQL, Scala and R code on Databricks clusters
-![Overview](./media/db-12-vscode-v0.1.0.gif)
+![Overview](./media/databricks-run-v0.1.0.gif)
 
 ## Features
 

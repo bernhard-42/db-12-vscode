@@ -5,7 +5,7 @@ function tasks() {
             {
                 "label": "Zip library",
                 "type": "shell",
-                "command": "${config:db-12-vscode.zip-command} /tmp/${config:db-12-vscode.lib-folder}.zip ${config:db-12-vscode.lib-folder}/",
+                "command": "${config:databricks-run.zip-command} /tmp/${config:databricks-run.lib-folder}.zip ${config:databricks-run.lib-folder}/",
                 "windows": {
                     "command": "echo 'NotImplemented'"
                 },
@@ -19,7 +19,7 @@ function tasks() {
             {
                 "label": "Upload library",
                 "type": "shell",
-                "command": "${config:db-12-vscode.databricks-cli} --profile ${config:db-12-vscode.profile} fs cp --overwrite /tmp/${config:db-12-vscode.lib-folder}.zip ${config:db-12-vscode.remote-folder}",
+                "command": "${config:databricks-run.databricks-cli} --profile ${config:databricks-run.profile} fs cp --overwrite /tmp/${config:databricks-run.lib-folder}.zip ${config:databricks-run.remote-folder}",
                 "windows": {
                     "command": "echo 'NotImplemented'"
                 },

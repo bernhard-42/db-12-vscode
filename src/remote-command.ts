@@ -9,7 +9,7 @@ function headers(token: string) {
     return { headers: { "Authorization": `Bearer ${token}` } };
 };
 
-export class Rest12 {
+export class RemoteCommand {
     output: OutputChannel;
     profile: string = "";
     host: string = "";
@@ -39,7 +39,7 @@ export class Rest12 {
             const response = await axios.post(uri, data, headers(token));
             this.contextId = (response as Response)["data"].id;
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error });
+            return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
 
         // Poll context until it is created
@@ -52,7 +52,7 @@ export class Rest12 {
             var msg = `Execution Context created for profile '${this.profile}' and cluster '${this.cluster}'`;
             return Promise.resolve({ "status": "success", "data": msg });
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error });
+            return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
     }
 
@@ -66,7 +66,7 @@ export class Rest12 {
             await axios.post(uri, data, headers(this.token));
             return Promise.resolve({ "status": "success", "data": "Execution context stopped" });
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error });
+            return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
     }
 
@@ -82,7 +82,7 @@ export class Rest12 {
             const response = await axios.post(uri, data, headers(this.token));
             this.commandId = (response as Response)["data"].id;
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error });
+            return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
 
         // Poll command until it is finished
@@ -111,7 +111,7 @@ export class Rest12 {
                 return Promise.resolve({ "status": "error", "data": "Command execution failed" });
             }
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error });
+            return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
     }
 
@@ -126,7 +126,7 @@ export class Rest12 {
             await axios.post(uri, data, headers(this.token));
             return Promise.resolve({ "status": "success", "data": "Command cancelled" });
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error });
+            return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
     }
 
