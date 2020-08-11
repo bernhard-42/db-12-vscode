@@ -77,11 +77,6 @@
 					"default": "",
 					"description": "Databricks cluster"
 				},
-				"databricks-run.language": {
-					"type": "string",
-					"default": "",
-					"description": "Databricks programming language (python, SQL, scala, r)"
-				},
 				"databricks-run.lib-folder": {
 					"type": "string",
 					"default": "",

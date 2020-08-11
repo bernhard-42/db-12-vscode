@@ -64,7 +64,6 @@ export function activate(context: vscode.ExtensionContext) {
 	let dbConfig: { [key: string]: any };
 	let userConfig: WorkspaceConfiguration;
 	let profiles: Array<string>;
-	const languages: Array<string> = ["Python", "SQL", "Scala", "R"];
 	let output: vscode.OutputChannel;
 	let profile = "";
 	let cluster = "";
@@ -122,14 +121,12 @@ export function activate(context: vscode.ExtensionContext) {
 			if (vscode.workspace.workspaceFolders !== undefined) {
 				profile = userConfig.get("profile") || "";
 				cluster = userConfig.get("cluster") || "";
-				language = userConfig.get("language") || "";
 				libFolder = userConfig.get("lib-folder") || "";
 				remoteFolder = userConfig.get("remote-folder") || "";
 			}
 		} else if (useSettings === "no") {
 			profile = "";
 			cluster = "";
-			language = "";
 			libFolder = "";
 			remoteFolder = "";
 		} else {
@@ -179,17 +176,19 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Select language
 
-		if (language === "") {
-			language = await window.showQuickPick(languages, { placeHolder: 'Select language' }) || "";
-
-			language = language.toLowerCase();
-			if (language === "") {
-				output.appendLine(format(editorPrefix, `Selection of language cancelled`));
-				return;
-			} else {
-				updateConfig(language, "language");
-			}
+		if (editor.document.fileName.endsWith(".py")) {
+			language = "python";
+		} else if (editor.document.fileName.endsWith(".sql")) {
+			language = "sql";
+		} else if (editor.document.fileName.toLowerCase().endsWith(".r")) {
+			language = "r";
+		} else if (editor.document.fileName.endsWith(".scala")) {
+			language = "scala";
+		} else {
+			output.appendLine(format(editorPrefix, `Language of current file not supported`));
+			return;
 		}
+		output.appendLine(format(editorPrefix, `Language: ${language}`));
 
 		if (libFolder === "") {
 			const wsFolder = vscode.workspace.rootPath || ".";
