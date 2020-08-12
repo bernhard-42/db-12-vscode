@@ -1,4 +1,4 @@
-function explorerCode() {
+export function explorerCode() {
     return `
 import inspect
 import itertools
@@ -73,11 +73,11 @@ print("Variable explorer code loaded")
 `;
 }
 
-function importCode(remoteFolder: string, libFolder: string) {
+export function importCode(remoteFolder: string, libFolder: string) {
     return `
 import sys
 if not "${remoteFolder}/${libFolder}.zip" in sys.path: sys.path.insert(0, "${remoteFolder}/${libFolder}.zip")
 `;
 }
 
-export { explorerCode, importCode };
+

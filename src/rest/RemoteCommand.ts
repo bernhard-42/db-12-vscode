@@ -1,6 +1,5 @@
 import url from 'url';
 import axios from 'axios';
-import { window, OutputChannel } from 'vscode';
 import { Response, headers, poll } from './Helpers';
 
 export class RemoteCommand {
@@ -32,7 +31,6 @@ export class RemoteCommand {
         }
 
         // Poll context until it is created
-
         try {
             const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${this.contextId}`;
             const uri = url.resolve(this.host, path);
@@ -75,7 +73,6 @@ export class RemoteCommand {
         }
 
         // Poll command until it is finished
-
         try {
             const path = `api/1.2/commands/status?clusterId=${this.cluster}&contextId=${this.contextId}&commandId=${this.commandId}`;
             const uri = url.resolve(this.host, path);

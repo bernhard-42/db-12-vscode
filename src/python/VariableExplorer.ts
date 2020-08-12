@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { RemoteCommand } from '../rest/RemoteCommand';
-import { timingSafeEqual } from 'crypto';
+import { DatabricksRunOutput } from '../databricks/DatabricksOutput';
+import { Response } from '../rest/Helpers';
+import { explorerCode } from './PythonTemplate';
+
 
 export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
     rest: RemoteCommand = <RemoteCommand>{};
@@ -85,4 +87,25 @@ class Variable extends vscode.TreeItem {
     get description(): string {
         return `${this.type}  ${this.value}`;
     }
+}
+
+export async function createVariableExplorer(language: string, remoteCommand: RemoteCommand) {
+    const variableExplorer = new DatabricksVariableExplorerProvider();
+    vscode.window.registerTreeDataProvider('databricksVariableExplorer', variableExplorer);
+
+    vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
+
+    const output = new DatabricksRunOutput();
+
+    output.write("Register variable explorer");
+    var result = await remoteCommand.execute(explorerCode()) as Response;
+    if (result["status"] === "success") {
+        output.write(result["data"]);
+    } else {
+        output.write(result["data"]);
+        return;
+    }
+
+    variableExplorer.refresh(remoteCommand, language);
+    return variableExplorer;
 }

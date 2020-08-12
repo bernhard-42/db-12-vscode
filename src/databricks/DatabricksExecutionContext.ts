@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { OutputChannel } from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
 
 interface IExecutionContext {
@@ -14,11 +13,9 @@ interface IExecutionContext {
 
 export class ExecutionContexts {
     executionContexts: Map<string, IExecutionContext>;
-    output: OutputChannel;
 
     constructor() {
         this.executionContexts = new Map<string, IExecutionContext>();
-        this.output = vscode.window.createOutputChannel("Databricks");
     }
 
     getEditor() {
@@ -27,22 +24,6 @@ export class ExecutionContexts {
             vscode.window.showErrorMessage("No editor window open");
         }
         return editor;
-    }
-
-    private getEditorPrefix() {
-        const fileName = this.getEditor()?.document.fileName;
-        if (!fileName) {
-            return "[unknown]";
-        } else {
-            const parts = fileName.split("/");
-            return `[${parts[parts.length - 1]}] `;
-        }
-    }
-
-    write(msg: string) {
-        this.output.show(true);
-        const editorPrefix = this.getEditorPrefix();
-        this.output.appendLine(`${editorPrefix} ${msg}`);
     }
 
     getContext() {
@@ -74,6 +55,7 @@ export class ExecutionContexts {
 
         }
     }
+
     clearContext() {
         const editor = this.getEditor();
         if (editor) {
