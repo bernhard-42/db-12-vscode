@@ -1,22 +1,24 @@
 import * as vscode from 'vscode';
+import { OutputChannel } from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
 
 interface IExecutionContext {
     language: string;
-    rest: RemoteCommand;
+    remoteCommand: RemoteCommand;
     commandId: string;
     host: string;
     token: string;
     cluster: string;
-    editorPrefix: string;
     executionId: number;
 }
 
 export class ExecutionContexts {
     executionContexts: Map<string, IExecutionContext>;
+    output: OutputChannel;
 
     constructor() {
         this.executionContexts = new Map<string, IExecutionContext>();
+        this.output = vscode.window.createOutputChannel("Databricks");
     }
 
     getEditor() {
@@ -27,7 +29,7 @@ export class ExecutionContexts {
         return editor;
     }
 
-    getEditorPrefix() {
+    private getEditorPrefix() {
         const fileName = this.getEditor()?.document.fileName;
         if (!fileName) {
             return "[unknown]";
@@ -35,6 +37,12 @@ export class ExecutionContexts {
             const parts = fileName.split("/");
             return `[${parts[parts.length - 1]}] `;
         }
+    }
+
+    write(msg: string) {
+        this.output.show(true);
+        const editorPrefix = this.getEditorPrefix();
+        this.output.appendLine(`${editorPrefix} ${msg}`);
     }
 
     getContext() {
@@ -50,17 +58,16 @@ export class ExecutionContexts {
         }
     }
 
-    setContext(language: string, rest: RemoteCommand, host: string, token: string, cluster: string, editorPrefix: string) {
+    setContext(language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string) {
         const editor = this.getEditor();
         if (editor) {
             this.executionContexts.set(editor.document.fileName, {
                 language: language,
-                rest: rest,
+                remoteCommand: remoteCommand,
                 commandId: "",
                 host: host,
                 token: token,
                 cluster: cluster,
-                editorPrefix: editorPrefix,
                 executionId: 1
             });
         } else {

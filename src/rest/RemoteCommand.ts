@@ -4,7 +4,6 @@ import { window, OutputChannel } from 'vscode';
 import { Response, headers, poll } from './Helpers';
 
 export class RemoteCommand {
-    output: OutputChannel;
     profile: string = "";
     host: string = "";
     token: string = "";
@@ -12,10 +11,6 @@ export class RemoteCommand {
     cluster: string = "";
     commandId: string = "";
     contextId: string = "";
-
-    constructor(output: OutputChannel) {
-        this.output = output;
-    }
 
     async createContext(profile: string, host: string, token: string, language: string, cluster: string): Promise<Response> {
         this.profile = profile;
@@ -42,7 +37,7 @@ export class RemoteCommand {
             const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${this.contextId}`;
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => value === "PENDING";
-            let response = await poll(uri, token, condition, 1000, this.output);
+            let response = await poll(uri, token, condition, 1000);
             var msg = `Execution Context created for profile '${this.profile}' and cluster '${this.cluster}'`;
             return Promise.resolve({ "status": "success", "data": msg });
         } catch (error) {
@@ -86,7 +81,7 @@ export class RemoteCommand {
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => ["Queued", "Running", "Cancelling"].indexOf(value) !== -1;
 
-            let response = await poll(uri, this.token, condition, 100, this.output) as Response;
+            let response = await poll(uri, this.token, condition, 100) as Response;
 
             if (response["data"].status === "Finished") {
                 let resultType = (response["data"] as Response)["results"]["resultType"];

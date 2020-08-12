@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { window, OutputChannel } from 'vscode';
+import { window } from 'vscode';
 
 export interface Response {
     [key: string]: any;
@@ -13,8 +13,9 @@ export async function poll(
     uri: string,
     token: string,
     condition: (value: string) => boolean,
-    ms: number,
-    output: OutputChannel) {
+    ms: number) {
+
+    const output = window.createOutputChannel("Databricks");
 
     const fn = () => axios.get(uri, headers(token));
     let response = await fn();
