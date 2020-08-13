@@ -16,7 +16,7 @@ import { setImportPath } from '../python/ImportPath';
 
 import { ExecutionContexts } from './ExecutionContext';
 import { DatabricksConfig } from './DatabricksConfig';
-import { DatabricksOutput } from './DatabricksOutput';
+import * as output from './DatabricksOutput';
 
 export class DatabricksRun {
     private workspaceConfig: DatabricksConfig;
@@ -57,7 +57,7 @@ export class DatabricksRun {
                 remoteFolder = this.workspaceConfig.get("remote-folder");
             }
         } else if (useSettings !== "no") {
-            DatabricksOutput.write(`Cancelled`);
+            output.write(`Cancelled`);
             return;
         }
 
@@ -65,7 +65,7 @@ export class DatabricksRun {
         if (profile === "") {
             profile = await window.showQuickPick(profiles, { placeHolder: 'Select Databricks CLI profile' }) || "";
             if (profile === "") {
-                DatabricksOutput.write(`Selection of profile cancelled`);
+                output.write(`Selection of profile cancelled`);
                 return;
             } else {
                 this.workspaceConfig.update(profile, "profile");
@@ -90,7 +90,7 @@ export class DatabricksRun {
 
             cluster = await window.showQuickPick(clusters, { placeHolder: 'Select Databricks cluster' }) || "";
             if (cluster === "") {
-                DatabricksOutput.write(`Selection of cluster cancelled`);
+                output.write(`Selection of cluster cancelled`);
                 return;
             } else {
                 this.workspaceConfig.update(cluster, "cluster");
@@ -107,19 +107,19 @@ export class DatabricksRun {
         } else if (editor.document.fileName.endsWith(".scala")) {
             language = "scala";
         } else {
-            DatabricksOutput.write(`Language of current file not supported`);
+            output.write(`Language of current file not supported`);
             return;
         }
-        DatabricksOutput.write(`Language: ${language}`);
+        output.write(`Language: ${language}`);
 
         // Create Databricks Execution Context
         var remoteCommand = new RemoteCommand();
         var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
 
         if (result["status"] === "success") {
-            DatabricksOutput.write(`Created execution context for cluster '${cluster}' on host '${host}'`);
+            output.write(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
-            DatabricksOutput.write("Could not create Databricks Execution Context");
+            output.write("Could not create Databricks Execution Context");
             return;
         }
 
@@ -133,7 +133,7 @@ export class DatabricksRun {
                 if (folders.length > 0) {
                     libFolder = await window.showQuickPick(folders, { placeHolder: 'Select local library folder' }) || "";
                     if (libFolder === "") {
-                        DatabricksOutput.write(`Selection of library folder cancelled`);
+                        output.write(`Selection of library folder cancelled`);
                         return;
                     } else {
                         this.workspaceConfig.update(libFolder, "lib-folder");
@@ -144,7 +144,7 @@ export class DatabricksRun {
             if ((libFolder !== "") && (remoteFolder === "")) {
                 remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
                 if (remoteFolder === "") {
-                    DatabricksOutput.write(`Selection of library folder cancelled`);
+                    output.write(`Selection of library folder cancelled`);
                     return;
                 } else {
                     this.workspaceConfig.update(remoteFolder, "remote-folder");
@@ -162,7 +162,7 @@ export class DatabricksRun {
         }
 
         this.executionContexts.setContext(language, remoteCommand, host, token, cluster);
-        DatabricksOutput.thickBorder();
+        output.thickBorder();
     };
 
     async sendSelectionOrLine() {
@@ -191,12 +191,12 @@ export class DatabricksRun {
         if (isPython) {
             inPrompt = `In[${context.executionId}]:`;
             outPrompt = `Out[${context.executionId}]: `;
-            DatabricksOutput.write(inPrompt);
+            output.write(inPrompt);
         }
         code.split("\n").forEach((line) => {
-            DatabricksOutput.write(line);
+            output.write(line);
         });
-        DatabricksOutput.thinBorder();
+        output.thinBorder();
 
         // Send code as a command
         var result = await context.remoteCommand.execute(code) as Response;
@@ -213,12 +213,12 @@ export class DatabricksRun {
                     // So patch "Out" number to match "In" number
                     line = line.replace(/^Out\[\d+\]:\s/, outPrompt);
                 }
-                DatabricksOutput.write(line);
+                output.write(line);
             });
         } else {
-            DatabricksOutput.write("Error: " + result["data"]);
+            output.write("Error: " + result["data"]);
         }
-        DatabricksOutput.thickBorder();
+        output.thickBorder();
 
         this.variableExplorer?.refresh(context.remoteCommand, context.language);
     };
@@ -230,9 +230,9 @@ export class DatabricksRun {
         // Send cancel command
         var result = await context.remoteCommand.cancel() as Response;
         if (result["status"] === "success") {
-            DatabricksOutput.write("Command cancelled");
+            output.write("Command cancelled");
         } else {
-            DatabricksOutput.write(result["data"]);
+            output.write(result["data"]);
         }
         this.variableExplorer?.refresh(context.remoteCommand, context.language);
     };
@@ -244,9 +244,9 @@ export class DatabricksRun {
         var result = await context.remoteCommand.stop() as Response;
         if (result["status"] === "success") {
             this.executionContexts.clearContext();
-            DatabricksOutput.write("Context stopped");
+            output.write("Context stopped");
         } else {
-            DatabricksOutput.write(result["data"]);
+            output.write(result["data"]);
         }
     };
 

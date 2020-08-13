@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
-import { DatabricksOutput } from '../databricks/DatabricksOutput';
+import * as output from '../databricks/DatabricksOutput';
 import { Response } from '../rest/Helpers';
 import { explorerCode } from './PythonTemplate';
 
@@ -98,9 +98,9 @@ export async function createVariableExplorer(language: string, remoteCommand: Re
 
     var result = await remoteCommand.execute(explorerCode()) as Response;
     if (result["status"] === "success") {
-        DatabricksOutput.write("Successfully registered Variable Explorer");
+        output.write("Successfully registered Variable Explorer");
     } else {
-        DatabricksOutput.write("Error: Failed to register Variable Explorer");
+        output.write("Error: Failed to register Variable Explorer");
         return;
     }
 

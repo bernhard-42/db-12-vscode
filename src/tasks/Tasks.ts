@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import decomment from 'decomment';
 import fs from 'fs';
 
-import { DatabricksOutput } from '../databricks/DatabricksOutput';
+import * as output from '../databricks/DatabricksOutput';
 
 import { tasks } from './TasksTemplate';
 
@@ -35,10 +35,10 @@ export function updateTasks() {
         }
         if (addZip || addUpload) {
             fs.writeFileSync(taskJson, JSON.stringify(exTaskJson, null, 2));
-            DatabricksOutput.write(`Updated ${taskJson}`);
+            output.write(`Updated ${taskJson}`);
         }
     } else {
         fs.writeFileSync(taskJson, JSON.stringify(dbTasks, null, 2));
-        DatabricksOutput.write(`Created ${taskJson}`);
+        output.write(`Created ${taskJson}`);
     }
 }

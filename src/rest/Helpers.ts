@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { DatabricksOutput } from '../databricks/DatabricksOutput';
+import * as output from '../databricks/DatabricksOutput';
 
 export interface Response {
     [key: string]: any;
@@ -18,11 +18,11 @@ export async function poll(
     const fn = () => axios.get(uri, headers(token));
     let response = await fn();
     while (condition((response as Response)["data"].status)) {
-        DatabricksOutput.write("»", false);
+        output.write("»", false);
         await wait(ms);
         response = await fn();
     }
-    DatabricksOutput.write("\n", false);
+    output.write("\n", false);
     return response;
 }
 
