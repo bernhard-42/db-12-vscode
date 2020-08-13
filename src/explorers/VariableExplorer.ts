@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
-import { DatabricksRunOutput } from '../databricks/DatabricksOutput';
+import { DatabricksOutput } from '../databricks/DatabricksOutput';
 import { Response } from '../rest/Helpers';
 import { explorerCode } from './PythonTemplate';
 
@@ -95,14 +95,12 @@ export async function createVariableExplorer(language: string, remoteCommand: Re
 
     vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
 
-    const output = new DatabricksRunOutput();
 
-    output.write("Register variable explorer");
     var result = await remoteCommand.execute(explorerCode()) as Response;
     if (result["status"] === "success") {
-        output.write(result["data"]);
+        DatabricksOutput.write("Successfully registered Variable Explorer");
     } else {
-        output.write(result["data"]);
+        DatabricksOutput.write("Error: Failed to register Variable Explorer");
         return;
     }
 

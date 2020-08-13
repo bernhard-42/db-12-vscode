@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { window } from 'vscode';
+import { DatabricksOutput } from '../databricks/DatabricksOutput';
 
 export interface Response {
     [key: string]: any;
@@ -15,16 +15,14 @@ export async function poll(
     condition: (value: string) => boolean,
     ms: number) {
 
-    const output = window.createOutputChannel("Databricks");
-
     const fn = () => axios.get(uri, headers(token));
     let response = await fn();
     while (condition((response as Response)["data"].status)) {
-        output.append("»");
+        DatabricksOutput.write("»", false);
         await wait(ms);
         response = await fn();
     }
-    output.append("\n");
+    DatabricksOutput.write("\n", false);
     return response;
 }
 

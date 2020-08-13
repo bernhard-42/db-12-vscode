@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
 import { DatabricksRun } from './databricks/DatabricksRun';
-import { DatabricksRunConfig } from './databricks/DatabricksConfig';
-
-let databricksRun = new DatabricksRun();
+import { DatabricksConfig } from './databricks/DatabricksConfig';
 
 export function activate(context: vscode.ExtensionContext) {
+
+	let databricksRun = new DatabricksRun();
 
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.initialize', () => databricksRun.initialize()
@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	vscode.workspace.onDidSaveTextDocument((document) => {
-		const userConfig = new DatabricksRunConfig();
+		const userConfig = new DatabricksConfig();
 		const libFolder: string = userConfig.get("lib-folder");
 		const remoteFolder: string = userConfig.get("remote-folder");
 		const file = vscode.workspace.asRelativePath(document.fileName);
