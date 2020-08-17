@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { ConfigurationTarget } from 'vscode';
 
 import * as output from './DatabricksOutput';
+interface ConfigObj {
+    [key: string]: any;
+}
 
 export class DatabricksConfig {
     private workspaceConfig: vscode.WorkspaceConfiguration;
@@ -10,7 +13,7 @@ export class DatabricksConfig {
         this.workspaceConfig = vscode.workspace.getConfiguration("databricks-run");
     }
 
-    update(value: string, name: string) {
+    update(value: any, name: string) {
         this.workspaceConfig.update(name, value, ConfigurationTarget.Workspace).then(
             () => {
                 output.write(`Added ${name} to workspace config .vscode/settings.json`);
@@ -22,8 +25,12 @@ export class DatabricksConfig {
         return value;
     }
 
-    get(attribute: string): string {
-        return this.workspaceConfig.get(attribute) || "";
+    getString(attribute: string): string {
+        return this.workspaceConfig.get(attribute) as string || "";
+    }
+
+    getObject(attribute: string): ConfigObj {
+        return this.workspaceConfig.get(attribute) || {};
     }
 }
 

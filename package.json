@@ -16,8 +16,7 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
+		"commands": [{
 				"command": "databricks-run.initialize",
 				"title": "Databricks Run: Initialize Databricks Connections"
 			},
@@ -34,8 +33,7 @@
 				"title": "Databricks Run: Stop the current exection context"
 			}
 		],
-		"keybindings": [
-			{
+		"keybindings": [{
 				"command": "databricks-run.sendSelectionOrLine",
 				"key": "ctrl+k shift+enter",
 				"mac": "cmd+k shift+enter",
@@ -83,34 +81,35 @@
 					"default": "",
 					"description": "Databricks cluster"
 				},
-				"databricks-run.lib-folder": {
-					"type": "string",
-					"default": "",
-					"description": "Local library folder"
-				},
-				"databricks-run.remote-folder": {
-					"type": "string",
-					"default": "",
-					"description": "Remote dbfs folder"
+				"databricks-run.python": {
+					"type": "object",
+					"properties": {
+						"lib-folder": {
+							"type": "string",
+							"default": "",
+							"description": "Local library folder"
+						},
+						"remote-folder": {
+							"type": "string",
+							"default": "",
+							"description": "Remote dbfs folder"
+						}
+					}
 				}
 			}
 		},
 		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "databricksExplorer",
-					"title": "Databricks",
-					"icon": "media/databricks-run.png"
-				}
-			]
+			"activitybar": [{
+				"id": "databricksExplorer",
+				"title": "Databricks",
+				"icon": "media/databricks-run.png"
+			}]
 		},
 		"views": {
-			"databricksExplorer": [
-				{
-					"id": "databricksVariableExplorer",
-					"name": "Variables"
-				}
-			]
+			"databricksExplorer": [{
+				"id": "databricksVariableExplorer",
+				"name": "Variables"
+			}]
 		}
 	},
 	"scripts": {

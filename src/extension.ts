@@ -21,9 +21,10 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	vscode.workspace.onDidSaveTextDocument((document) => {
-		const userConfig = new DatabricksConfig();
-		const libFolder: string = userConfig.get("lib-folder");
-		const remoteFolder: string = userConfig.get("remote-folder");
+		const workspaceConfig = new DatabricksConfig();
+		const pythonConfig = workspaceConfig.getObject("python");
+		const libFolder = pythonConfig["lib-folder"];
+		const remoteFolder = pythonConfig["remote-folder"];
 		const file = vscode.workspace.asRelativePath(document.fileName);
 
 		if ((libFolder !== "") && (remoteFolder !== "") && file.startsWith(libFolder)) {

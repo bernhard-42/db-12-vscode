@@ -51,10 +51,11 @@ export class DatabricksRun {
 
         if (useSettings === "yes") {
             if (vscode.workspace.workspaceFolders !== undefined) {
-                profile = this.workspaceConfig.get("profile");
-                cluster = this.workspaceConfig.get("cluster");
-                libFolder = this.workspaceConfig.get("lib-folder");
-                remoteFolder = this.workspaceConfig.get("remote-folder");
+                profile = this.workspaceConfig.getString("profile");
+                cluster = this.workspaceConfig.getString("cluster");
+                let pythonConfig = this.workspaceConfig.getObject("python");
+                libFolder = pythonConfig["lib-folder"];
+                remoteFolder = pythonConfig["remote-folder"];
             }
         } else if (useSettings !== "no") {
             output.write(`Cancelled`);
@@ -119,7 +120,7 @@ export class DatabricksRun {
         if (result["status"] === "success") {
             output.write(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
-            output.write("Could not create Databricks Execution Context");
+            output.write(`Could not create Databricks Execution Context: ${result["data"]}`);
             return;
         }
 
@@ -135,8 +136,6 @@ export class DatabricksRun {
                     if (libFolder === "") {
                         output.write(`Selection of library folder cancelled`);
                         return;
-                    } else {
-                        this.workspaceConfig.update(libFolder, "lib-folder");
                     }
                 }
             }
@@ -146,10 +145,9 @@ export class DatabricksRun {
                 if (remoteFolder === "") {
                     output.write(`Selection of library folder cancelled`);
                     return;
-                } else {
-                    this.workspaceConfig.update(remoteFolder, "remote-folder");
                 }
             }
+            this.workspaceConfig.update({ "lib-folder": libFolder, "remote-folder": remoteFolder }, "python");
 
             // Register Variable explorer
             this.variableExplorer = await createVariableExplorer(language, remoteCommand);
