@@ -11,16 +11,25 @@ export class Clusters {
         this.token = token;
     }
 
-    async listClusterNames(): Promise<Response> {
+    async names(): Promise<Response> {
         let clusters: string[] = [];
-        const uri = url.resolve(this.host, 'api/2.0/clusters/list');
-        try {
-            const response = await axios.get(uri, headers(this.token));
-            const clusterConfig: Response[] = response["data"]["clusters"];
+        const response = await this.list();
+        if (response["status"] === "success") {
+            const clusterConfig: Response[] = response["data"];
             clusterConfig.forEach(cluster => {
                 clusters.push(cluster["cluster_id"]);
             });
             return Promise.resolve({ "status": "success", "data": clusters });
+        } else {
+            return Promise.resolve({ "status": "error", "data": response["data"] });
+        }
+    }
+
+    async list(): Promise<Response> {
+        const uri = url.resolve(this.host, 'api/2.0/clusters/list');
+        try {
+            const response = await axios.get(uri, headers(this.token));
+            return Promise.resolve({ "status": "success", "data": response["data"]["clusters"] });
         } catch (error) {
             return Promise.resolve({ "status": "error", "data": error });
         }

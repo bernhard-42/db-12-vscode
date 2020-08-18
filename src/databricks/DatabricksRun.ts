@@ -12,6 +12,7 @@ import { Response } from '../rest/Helpers';
 
 import { updateTasks } from "../tasks/Tasks";
 import { createVariableExplorer, DatabricksVariableExplorerProvider } from '../explorers/VariableExplorer';
+import { createClusterExplorer, DatabricksClusterExplorerProvider } from '../explorers/ClusterExplorer';
 import { setImportPath } from '../python/ImportPath';
 
 import { ExecutionContexts } from './ExecutionContext';
@@ -22,6 +23,7 @@ export class DatabricksRun {
     private workspaceConfig: DatabricksConfig;
     private executionContexts: ExecutionContexts;
     private variableExplorer: DatabricksVariableExplorerProvider | undefined;
+    private clusterExplorer: DatabricksClusterExplorerProvider | undefined;
 
     constructor() {
         this.executionContexts = new ExecutionContexts();
@@ -73,14 +75,18 @@ export class DatabricksRun {
             }
         }
 
+
         const host = dbConfig[profile]["host"];
         const token = dbConfig[profile]["token"];
+
+        // Register Cluster explorer
+        this.clusterExplorer = createClusterExplorer(host, token);
 
         // Select cluster
         if (cluster === "") {
             let clusters = [];
             const clusterApi = new Clusters(host, token);
-            let response = await clusterApi.listClusterNames();
+            let response = await clusterApi.names();
             if (response["status"] === "success") {
                 clusters = response["data"];
             } else {

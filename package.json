@@ -107,8 +107,20 @@
 		},
 		"views": {
 			"databricksExplorer": [{
-				"id": "databricksVariableExplorer",
-				"name": "Variables"
+					"id": "databricksVariableExplorer",
+					"name": "Python Variables"
+				},
+				{
+					"id": "databricksClusterExplorer",
+					"name": "Clusters"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [{
+				"command": "databricksClusterExplorer.refresh",
+				"when": "view == databricksClusterExplorer",
+				"group": "navigation"
 			}]
 		}
 	},
