@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import * as output from '../databricks/DatabricksOutput';
 import { Response } from '../rest/Helpers';
-import { explorerCode } from './PythonTemplate';
+import { variablesCode } from './PythonTemplate';
 
 
-export class DatabricksVariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
+export class VariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
     rest: RemoteCommand = <RemoteCommand>{};
     language = "";
 
@@ -90,13 +90,13 @@ class Variable extends vscode.TreeItem {
 }
 
 export async function createVariableExplorer(language: string, remoteCommand: RemoteCommand) {
-    const variableExplorer = new DatabricksVariableExplorerProvider();
+    const variableExplorer = new VariableExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksVariableExplorer', variableExplorer);
 
     vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
 
 
-    var result = await remoteCommand.execute(explorerCode()) as Response;
+    var result = await remoteCommand.execute(variablesCode()) as Response;
     if (result["status"] === "success") {
         output.write("Successfully registered Variable Explorer");
     } else {

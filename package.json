@@ -111,17 +111,13 @@
 					"name": "Python Variables"
 				},
 				{
-					"id": "databricksClusterExplorer",
-					"name": "Clusters"
+					"id": "databricksLibraryExplorer",
+					"name": "Python Libraries"
 				}
 			]
 		},
 		"menus": {
-			"view/title": [{
-				"command": "databricksClusterExplorer.refresh",
-				"when": "view == databricksClusterExplorer",
-				"group": "navigation"
-			}]
+			"view/title": []
 		}
 	},
 	"scripts": {

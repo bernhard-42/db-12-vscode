@@ -11,8 +11,8 @@ import { Clusters } from '../rest/Clusters';
 import { Response } from '../rest/Helpers';
 
 import { updateTasks } from "../tasks/Tasks";
-import { createVariableExplorer, DatabricksVariableExplorerProvider } from '../explorers/VariableExplorer';
-import { createClusterExplorer, DatabricksClusterExplorerProvider } from '../explorers/ClusterExplorer';
+import { createVariableExplorer, VariableExplorerProvider } from '../explorers/VariableExplorer';
+import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/LibraryExplorer';
 import { setImportPath } from '../python/ImportPath';
 
 import { ExecutionContexts } from './ExecutionContext';
@@ -22,8 +22,8 @@ import * as output from './DatabricksOutput';
 export class DatabricksRun {
     private workspaceConfig: DatabricksConfig;
     private executionContexts: ExecutionContexts;
-    private variableExplorer: DatabricksVariableExplorerProvider | undefined;
-    private clusterExplorer: DatabricksClusterExplorerProvider | undefined;
+    private variableExplorer: VariableExplorerProvider | undefined;
+    private libraryExplorer: LibraryExplorerProvider | undefined;
 
     constructor() {
         this.executionContexts = new ExecutionContexts();
@@ -78,9 +78,6 @@ export class DatabricksRun {
 
         const host = dbConfig[profile]["host"];
         const token = dbConfig[profile]["token"];
-
-        // Register Cluster explorer
-        this.clusterExplorer = createClusterExplorer(host, token);
 
         // Select cluster
         if (cluster === "") {
@@ -157,6 +154,9 @@ export class DatabricksRun {
 
             // Register Variable explorer
             this.variableExplorer = await createVariableExplorer(language, remoteCommand);
+
+            // Register Library explorer
+            this.libraryExplorer = createLibraryExplorer(language, remoteCommand);
 
             // Set import path
             await setImportPath(remoteFolder, libFolder, remoteCommand);
