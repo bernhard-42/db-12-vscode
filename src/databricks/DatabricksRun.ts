@@ -19,13 +19,16 @@ import { ExecutionContexts } from './ExecutionContext';
 import { DatabricksConfig } from './DatabricksConfig';
 import * as output from './DatabricksOutput';
 
+export let RESOURCES = "";
+
 export class DatabricksRun {
     private workspaceConfig: DatabricksConfig;
     private executionContexts: ExecutionContexts;
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
 
-    constructor() {
+    constructor(resources: string) {
+        RESOURCES = resources;
         this.executionContexts = new ExecutionContexts();
         this.workspaceConfig = new DatabricksConfig();
     }
@@ -254,4 +257,9 @@ export class DatabricksRun {
         }
     };
 
+    refreshLibraries() {
+        if (this.libraryExplorer) {
+            this.libraryExplorer.refresh();
+        }
+    }
 }

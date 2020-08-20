@@ -2,28 +2,26 @@ import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { librariesCode } from './PythonTemplate';
 import { BASELIST } from './baselibs';
-import { exec } from 'child_process';
-
-function execShellCommand(cmd: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        exec(cmd, (error, stdout, stderr) => {
-            if (error) {
-                console.warn(error);
-            }
-            resolve(stdout ? stdout : stderr);
-        });
-    });
-}
+import * as path from 'path';
+import { RESOURCES } from '../databricks/DatabricksRun';
+import { pipList } from '../system/shell';
+import * as output from '../databricks/DatabricksOutput';
 
 export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library> {
-    remoteCommand: RemoteCommand = <RemoteCommand>{};
+    remoteCommand: RemoteCommand;
+    language: string;
+
     remoteLibraries = new Map<string, Library>();
     localLibraries = new Map<string, string>();
 
-    language = "";
+
+    constructor(remoteCommand: RemoteCommand, language: string) {
+        this.remoteCommand = remoteCommand;
+        this.language = language;
+    }
 
     errorResponse(msg: string) {
-        return new Library(msg, "", "", vscode.TreeItemCollapsibleState.None);
+        return new Library(false, msg, "", "", vscode.TreeItemCollapsibleState.None);
     }
 
     getTreeItem(variable: Library): vscode.TreeItem {
@@ -34,6 +32,7 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
         var data = JSON.parse(jsonData);
         Object.keys(data).forEach(key => {
             this.remoteLibraries.set(data[key]["name"], new Library(
+                false,
                 data[key]["name"],
                 data[key]["version"],
                 (this.localLibraries.has(data[key]["name"])) ? this.localLibraries.get(data[key]["name"]) || "missing" : "missing",
@@ -65,16 +64,26 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
     }
 
     private async getCategories(): Promise<Library[]> {
-        let locaLibs: string = await execShellCommand('pip list --format json') || "";
+        this.localLibraries = new Map<string, string>();
+        // TODO: python.pythonPath is deprecated!
+        let pythonConfig = vscode.workspace.getConfiguration("python");
+        let python = pythonConfig.get("pythonPath");
+        if (python === "python") {
+            await vscode.commands.executeCommand("python.setInterpreter");
+            let pythonConfig = vscode.workspace.getConfiguration("python");
+            python = pythonConfig.get("pythonPath");
+        }
+        output.write(`Local python interpreter: ${python}`);
+        let locaLibs: string = pipList(python as string);
         this.parseLocal(locaLibs);
 
         const code = librariesCode();
         let remoteLibs = await this.remoteCommand.execute(code);
         this.parseResponse(remoteLibs["data"]);
         return [
-            new Library("Python", "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library("DE and ML", "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library("Base", "", "", vscode.TreeItemCollapsibleState.Collapsed)
+            new Library(true, "Python", "", "", vscode.TreeItemCollapsibleState.Collapsed),
+            new Library(true, "DE and ML", "", "", vscode.TreeItemCollapsibleState.Collapsed),
+            new Library(true, "Base", "", "", vscode.TreeItemCollapsibleState.Collapsed)
         ];
     }
 
@@ -102,21 +111,36 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
 
     readonly onDidChangeTreeData: vscode.Event<Library | undefined> = this._onDidChangeTreeData.event;
 
-    refresh(remoteCommand: RemoteCommand, language: string): void {
-        this.remoteCommand = remoteCommand;
-        this.language = language;
+    refresh(): void {
         this._onDidChangeTreeData.fire();
     }
 }
 
+
 class Library extends vscode.TreeItem {
     constructor(
+        public readonly category: boolean,
         public readonly name: string,
         public readonly version: string,
         public readonly localVersion: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState
     ) {
         super(name, collapsibleState);
+
+        let icon = "python.png";
+        if (!category) {
+            if (localVersion === version) {
+                icon = "python_green.png";
+            } else if (localVersion === "missing") {
+                icon = "python_grey.png";
+            } else {
+                icon = "python_red.png";
+            }
+        }
+        super.iconPath = {
+            light: path.join(RESOURCES, 'light', icon),
+            dark: path.join(RESOURCES, 'dark', icon),
+        };
     }
 
     get tooltip(): string {
@@ -129,11 +153,11 @@ class Library extends vscode.TreeItem {
 }
 
 export function createLibraryExplorer(language: string, remoteCommand: RemoteCommand) {
-    const libraryExplorer = new LibraryExplorerProvider();
+    const libraryExplorer = new LibraryExplorerProvider(remoteCommand, language);
     vscode.window.registerTreeDataProvider('databricksLibraryExplorer', libraryExplorer);
 
     vscode.window.createTreeView('databricksLibraryExplorer', { treeDataProvider: libraryExplorer });
 
-    libraryExplorer.refresh(remoteCommand, language);
+    libraryExplorer.refresh();
     return libraryExplorer;
 }

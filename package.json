@@ -31,6 +31,14 @@
 			{
 				"command": "databricks-run.stop",
 				"title": "Databricks Run: Stop the current exection context"
+			},
+			{
+				"command": "databricks-run.refresh-libraries",
+				"title": "Refresh Libraries",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
 			}
 		],
 		"keybindings": [{
@@ -102,22 +110,26 @@
 			"activitybar": [{
 				"id": "databricksExplorer",
 				"title": "Databricks",
-				"icon": "media/databricks-run.png"
+				"icon": "resources/databricks-run.png"
 			}]
 		},
 		"views": {
 			"databricksExplorer": [{
 					"id": "databricksVariableExplorer",
-					"name": "Python Variables"
+					"name": "Remote Python Variables"
 				},
 				{
 					"id": "databricksLibraryExplorer",
-					"name": "Python Libraries"
+					"name": "Remote Python Libraries"
 				}
 			]
 		},
 		"menus": {
-			"view/title": []
+			"view/title": [{
+				"command": "databricks-run.refresh-libraries",
+				"when": "view == databricksLibraryExplorer",
+				"group": "navigation"
+			}]
 		}
 	},
 	"scripts": {

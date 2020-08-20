@@ -5,7 +5,8 @@ import { DatabricksConfig } from './databricks/DatabricksConfig';
 
 export function activate(context: vscode.ExtensionContext) {
 
-	let databricksRun = new DatabricksRun();
+	const execLocation = context.asAbsolutePath("resources");
+	let databricksRun = new DatabricksRun(execLocation);
 
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.initialize', () => databricksRun.initialize()
@@ -20,6 +21,10 @@ export function activate(context: vscode.ExtensionContext) {
 		'databricks-run.cancel', () => databricksRun.cancel()
 	));
 
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-libraries', () => databricksRun.refreshLibraries()
+	));
+
 	vscode.workspace.onDidSaveTextDocument((document) => {
 		const workspaceConfig = new DatabricksConfig();
 		const pythonConfig = workspaceConfig.getObject("python");
@@ -30,6 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if ((libFolder !== "") && (remoteFolder !== "") && file.startsWith(libFolder)) {
 			vscode.commands.executeCommand("workbench.action.tasks.runTask", "Upload library");
 		}
+
 	});
 }
 
