@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { DatabricksRun } from './databricks/DatabricksRun';
 import { DatabricksConfig } from './databricks/DatabricksConfig';
+import * as output from './databricks/DatabricksOutput';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -25,6 +26,10 @@ export function activate(context: vscode.ExtensionContext) {
 		'databricks-run.refresh-libraries', () => databricksRun.refreshLibraries()
 	));
 
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-variables', () => databricksRun.refreshVariables()
+	));
+
 	vscode.workspace.onDidSaveTextDocument((document) => {
 		const workspaceConfig = new DatabricksConfig();
 		const pythonConfig = workspaceConfig.getObject("python");
@@ -35,7 +40,16 @@ export function activate(context: vscode.ExtensionContext) {
 		if ((libFolder !== "") && (remoteFolder !== "") && file.startsWith(libFolder)) {
 			vscode.commands.executeCommand("workbench.action.tasks.runTask", "Upload library");
 		}
+	});
 
+	vscode.window.onDidChangeActiveTextEditor(e => {
+		output.write("window.onDidChangeActiveTextEditor");
+		databricksRun.refreshVariables();
+	});
+
+	vscode.workspace.onDidCloseTextDocument(e => {
+		output.write("workspace.onDidCloseTextDocument");
+		databricksRun.stop(e.fileName);
 	});
 }
 

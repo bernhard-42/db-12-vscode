@@ -3,10 +3,10 @@ import { RemoteCommand } from '../rest/RemoteCommand';
 import * as output from '../databricks/DatabricksOutput';
 import { Response } from '../rest/Helpers';
 import { variablesCode } from './PythonTemplate';
-
+import { executionContexts } from '../databricks/ExecutionContext';
 
 export class VariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
-    rest: RemoteCommand = <RemoteCommand>{};
+    remoteCommand: RemoteCommand = <RemoteCommand>{};
     language = "";
 
     getTreeItem(variable: Variable): vscode.TreeItem {
@@ -26,21 +26,21 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
 
     getChildren(variable?: Variable): Thenable<Variable[]> {
         if (this.language !== "python") {
-            return Promise.resolve([new Variable("No implmented", `for ${this.language}`, "", "", vscode.TreeItemCollapsibleState.None)]);
+            return Promise.resolve([new Variable("No context", "", "", "", vscode.TreeItemCollapsibleState.None)]);
         }
-        if (Object.keys(this.rest).length > 0) {
+        if (Object.keys(this.remoteCommand).length > 0) {
             if (variable) {
                 return Promise.resolve(this.getAttributes(variable));
             } else {
                 return Promise.resolve(this.getVariables());
             }
         } else {
-            return Promise.resolve([new Variable("No context", "No context", "", "", vscode.TreeItemCollapsibleState.None)]);
+            return Promise.resolve([new Variable("No context", "", "", "", vscode.TreeItemCollapsibleState.None)]);
         }
     }
 
     private async getVariables(): Promise<Variable[]> {
-        let result = await this.rest.execute("__db_get_variables__()");
+        let result = await this.remoteCommand.execute("__db_get_variables__()");
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"]));
         } else {
@@ -50,7 +50,7 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
 
     private async getAttributes(variable: Variable): Promise<Variable[]> {
         var pythonVar = (variable.parent === "") ? variable.name : `${variable.parent}.${variable.name}`;
-        let result = await this.rest.execute(`__db_get_attributes__("${pythonVar}")`);
+        let result = await this.remoteCommand.execute(`__db_get_attributes__("${pythonVar}")`);
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"]));
         } else {
@@ -62,9 +62,15 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
 
     readonly onDidChangeTreeData: vscode.Event<Variable | undefined> = this._onDidChangeTreeData.event;
 
-    refresh(rest: RemoteCommand, language: string): void {
-        this.rest = rest;
-        this.language = language;
+    refresh(): void {
+        output.write("VariableExplorer refresh");
+        let context = executionContexts.getContext();
+        if (context) {
+            this.remoteCommand = context.remoteCommand;
+            this.language = context.language;
+        } else {
+            this.language = "";
+        }
         this._onDidChangeTreeData.fire();
     }
 }
@@ -95,15 +101,20 @@ export async function createVariableExplorer(language: string, remoteCommand: Re
 
     vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
 
+    if (language === "python") {
+        var result = await remoteCommand.execute(variablesCode()) as Response;
+        if (result["status"] === "success") {
+            output.write("Successfully registered Variable Explorer");
+        } else {
+            output.write("Error: Failed to register Variable Explorer");
+            return;
+        }
 
-    var result = await remoteCommand.execute(variablesCode()) as Response;
-    if (result["status"] === "success") {
-        output.write("Successfully registered Variable Explorer");
+        variableExplorer.refresh();
+
     } else {
-        output.write("Error: Failed to register Variable Explorer");
         return;
     }
 
-    variableExplorer.refresh(remoteCommand, language);
     return variableExplorer;
 }

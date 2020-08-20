@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
+import * as output from './DatabricksOutput';
 
 interface IExecutionContext {
     language: string;
@@ -21,22 +22,33 @@ export class ExecutionContexts {
     getEditor() {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showErrorMessage("No editor window open");
+            // vscode.window.showErrorMessage("No editor window open");
+            output.write("No editor window open");
         }
         return editor;
     }
 
-    getContext() {
-        const editor = this.getEditor();
-        if (editor) {
-            let context = this.executionContexts.get(editor.document.fileName);
-            if (context === undefined) {
-                vscode.window.showErrorMessage("No Databricks context available");
-            }
-            return context;
+    getFilename() {
+        return this.getEditor()?.document.fileName;
+    }
+
+    getContext(filename?: string) {
+        let fname = "";
+        if (filename) {
+            fname = filename;
         } else {
-            return undefined;
+            const editor = this.getEditor();
+            if (editor) {
+                fname = editor.document.fileName;
+            }
         }
+        let context = this.executionContexts.get(fname);
+        output.write(`Getting context for file ${fname}: ${context !== undefined}`);
+        if (context === undefined) {
+            // vscode.window.showErrorMessage("No Databricks context available");
+            output.write("No Databricks context available");
+        }
+        return context;
     }
 
     setContext(language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string) {
@@ -51,15 +63,22 @@ export class ExecutionContexts {
                 cluster: cluster,
                 executionId: 1
             });
-        } else {
-
         }
     }
 
-    clearContext() {
-        const editor = this.getEditor();
-        if (editor) {
-            this.executionContexts.delete(editor.document.fileName);
+    clearContext(filename: string | undefined) {
+        let fname = "";
+        if (filename) {
+            fname = filename;
+        } else {
+            const editor = this.getEditor();
+            if (editor) {
+                fname = editor.document.fileName;
+            }
         }
+        output.write(`Clearing context for file ${fname}`);
+        this.executionContexts.delete(fname);
     }
 }
+
+export const executionContexts = new ExecutionContexts();

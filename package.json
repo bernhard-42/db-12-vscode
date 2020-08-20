@@ -34,7 +34,15 @@
 			},
 			{
 				"command": "databricks-run.refresh-libraries",
-				"title": "Refresh Libraries",
+				"title": "Refresh Remote Libraries",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.refresh-variables",
+				"title": "Refresh Remote Variables",
 				"icon": {
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
@@ -126,10 +134,16 @@
 		},
 		"menus": {
 			"view/title": [{
-				"command": "databricks-run.refresh-libraries",
-				"when": "view == databricksLibraryExplorer",
-				"group": "navigation"
-			}]
+					"command": "databricks-run.refresh-libraries",
+					"when": "view == databricksLibraryExplorer",
+					"group": "navigation"
+				},
+				{
+					"command": "databricks-run.refresh-variables",
+					"when": "view == databricksVariableExplorer",
+					"group": "navigation"
+				}
+			]
 		}
 	},
 	"scripts": {

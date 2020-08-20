@@ -1,6 +1,7 @@
 import url from 'url';
 import axios from 'axios';
 import { Response, headers, poll } from './Helpers';
+import * as output from '../databricks/DatabricksOutput';
 
 export class RemoteCommand {
     profile: string = "";
@@ -26,6 +27,7 @@ export class RemoteCommand {
             };
             const response = await axios.post(uri, data, headers(token));
             this.contextId = (response as Response)["data"].id;
+            output.write(`Remote Context id: ${this.contextId}`);
         } catch (error) {
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
@@ -44,15 +46,18 @@ export class RemoteCommand {
     }
 
     async stop(): Promise<Response> {
+        output.write(`Stopping remote context with id: ${this.contextId}: `);
         try {
             const uri = url.resolve(this.host, 'api/1.2/contexts/destroy');
             const data = {
                 "clusterId": this.cluster,
                 "contextId": this.contextId
             };
+            output.write("success");
             await axios.post(uri, data, headers(this.token));
             return Promise.resolve({ "status": "success", "data": "Execution context stopped" });
         } catch (error) {
+            output.write("failed");
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
     }

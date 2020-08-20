@@ -1,24 +1,20 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { librariesCode } from './PythonTemplate';
 import { BASELIST } from './baselibs';
-import * as path from 'path';
 import { RESOURCES } from '../databricks/DatabricksRun';
 import { pipList } from '../system/shell';
 import * as output from '../databricks/DatabricksOutput';
+import { executionContexts } from '../databricks/ExecutionContext';
 
 export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library> {
-    remoteCommand: RemoteCommand;
-    language: string;
+    clusterID = "";
+    remoteCommand = <RemoteCommand>{};
+    language = "";
 
     remoteLibraries = new Map<string, Library>();
     localLibraries = new Map<string, string>();
-
-
-    constructor(remoteCommand: RemoteCommand, language: string) {
-        this.remoteCommand = remoteCommand;
-        this.language = language;
-    }
 
     errorResponse(msg: string) {
         return new Library(false, msg, "", "", vscode.TreeItemCollapsibleState.None);
@@ -50,7 +46,7 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
 
     getChildren(library?: Library): Thenable<Library[]> {
         if (this.language !== "python") {
-            return Promise.resolve([this.errorResponse(`No implmented for ${this.language}`)]);
+            return Promise.resolve([this.errorResponse(`Not implmented`)]);
         }
         if (Object.keys(this.remoteCommand).length > 0) {
             if (library) {
@@ -112,7 +108,20 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
     readonly onDidChangeTreeData: vscode.Event<Library | undefined> = this._onDidChangeTreeData.event;
 
     refresh(): void {
-        this._onDidChangeTreeData.fire();
+        const filename = executionContexts.getFilename();
+        if (!filename?.startsWith("/")) {
+            return;
+        }
+        const context = executionContexts.getContext();
+        if (context) {
+            this.clusterID = context.cluster;
+            this.remoteCommand = context.remoteCommand;
+            this.language = context.language;
+            if (this.language === "python") {
+                output.write("LibraryExplorer refresh");
+                this._onDidChangeTreeData.fire();
+            }
+        }
     }
 }
 
@@ -152,8 +161,8 @@ class Library extends vscode.TreeItem {
     }
 }
 
-export function createLibraryExplorer(language: string, remoteCommand: RemoteCommand) {
-    const libraryExplorer = new LibraryExplorerProvider(remoteCommand, language);
+export function createLibraryExplorer() {
+    const libraryExplorer = new LibraryExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksLibraryExplorer', libraryExplorer);
 
     vscode.window.createTreeView('databricksLibraryExplorer', { treeDataProvider: libraryExplorer });

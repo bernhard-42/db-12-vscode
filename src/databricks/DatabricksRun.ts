@@ -15,7 +15,7 @@ import { createVariableExplorer, VariableExplorerProvider } from '../explorers/V
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/LibraryExplorer';
 import { setImportPath } from '../python/ImportPath';
 
-import { ExecutionContexts } from './ExecutionContext';
+import { executionContexts } from './ExecutionContext';
 import { DatabricksConfig } from './DatabricksConfig';
 import * as output from './DatabricksOutput';
 
@@ -23,18 +23,16 @@ export let RESOURCES = "";
 
 export class DatabricksRun {
     private workspaceConfig: DatabricksConfig;
-    private executionContexts: ExecutionContexts;
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
 
     constructor(resources: string) {
         RESOURCES = resources;
-        this.executionContexts = new ExecutionContexts();
         this.workspaceConfig = new DatabricksConfig();
     }
 
     async initialize() {
-        const editor = this.executionContexts.getEditor();
+        const editor = executionContexts.getEditor();
         if (!editor) { return; }
 
         let profile = "";
@@ -123,6 +121,8 @@ export class DatabricksRun {
         var remoteCommand = new RemoteCommand();
         var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
 
+        executionContexts.setContext(language, remoteCommand, host, token, cluster);
+
         if (result["status"] === "success") {
             output.write(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
@@ -159,7 +159,7 @@ export class DatabricksRun {
             this.variableExplorer = await createVariableExplorer(language, remoteCommand);
 
             // Register Library explorer
-            this.libraryExplorer = createLibraryExplorer(language, remoteCommand);
+            this.libraryExplorer = createLibraryExplorer();
 
             // Set import path
             await setImportPath(remoteFolder, libFolder, remoteCommand);
@@ -168,15 +168,19 @@ export class DatabricksRun {
             updateTasks();
         }
 
-        this.executionContexts.setContext(language, remoteCommand, host, token, cluster);
+        if (language === "python") {
+            this.variableExplorer?.refresh();
+            this.libraryExplorer?.refresh();
+        }
+
         output.thickBorder();
     };
 
     async sendSelectionOrLine() {
-        const editor = this.executionContexts.getEditor();
+        const editor = executionContexts.getEditor();
         if (!editor) { return; }
 
-        const context = this.executionContexts.getContext();
+        const context = executionContexts.getContext();
         if (!context) { return; }
 
         // Prepare and print the input code
@@ -227,11 +231,11 @@ export class DatabricksRun {
         }
         output.thickBorder();
 
-        this.variableExplorer?.refresh(context.remoteCommand, context.language);
+        this.variableExplorer?.refresh();
     };
 
     async cancel() {
-        const context = this.executionContexts.getContext();
+        const context = executionContexts.getContext();
         if (!context) { return; }
 
         // Send cancel command
@@ -241,25 +245,34 @@ export class DatabricksRun {
         } else {
             output.write(result["data"]);
         }
-        this.variableExplorer?.refresh(context.remoteCommand, context.language);
+        this.variableExplorer?.refresh();
     };
 
-    async stop() {
-        let context = this.executionContexts.getContext();
+    async stop(filename?: string) {
+
+        let context = executionContexts.getContext(filename);
+        output.write(`DatabricksRun stop: ${context !== undefined}`);
         if (!context) { return; }
 
         var result = await context.remoteCommand.stop() as Response;
         if (result["status"] === "success") {
-            this.executionContexts.clearContext();
+            executionContexts.clearContext(filename);
             output.write("Context stopped");
         } else {
             output.write(result["data"]);
         }
+        this.refreshVariables();
     };
 
     refreshLibraries() {
         if (this.libraryExplorer) {
             this.libraryExplorer.refresh();
+        }
+    }
+
+    refreshVariables() {
+        if (this.variableExplorer) {
+            this.variableExplorer.refresh();
         }
     }
 }
