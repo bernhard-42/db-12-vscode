@@ -41,6 +41,6 @@ export function thickBorder() {
 }
 
 export function info(msg: string) {
-    const prefix = getPrefix(true)
+    const prefix = getPrefix(true);
     log.appendLine(prefix + msg);
 }
