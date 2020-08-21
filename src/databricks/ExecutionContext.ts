@@ -23,7 +23,7 @@ export class ExecutionContexts {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             // vscode.window.showErrorMessage("No editor window open");
-            output.write("No editor window open");
+            output.info("No editor window open");
         }
         return editor;
     }
@@ -43,10 +43,10 @@ export class ExecutionContexts {
             }
         }
         let context = this.executionContexts.get(fname);
-        output.write(`Getting context for file ${fname}: ${context !== undefined}`);
+        output.info(`Getting context for file ${fname}: ${context !== undefined}`);
         if (context === undefined) {
             // vscode.window.showErrorMessage("No Databricks context available");
-            output.write("No Databricks context available");
+            output.info("No Databricks context available");
         }
         return context;
     }
@@ -76,7 +76,7 @@ export class ExecutionContexts {
                 fname = editor.document.fileName;
             }
         }
-        output.write(`Clearing context for file ${fname}`);
+        output.info(`Clearing context for file ${fname}`);
         this.executionContexts.delete(fname);
     }
 }

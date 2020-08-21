@@ -35,10 +35,10 @@ export function updateTasks() {
         }
         if (addZip || addUpload) {
             fs.writeFileSync(taskJson, JSON.stringify(exTaskJson, null, 2));
-            output.write(`Updated ${taskJson}`);
+            output.info(`Updated ${taskJson}`);
         }
     } else {
         fs.writeFileSync(taskJson, JSON.stringify(dbTasks, null, 2));
-        output.write(`Created ${taskJson}`);
+        output.info(`Created ${taskJson}`);
     }
 }

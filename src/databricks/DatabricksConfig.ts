@@ -16,10 +16,10 @@ export class DatabricksConfig {
     update(value: any, name: string) {
         this.workspaceConfig.update(name, value, ConfigurationTarget.Workspace).then(
             () => {
-                output.write(`Added ${name} to workspace config .vscode/settings.json`);
+                output.info(`Added ${name} to workspace config .vscode/settings.json`);
             },
             (error) => {
-                output.write(error);
+                output.info(error);
             }
         );
         return value;

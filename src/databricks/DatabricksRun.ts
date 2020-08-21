@@ -61,7 +61,7 @@ export class DatabricksRun {
                 remoteFolder = pythonConfig["remote-folder"];
             }
         } else if (useSettings !== "no") {
-            output.write(`Cancelled`);
+            vscode.window.showErrorMessage(`Cancelled`);
             return;
         }
 
@@ -69,7 +69,7 @@ export class DatabricksRun {
         if (profile === "") {
             profile = await window.showQuickPick(profiles, { placeHolder: 'Select Databricks CLI profile' }) || "";
             if (profile === "") {
-                output.write(`Selection of profile cancelled`);
+                vscode.window.showErrorMessage(`Selection of profile cancelled`);
                 return;
             } else {
                 this.workspaceConfig.update(profile, "profile");
@@ -95,7 +95,7 @@ export class DatabricksRun {
 
             cluster = await window.showQuickPick(clusters, { placeHolder: 'Select Databricks cluster' }) || "";
             if (cluster === "") {
-                output.write(`Selection of cluster cancelled`);
+                vscode.window.showErrorMessage(`Selection of cluster cancelled`);
                 return;
             } else {
                 this.workspaceConfig.update(cluster, "cluster");
@@ -112,10 +112,10 @@ export class DatabricksRun {
         } else if (editor.document.fileName.endsWith(".scala")) {
             language = "scala";
         } else {
-            output.write(`Language of current file not supported`);
+            vscode.window.showErrorMessage(`Language of current file not supported`);
             return;
         }
-        output.write(`Language: ${language}`);
+        output.info(`Language: ${language}`);
 
         // Create Databricks Execution Context
         var remoteCommand = new RemoteCommand();
@@ -124,9 +124,9 @@ export class DatabricksRun {
         executionContexts.setContext(language, remoteCommand, host, token, cluster);
 
         if (result["status"] === "success") {
-            output.write(`Created execution context for cluster '${cluster}' on host '${host}'`);
+            output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
-            output.write(`Could not create Databricks Execution Context: ${result["data"]}`);
+            output.info(`Could not create Databricks Execution Context: ${result["data"]}`);
             return;
         }
 
@@ -140,7 +140,7 @@ export class DatabricksRun {
                 if (folders.length > 0) {
                     libFolder = await window.showQuickPick(folders, { placeHolder: 'Select local library folder' }) || "";
                     if (libFolder === "") {
-                        output.write(`Selection of library folder cancelled`);
+                        vscode.window.showErrorMessage(`Selection of library folder cancelled`);
                         return;
                     }
                 }
@@ -149,7 +149,7 @@ export class DatabricksRun {
             if ((libFolder !== "") && (remoteFolder === "")) {
                 remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
                 if (remoteFolder === "") {
-                    output.write(`Selection of library folder cancelled`);
+                    vscode.window.showErrorMessage(`Selection of library folder cancelled`);
                     return;
                 }
             }
@@ -172,7 +172,7 @@ export class DatabricksRun {
             this.variableExplorer?.refresh();
             this.libraryExplorer?.refresh();
         }
-
+        output.write("Ready");
         output.thickBorder();
     };
 
@@ -251,7 +251,7 @@ export class DatabricksRun {
     async stop(filename?: string) {
 
         let context = executionContexts.getContext(filename);
-        output.write(`DatabricksRun stop: ${context !== undefined}`);
+        output.info(`DatabricksRun stop: ${context !== undefined}`);
         if (!context) { return; }
 
         var result = await context.remoteCommand.stop() as Response;

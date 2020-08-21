@@ -43,12 +43,12 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	vscode.window.onDidChangeActiveTextEditor(e => {
-		output.write("window.onDidChangeActiveTextEditor");
+		output.info("window.onDidChangeActiveTextEditor");
 		databricksRun.refreshVariables();
 	});
 
 	vscode.workspace.onDidCloseTextDocument(e => {
-		output.write("workspace.onDidCloseTextDocument");
+		output.info("workspace.onDidCloseTextDocument");
 		databricksRun.stop(e.fileName);
 	});
 }

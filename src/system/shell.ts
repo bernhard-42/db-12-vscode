@@ -5,7 +5,7 @@ export function pipList(python: string): string {
     try {
         return execSync(`${python} -m pip list --format json`).toString();
     } catch (error) {
-        output.write(error["stderr"].toString());
+        output.info(error["stderr"].toString());
         return "";
     };
 }

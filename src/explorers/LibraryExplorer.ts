@@ -69,7 +69,7 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
             let pythonConfig = vscode.workspace.getConfiguration("python");
             python = pythonConfig.get("pythonPath");
         }
-        output.write(`Local python interpreter: ${python}`);
+        output.info(`Local python interpreter: ${python}`);
         let locaLibs: string = pipList(python as string);
         this.parseLocal(locaLibs);
 
@@ -118,7 +118,7 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
             this.remoteCommand = context.remoteCommand;
             this.language = context.language;
             if (this.language === "python") {
-                output.write("LibraryExplorer refresh");
+                output.info("LibraryExplorer refresh");
                 this._onDidChangeTreeData.fire();
             }
         }

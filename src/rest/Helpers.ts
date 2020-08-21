@@ -17,12 +17,16 @@ export async function poll(
 
     const fn = () => axios.get(uri, headers(token));
     let response = await fn();
+    let progress = false;
     while (condition((response as Response)["data"].status)) {
         output.write("»", false);
+        progress = true;
         await wait(ms);
         response = await fn();
     }
-    output.write("\n", false);
+    if (progress) {
+        output.write("\n", false);
+    }
     return response;
 }
 

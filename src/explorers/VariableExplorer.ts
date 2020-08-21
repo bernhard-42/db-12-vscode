@@ -63,7 +63,7 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
     readonly onDidChangeTreeData: vscode.Event<Variable | undefined> = this._onDidChangeTreeData.event;
 
     refresh(): void {
-        output.write("VariableExplorer refresh");
+        output.info("VariableExplorer refresh");
         let context = executionContexts.getContext();
         if (context) {
             this.remoteCommand = context.remoteCommand;
@@ -104,9 +104,9 @@ export async function createVariableExplorer(language: string, remoteCommand: Re
     if (language === "python") {
         var result = await remoteCommand.execute(variablesCode()) as Response;
         if (result["status"] === "success") {
-            output.write("Successfully registered Variable Explorer");
+            output.info("Successfully registered Variable Explorer");
         } else {
-            output.write("Error: Failed to register Variable Explorer");
+            output.info("Error: Failed to register Variable Explorer");
             return;
         }
 

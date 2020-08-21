@@ -9,8 +9,8 @@ export async function setImportPath(remoteFolder: string, libFolder: string, rem
 
     var result = await remoteCommand.execute(code) as Response;
     if (result["status"] === "success") {
-        output.write(`Added import path: ${importPath}/${libFolder}.zip`);
+        output.info(`Added import path: ${importPath}/${libFolder}.zip`);
     } else {
-        output.write(`Failed to add import path: ${importPath}/${libFolder}.zip`);
+        output.info(`Failed to add import path: ${importPath}/${libFolder}.zip`);
     }
 }

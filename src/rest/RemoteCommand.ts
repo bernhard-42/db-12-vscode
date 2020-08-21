@@ -27,7 +27,7 @@ export class RemoteCommand {
             };
             const response = await axios.post(uri, data, headers(token));
             this.contextId = (response as Response)["data"].id;
-            output.write(`Remote Context id: ${this.contextId}`);
+            output.info(`Remote Context id: ${this.contextId}`);
         } catch (error) {
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
@@ -46,18 +46,18 @@ export class RemoteCommand {
     }
 
     async stop(): Promise<Response> {
-        output.write(`Stopping remote context with id: ${this.contextId}: `);
+        output.info(`Stopping remote context with id: ${this.contextId}: `);
         try {
             const uri = url.resolve(this.host, 'api/1.2/contexts/destroy');
             const data = {
                 "clusterId": this.cluster,
                 "contextId": this.contextId
             };
-            output.write("success");
+            output.info("success");
             await axios.post(uri, data, headers(this.token));
             return Promise.resolve({ "status": "success", "data": "Execution context stopped" });
         } catch (error) {
-            output.write("failed");
+            output.info("failed");
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
     }
