@@ -275,4 +275,13 @@ export class DatabricksRun {
             this.variableExplorer.refresh();
         }
     }
+
+    getConnectionStatus() {
+        const context = executionContexts.getContext();
+        if (context) {
+            return context.cluster;
+        } else {
+            return "--";
+        }
+    }
 }
