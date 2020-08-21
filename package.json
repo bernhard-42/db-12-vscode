@@ -41,6 +41,14 @@
 				}
 			},
 			{
+				"command": "databricks-run.create-env-file",
+				"title": "Create Environment File",
+				"icon": {
+					"light": "resources/light/open-file.svg",
+					"dark": "resources/dark/open-file.svg"
+				}
+			},
+			{
 				"command": "databricks-run.refresh-variables",
 				"title": "Refresh Remote Variables",
 				"icon": {
@@ -135,6 +143,11 @@
 		"menus": {
 			"view/title": [{
 					"command": "databricks-run.refresh-libraries",
+					"when": "view == databricksLibraryExplorer",
+					"group": "navigation"
+				},
+				{
+					"command": "databricks-run.create-env-file",
 					"when": "view == databricksLibraryExplorer",
 					"group": "navigation"
 				},

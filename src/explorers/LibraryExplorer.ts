@@ -122,6 +122,51 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
             }
         }
     }
+
+    downloadEnvFile() {
+        var envFile: string[] = [];
+        envFile.push("# env.yml");
+        envFile.push("#");
+        envFile.push("# Edit as necessary, save as env.yaml and create an environment via");
+        envFile.push("#   conda env create -n databricks -f env.yml");
+        envFile.push("# Then select this environment as interpreter in VS Code");
+        envFile.push("#");
+        envFile.push("channels:");
+        envFile.push("  - defaults");
+        envFile.push("dependencies:");
+        if (this.remoteLibraries.get("python")) {
+            envFile.push(`  - python=${this.remoteLibraries.get("python")?.version}`);
+        }
+        if (this.remoteLibraries.get("pip")) {
+            envFile.push(`  - pip=${this.remoteLibraries.get("pip")?.version}`);
+        }
+        envFile.push("  - pip:");
+        output.info(this.remoteLibraries.toString());
+        Array.from(this.remoteLibraries.keys()).forEach(key => {
+            if (!baseLibraries.includes(key) && !["python", "sparkdl", "horovod"].includes(key)) {
+                let version = this.remoteLibraries.get(key)?.version;
+                if (version) {
+                    if (key === "torchvision") {
+                        version = version.substr(0, 5);
+                    }
+                    if (key === "sparkdl") {
+                        version = version.substr(0, 5);
+                    }
+                    if (key === "hyperopt") {
+                        version = version.substr(0, 5);
+                    }
+                    envFile.push(`    - ${key}==${version}`);
+                }
+            }
+        });
+
+        vscode.workspace.openTextDocument({
+            language: "yaml",
+            content: envFile.join("\n"),
+        }).then(document => {
+            vscode.window.showTextDocument(document);
+        });
+    }
 }
 
 export function createLibraryExplorer() {

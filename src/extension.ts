@@ -37,6 +37,10 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.create-env-file', () => databricksRun.createEnvFile()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.refresh-variables', () => databricksRun.refreshVariables()
 	));
 

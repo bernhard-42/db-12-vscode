@@ -282,6 +282,12 @@ export class DatabricksRun {
         }
     }
 
+    createEnvFile() {
+        if (this.libraryExplorer) {
+            this.libraryExplorer.downloadEnvFile();
+        }
+    }
+
     refreshVariables(filename?: string) {
         if (filename && this.variableExplorer) {
             this.variableExplorer.refresh(filename);
