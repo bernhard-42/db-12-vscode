@@ -22,18 +22,13 @@ export class ExecutionContexts {
     getEditor() {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            // vscode.window.showErrorMessage("No editor window open");
             output.info("No editor window open");
         }
         return editor;
     }
 
-    getFilename() {
-        return this.getEditor()?.document.fileName;
-    }
-
-    getContext(filename?: string) {
-        let fname = "";
+    getFilename(filename?: string) {
+        let fname: string | undefined = undefined;
         if (filename) {
             fname = filename;
         } else {
@@ -42,19 +37,27 @@ export class ExecutionContexts {
                 fname = editor.document.fileName;
             }
         }
-        let context = this.executionContexts.get(fname);
-        output.info(`Getting context for file ${fname}: ${context !== undefined}`);
-        if (context === undefined) {
-            // vscode.window.showErrorMessage("No Databricks context available");
-            output.info("No Databricks context available");
-        }
-        return context;
+        return fname;
     }
 
-    setContext(language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string) {
+    getContext(filename?: string) {
+        let fname = this.getFilename(filename);
+        if (fname) {
+            let context = this.executionContexts.get(fname);
+            if (context) {
+                output.info(`Retrieved context for file ${fname}`);
+            } else {
+                output.info(`No Databricks context available for file ${fname}`);
+            }
+            return context;
+        }
+        return;
+    }
+
+    setContext(fileName: string, language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string) {
         const editor = this.getEditor();
         if (editor) {
-            this.executionContexts.set(editor.document.fileName, {
+            this.executionContexts.set(fileName, {
                 language: language,
                 remoteCommand: remoteCommand,
                 commandId: "",
@@ -66,18 +69,12 @@ export class ExecutionContexts {
         }
     }
 
-    clearContext(filename: string | undefined) {
-        let fname = "";
-        if (filename) {
-            fname = filename;
-        } else {
-            const editor = this.getEditor();
-            if (editor) {
-                fname = editor.document.fileName;
-            }
+    clearContext(filename?: string) {
+        let fname = this.getFilename(filename);
+        if (fname) {
+            output.info(`Clearing context for file ${fname}`);
+            this.executionContexts.delete(fname);
         }
-        output.info(`Clearing context for file ${fname}`);
-        this.executionContexts.delete(fname);
     }
 }
 

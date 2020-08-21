@@ -1,4 +1,4 @@
-export const BASELIST = [
+export const baseLibraries = [
     "absl-py",
     "ansi2html",
     "asn1crypto",

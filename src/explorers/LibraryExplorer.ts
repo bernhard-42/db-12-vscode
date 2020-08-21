@@ -1,12 +1,11 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { librariesCode } from './PythonTemplate';
-import { BASELIST } from './baselibs';
-import { RESOURCES } from '../databricks/DatabricksRun';
+import { baseLibraries } from './baselibs';
 import { pipList } from '../system/shell';
 import * as output from '../databricks/DatabricksOutput';
 import { executionContexts } from '../databricks/ExecutionContext';
+import { Library } from './Library';
 
 export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library> {
     clusterID = "";
@@ -89,13 +88,13 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
             libs.push(this.remoteLibraries.get("python") || this.errorResponse("python version is missing"));
         } else if (category.name === "Base") {
             Array.from(this.remoteLibraries.keys()).forEach(key => {
-                if (BASELIST.includes(key) && !(key === "python")) {
+                if (baseLibraries.includes(key) && !(key === "python")) {
                     libs.push(this.remoteLibraries.get(key) || this.errorResponse(`lib ${key} is missing`));
                 }
             });
         } else {
             Array.from(this.remoteLibraries.keys()).forEach(key => {
-                if (!BASELIST.includes(key) && !(key === "python")) {
+                if (!baseLibraries.includes(key) && !(key === "python")) {
                     libs.push(this.remoteLibraries.get(key) || this.errorResponse(`lib ${key} is missing`));
                 }
             });
@@ -125,46 +124,9 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
     }
 }
 
-
-class Library extends vscode.TreeItem {
-    constructor(
-        public readonly category: boolean,
-        public readonly name: string,
-        public readonly version: string,
-        public readonly localVersion: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
-    ) {
-        super(name, collapsibleState);
-
-        let icon = "python.png";
-        if (!category) {
-            if (localVersion === version) {
-                icon = "python_green.png";
-            } else if (localVersion === "missing") {
-                icon = "python_grey.png";
-            } else {
-                icon = "python_red.png";
-            }
-        }
-        super.iconPath = {
-            light: path.join(RESOURCES, 'light', icon),
-            dark: path.join(RESOURCES, 'dark', icon),
-        };
-    }
-
-    get tooltip(): string {
-        return `Local env: ${this.localVersion}`;
-    }
-
-    get description(): string {
-        return `${this.version}`;
-    }
-}
-
 export function createLibraryExplorer() {
     const libraryExplorer = new LibraryExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksLibraryExplorer', libraryExplorer);
-
     vscode.window.createTreeView('databricksLibraryExplorer', { treeDataProvider: libraryExplorer });
 
     libraryExplorer.refresh();

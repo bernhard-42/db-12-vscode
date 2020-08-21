@@ -4,13 +4,21 @@ import { DatabricksRun } from './databricks/DatabricksRun';
 import { DatabricksConfig } from './databricks/DatabricksConfig';
 import * as output from './databricks/DatabricksOutput';
 
-let statusBar: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
 
 	const execLocation = context.asAbsolutePath("resources");
-	let databricksRun = new DatabricksRun(execLocation);
 
+	let statusBar: vscode.StatusBarItem;
+	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+	statusBar.command = 'databricks-run.set-connection-status';
+	statusBar.tooltip = "Connection to Databricks cluster";
+
+	let databricksRun = new DatabricksRun(execLocation, statusBar);
+
+	/*
+	 *	Commands
+	 */
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.initialize', () => databricksRun.initialize()
 	));
@@ -33,27 +41,20 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
-		'databricks-run.get-connection-status', () => databricksRun.getConnectionStatus()
+		'databricks-run.set-connection-status', () => databricksRun.updateStatus()
 	));
 
-	// create a new status bar item that we can now manage
-	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-	statusBar.command = 'databricks-run.get-connection-status';
+	/*
+	 *	Event handlers
+	 */
 
 	context.subscriptions.push(
-		vscode.window.onDidChangeActiveTextEditor(updateStatusBarItem)
-	);
-	context.subscriptions.push(
-		vscode.window.onDidChangeTextEditorSelection(updateStatusBarItem)
-	);
-
-	context.subscriptions.push(
-		vscode.workspace.onDidSaveTextDocument(document => {
+		vscode.workspace.onDidSaveTextDocument(doc => {
 			const workspaceConfig = new DatabricksConfig();
 			const pythonConfig = workspaceConfig.getObject("python");
 			const libFolder = pythonConfig["lib-folder"];
 			const remoteFolder = pythonConfig["remote-folder"];
-			const file = vscode.workspace.asRelativePath(document.fileName);
+			const file = vscode.workspace.asRelativePath(doc.fileName);
 
 			if ((libFolder !== "") && (remoteFolder !== "") && file.startsWith(libFolder)) {
 				output.info("vscode.workspace.onDidSaveTextDocument");
@@ -62,26 +63,26 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
-		if (editor) {
-			output.info("window.onDidChangeActiveTextEditor");
-			databricksRun.refreshVariables();
-		}
-	}));
-
 	context.subscriptions.push(
-		vscode.workspace.onDidCloseTextDocument(doc => {
-			output.info("workspace.onDidCloseTextDocument");
-			databricksRun.stop(doc.fileName);
-
+		vscode.window.onDidChangeActiveTextEditor(editor => {
+			databricksRun.updateStatus(editor?.document.fileName || "");
 		})
 	);
 
-	function updateStatusBarItem(): void {
-		statusBar.text = `(${databricksRun.getConnectionStatus()})`;
-		statusBar.tooltip = "Connection to Databricks cluster";
-		statusBar.show();
-	}
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(editor => {
+			if (editor) {
+				output.info(`window.onDidChangeActiveTextEditor: ${editor.document.fileName}`);
+				databricksRun.refreshVariables(editor.document.fileName);
+			}
+		}));
+
+	context.subscriptions.push(
+		vscode.workspace.onDidCloseTextDocument(doc => {
+			output.info(`workspace.onDidCloseTextDocument ${doc.fileName}`);
+			databricksRun.stop(doc.fileName);
+		})
+	);
 }
 
 export function deactivate() {

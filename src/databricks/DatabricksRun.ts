@@ -19,21 +19,27 @@ import { executionContexts } from './ExecutionContext';
 import { DatabricksConfig } from './DatabricksConfig';
 import * as output from './DatabricksOutput';
 
-export let RESOURCES = "";
+export let resourcesFolder = "";
 
 export class DatabricksRun {
     private workspaceConfig: DatabricksConfig;
+    private statusBar: vscode.StatusBarItem;
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
+    private lastFilename = "";
 
-    constructor(resources: string) {
-        RESOURCES = resources;
+    constructor(resources: string, statusBar: vscode.StatusBarItem) {
+        resourcesFolder = resources;
         this.workspaceConfig = new DatabricksConfig();
+        this.statusBar = statusBar;
     }
 
     async initialize() {
         const editor = executionContexts.getEditor();
         if (!editor) { return; }
+
+        const fileName = executionContexts.getFilename();
+        if (!fileName) { return; }
 
         let profile = "";
         let cluster = "";
@@ -75,7 +81,6 @@ export class DatabricksRun {
                 this.workspaceConfig.update(profile, "profile");
             }
         }
-
 
         const host = dbConfig[profile]["host"];
         const token = dbConfig[profile]["token"];
@@ -121,12 +126,12 @@ export class DatabricksRun {
         var remoteCommand = new RemoteCommand();
         var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
 
-        executionContexts.setContext(language, remoteCommand, host, token, cluster);
+        executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster);
 
         if (result["status"] === "success") {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
-            output.info(`Could not create Databricks Execution Context: ${result["data"]}`);
+            vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result["data"]}`);
             return;
         }
 
@@ -172,6 +177,8 @@ export class DatabricksRun {
             this.variableExplorer?.refresh();
             this.libraryExplorer?.refresh();
         }
+
+        this.updateStatus(fileName, true);
         output.write("Ready");
         output.thickBorder();
     };
@@ -231,7 +238,7 @@ export class DatabricksRun {
         }
         output.thickBorder();
 
-        this.variableExplorer?.refresh();
+        this.variableExplorer?.refresh(editor.document.fileName);
     };
 
     async cancel() {
@@ -245,7 +252,7 @@ export class DatabricksRun {
         } else {
             output.write(result["data"]);
         }
-        this.variableExplorer?.refresh();
+        this.variableExplorer?.refresh(executionContexts.getFilename());
     };
 
     async stop(filename?: string) {
@@ -254,14 +261,19 @@ export class DatabricksRun {
         output.info(`DatabricksRun stop: ${context !== undefined}`);
         if (!context) { return; }
 
+        let fileName = executionContexts.getFilename();
+        if (!fileName) { return; }
+
         var result = await context.remoteCommand.stop() as Response;
         if (result["status"] === "success") {
             executionContexts.clearContext(filename);
-            output.write("Context stopped");
+            vscode.window.showInformationMessage("Context stopped");
         } else {
             output.write(result["data"]);
         }
-        this.refreshVariables();
+
+        this.refreshVariables(fileName);
+        this.updateStatus(fileName, true);
     };
 
     refreshLibraries() {
@@ -270,18 +282,18 @@ export class DatabricksRun {
         }
     }
 
-    refreshVariables() {
-        if (this.variableExplorer) {
-            this.variableExplorer.refresh();
+    refreshVariables(filename?: string) {
+        if (filename && this.variableExplorer) {
+            this.variableExplorer.refresh(filename);
         }
     }
 
-    getConnectionStatus() {
-        const context = executionContexts.getContext();
-        if (context) {
-            return context.cluster;
-        } else {
-            return "--";
+    updateStatus(filename?: string, force?: boolean) {
+        if ((filename !== "") && (force || (filename !== this.lastFilename))) {
+            const context = executionContexts.getContext();
+            let status = (context) ? context.cluster : "--";
+            this.statusBar.text = `(${status})`;
+            this.statusBar.show();
         }
     }
 }

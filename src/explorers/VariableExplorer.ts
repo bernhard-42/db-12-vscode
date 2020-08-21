@@ -4,6 +4,7 @@ import * as output from '../databricks/DatabricksOutput';
 import { Response } from '../rest/Helpers';
 import { variablesCode } from './PythonTemplate';
 import { executionContexts } from '../databricks/ExecutionContext';
+import { Variable } from './Variable';
 
 export class VariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
     remoteCommand: RemoteCommand = <RemoteCommand>{};
@@ -62,9 +63,9 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
 
     readonly onDidChangeTreeData: vscode.Event<Variable | undefined> = this._onDidChangeTreeData.event;
 
-    refresh(): void {
+    refresh(filename?: string): void {
         output.info("VariableExplorer refresh");
-        let context = executionContexts.getContext();
+        let context = executionContexts.getContext(filename);
         if (context) {
             this.remoteCommand = context.remoteCommand;
             this.language = context.language;
@@ -75,30 +76,10 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
     }
 }
 
-class Variable extends vscode.TreeItem {
-    constructor(
-        public readonly name: string,
-        public readonly type: string,
-        public readonly value: string,
-        public readonly parent: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
-    ) {
-        super(name, collapsibleState);
-    }
-
-    get tooltip(): string {
-        return `${this.type}`;
-    }
-
-    get description(): string {
-        return `${this.type}  ${this.value}`;
-    }
-}
 
 export async function createVariableExplorer(language: string, remoteCommand: RemoteCommand) {
     const variableExplorer = new VariableExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksVariableExplorer', variableExplorer);
-
     vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });
 
     if (language === "python") {
@@ -109,9 +90,6 @@ export async function createVariableExplorer(language: string, remoteCommand: Re
             output.info("Error: Failed to register Variable Explorer");
             return;
         }
-
-        variableExplorer.refresh();
-
     } else {
         return;
     }
