@@ -147,24 +147,32 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
             envFile.push(`  - pip=${this.remoteLibraries.get("pip")?.version}`);
         }
         envFile.push("  - pip:");
-        output.info(this.remoteLibraries.toString());
-        Array.from(this.remoteLibraries.keys()).forEach(key => {
-            if (!baseLibraries.includes(key) && !["python", "sparkdl", "horovod"].includes(key)) {
-                let version = this.remoteLibraries.get(key)?.version;
-                if (version) {
-                    if (key === "torchvision") {
-                        version = version.substr(0, 5);
-                    }
-                    if (key === "sparkdl") {
-                        version = version.substr(0, 5);
-                    }
-                    if (key === "hyperopt") {
-                        version = version.substr(0, 5);
-                    }
-                    envFile.push(`    - ${key}==${version}`);
+
+        envFile.push("#   Data Engineering & Science related libraries");
+        const dslibs = Array.from(this.remoteLibraries.keys()).filter(key => !baseLibraries.includes(key) && key !== "python").sort();
+        for (let lib of dslibs) {
+            let version = this.remoteLibraries.get(lib)?.version;
+            const prefix = (["python", "sparkdl", "horovod"].includes(lib)) ? "#" : " ";
+            if (version) {
+                if (lib === "torchvision") {
+                    version = version.substr(0, 5);
                 }
+                if (lib === "sparkdl") {
+                    version = version.substr(0, 5);
+                }
+                if (lib === "hyperopt") {
+                    version = version.substr(0, 5);
+                }
+                envFile.push(`${prefix}   - ${lib}==${version}`);
             }
-        });
+        }
+
+        envFile.push("#   Basic python libraries");
+        const baselibs = Array.from(this.remoteLibraries.keys()).filter(key => baseLibraries.includes(key) && key !== "python").sort();
+        for (let lib of baselibs) {
+            let version = this.remoteLibraries.get(lib)?.version;
+            envFile.push(`#   - ${lib}==${version}`);
+        };
 
         vscode.workspace.openTextDocument({
             language: "yaml",
@@ -183,3 +191,7 @@ export function createLibraryExplorer() {
     libraryExplorer.refresh();
     return libraryExplorer;
 }
+
+
+// DATABRICKS_RUNTIME_VERSION
+// CONDA_DEFAULT_ENV
