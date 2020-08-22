@@ -191,7 +191,3 @@ export function createLibraryExplorer() {
     libraryExplorer.refresh();
     return libraryExplorer;
 }
-
-
-// DATABRICKS_RUNTIME_VERSION
-// CONDA_DEFAULT_ENV

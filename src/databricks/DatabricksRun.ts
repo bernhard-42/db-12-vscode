@@ -11,8 +11,11 @@ import { Clusters } from '../rest/Clusters';
 import { Response } from '../rest/Helpers';
 
 import { updateTasks } from "../tasks/Tasks";
+
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/LibraryExplorer';
+import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/ClusterExplorer';
+
 import { setImportPath } from '../python/ImportPath';
 
 import { executionContexts } from './ExecutionContext';
@@ -26,6 +29,9 @@ export class DatabricksRun {
     private statusBar: vscode.StatusBarItem;
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
+    private clusterApi: Clusters | undefined;
+
+    private clusterExplorer: ClusterExplorerProvider | undefined;
     private lastFilename = "";
 
     constructor(resources: string, statusBar: vscode.StatusBarItem) {
@@ -92,8 +98,8 @@ export class DatabricksRun {
         // Select cluster
         if (cluster === "") {
             let clusters = [];
-            const clusterApi = new Clusters(host, token);
-            let response = await clusterApi.names();
+            this.clusterApi = new Clusters(host, token);
+            let response = await this.clusterApi.names();
             if (response["status"] === "success") {
                 clusters = response["data"];
             } else {
@@ -136,6 +142,9 @@ export class DatabricksRun {
         var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
 
         executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster, clusterName);
+
+        // Register Cluster Explorer
+        this.clusterExplorer = createClusterExplorer(cluster, host, token);
 
         if (result["status"] === "success") {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
@@ -186,6 +195,7 @@ export class DatabricksRun {
             this.variableExplorer?.refresh();
             this.libraryExplorer?.refresh();
         }
+        this.clusterExplorer?.refresh();
 
         this.updateStatus(fileName, true);
         output.write("Ready");
@@ -284,6 +294,55 @@ export class DatabricksRun {
         this.refreshVariables(fileName);
         this.updateStatus(fileName, true);
     };
+
+    refreshClusterAttributes() {
+        if (this.clusterExplorer) {
+            this.clusterExplorer.refresh();
+        }
+    }
+
+    private async manageCluster(command: string) {
+        if (await window.showQuickPick(["yes", "no"], { placeHolder: `${command} cluster?` }) !== "yes") { return; }
+
+        let context = executionContexts.getContext();
+        let result: Response;
+        if (context?.cluster) {
+            let clusterApi = new Clusters(context.host, context.token);
+            if (command === "start") {
+                result = await clusterApi.start(context.cluster);
+            } else if (command === "restart") {
+                result = await clusterApi.restart(context.cluster);
+            } else if (command === "stop") {
+                result = await clusterApi.stop(context.cluster);
+            } else {
+                return;
+            }
+            if (result["status"] === "success") {
+                vscode.window.showInformationMessage(`Triggered cluster ${command}`);
+            } else {
+                vscode.window.showErrorMessage(`Couldn't ${command} cluster`);
+                output.info(result["data"]);
+            }
+            for (let dummy of [0, 2]) {
+                setTimeout(() => {
+                    console.log('Test');
+                    this.refreshClusterAttributes();
+                }, 1000);
+            }
+        }
+    }
+
+    async startCluster() {
+        this.manageCluster("start");
+    }
+
+    async restartCluster() {
+        this.manageCluster("restart");
+    }
+
+    async stopCluster() {
+        this.manageCluster("stop");
+    }
 
     refreshLibraries() {
         if (this.libraryExplorer) {

@@ -32,6 +32,21 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-cluster-attributes', () => databricksRun.refreshClusterAttributes()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.start-cluster', () => databricksRun.startCluster()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.restart-cluster', () => databricksRun.restartCluster()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.stop-cluster', () => databricksRun.stopCluster()
+	));
+	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.refresh-libraries', () => databricksRun.refreshLibraries()
 	));
 

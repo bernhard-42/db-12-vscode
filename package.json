@@ -55,6 +55,38 @@
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
 				}
+			},
+			{
+				"command": "databricks-run.refresh-cluster-attributes",
+				"title": "Refresh Remote Cluster Attributes",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.start-cluster",
+				"title": "Start Remote Cluster",
+				"icon": {
+					"light": "resources/light/resume.svg",
+					"dark": "resources/dark/resume.svg"
+				}
+			},
+			{
+				"command": "databricks-run.restart-cluster",
+				"title": "Restart Remote Cluster",
+				"icon": {
+					"light": "resources/light/restart.svg",
+					"dark": "resources/dark/restart.svg"
+				}
+			},
+			{
+				"command": "databricks-run.stop-cluster",
+				"title": "Stop Remote Cluster",
+				"icon": {
+					"light": "resources/light/stop.svg",
+					"dark": "resources/dark/stop.svg"
+				}
 			}
 		],
 		"keybindings": [{
@@ -130,13 +162,19 @@
 			}]
 		},
 		"views": {
-			"databricksExplorer": [{
+			"databricksExplorer": [
+
+				{
 					"id": "databricksVariableExplorer",
 					"name": "Remote Python Variables"
 				},
 				{
 					"id": "databricksLibraryExplorer",
 					"name": "Remote Python Libraries"
+				},
+				{
+					"id": "databricksClusterExplorer",
+					"name": "Remote Databricks Cluster"
 				}
 			]
 		},
@@ -144,17 +182,37 @@
 			"view/title": [{
 					"command": "databricks-run.refresh-libraries",
 					"when": "view == databricksLibraryExplorer",
-					"group": "navigation"
+					"group": "navigation@1"
 				},
 				{
 					"command": "databricks-run.create-env-file",
 					"when": "view == databricksLibraryExplorer",
-					"group": "navigation"
+					"group": "navigation@0"
 				},
 				{
 					"command": "databricks-run.refresh-variables",
 					"when": "view == databricksVariableExplorer",
 					"group": "navigation"
+				},
+				{
+					"command": "databricks-run.refresh-cluster-attributes",
+					"when": "view == databricksClusterExplorer",
+					"group": "navigation@3"
+				},
+				{
+					"command": "databricks-run.start-cluster",
+					"when": "view == databricksClusterExplorer",
+					"group": "navigation@0"
+				},
+				{
+					"command": "databricks-run.stop-cluster",
+					"when": "view == databricksClusterExplorer",
+					"group": "navigation@2"
+				},
+				{
+					"command": "databricks-run.restart-cluster",
+					"when": "view == databricksClusterExplorer",
+					"group": "navigation@1"
 				}
 			]
 		}
