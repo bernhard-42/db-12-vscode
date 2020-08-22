@@ -12,7 +12,6 @@ export function activate(context: vscode.ExtensionContext) {
 	let statusBar: vscode.StatusBarItem;
 	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	statusBar.command = 'databricks-run.set-connection-status';
-	statusBar.tooltip = "Connection to Databricks cluster";
 
 	let databricksRun = new DatabricksRun(execLocation, statusBar);
 

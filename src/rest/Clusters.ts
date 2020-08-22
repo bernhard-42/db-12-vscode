@@ -12,12 +12,12 @@ export class Clusters {
     }
 
     async names(): Promise<Response> {
-        let clusters: string[] = [];
+        let clusters: [string, string][] = [];
         const response = await this.list();
         if (response["status"] === "success") {
             const clusterConfig: Response[] = response["data"];
             clusterConfig.forEach(cluster => {
-                clusters.push(cluster["cluster_id"]);
+                clusters.push([cluster["cluster_id"], cluster["cluster_name"]]);
             });
             return Promise.resolve({ "status": "success", "data": clusters });
         } else {

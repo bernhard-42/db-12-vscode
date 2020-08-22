@@ -9,6 +9,7 @@ interface IExecutionContext {
     host: string;
     token: string;
     cluster: string;
+    clusterName: string,
     executionId: number;
 }
 
@@ -54,7 +55,7 @@ export class ExecutionContexts {
         return;
     }
 
-    setContext(fileName: string, language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string) {
+    setContext(fileName: string, language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string, clusterName: string) {
         const editor = this.getEditor();
         if (editor) {
             this.executionContexts.set(fileName, {
@@ -64,6 +65,7 @@ export class ExecutionContexts {
                 host: host,
                 token: token,
                 cluster: cluster,
+                clusterName: clusterName,
                 executionId: 1
             });
         }

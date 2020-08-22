@@ -43,6 +43,7 @@ export class DatabricksRun {
 
         let profile = "";
         let cluster = "";
+        let clusterName = "";
         let language = "";
         let libFolder = "";
         let remoteFolder = "";
@@ -61,7 +62,10 @@ export class DatabricksRun {
         if (useSettings === "yes") {
             if (vscode.workspace.workspaceFolders !== undefined) {
                 profile = this.workspaceConfig.getString("profile");
-                cluster = this.workspaceConfig.getString("cluster");
+                let clusterInfo = this.workspaceConfig.getString("cluster");
+                const sep = clusterInfo.indexOf(" ");
+                cluster = clusterInfo.substring(0, sep);
+                clusterName = clusterInfo.substring(sep + 2, clusterInfo.length - 1);
                 let pythonConfig = this.workspaceConfig.getObject("python");
                 libFolder = pythonConfig["lib-folder"];
                 remoteFolder = pythonConfig["remote-folder"];
@@ -98,12 +102,17 @@ export class DatabricksRun {
                 return;
             }
 
-            cluster = await window.showQuickPick(clusters, { placeHolder: 'Select Databricks cluster' }) || "";
-            if (cluster === "") {
+            let clusterList: { [key: string]: [string, string] } = {};
+            clusters.forEach((row: [string, string]) => {
+                clusterList[`${row[0]} (${row[1]})`] = row;
+            });
+            let clusterInfo = await window.showQuickPick(Object.keys(clusterList), { placeHolder: 'Select Databricks cluster' }) || "";
+            if (clusterInfo === "") {
                 vscode.window.showErrorMessage(`Selection of cluster cancelled`);
                 return;
             } else {
-                this.workspaceConfig.update(cluster, "cluster");
+                [cluster, clusterName] = clusterList[clusterInfo];
+                this.workspaceConfig.update(clusterInfo, "cluster");
             }
         }
 
@@ -126,7 +135,7 @@ export class DatabricksRun {
         var remoteCommand = new RemoteCommand();
         var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
 
-        executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster);
+        executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster, clusterName);
 
         if (result["status"] === "success") {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
@@ -297,9 +306,14 @@ export class DatabricksRun {
     updateStatus(filename?: string, force?: boolean) {
         if ((filename !== "") && (force || (filename !== this.lastFilename))) {
             const context = executionContexts.getContext();
-            let status = (context) ? context.cluster : "--";
-            this.statusBar.text = `(${status})`;
-            this.statusBar.show();
+            if (context) {
+                let status = context.clusterName;
+                this.statusBar.tooltip = `Connection to Databricks cluster ${context.cluster}`;
+                this.statusBar.text = `(${status})`;
+                this.statusBar.show();
+            } else {
+                this.statusBar.hide();
+            }
         }
     }
 }
