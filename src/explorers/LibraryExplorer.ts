@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { librariesCode } from './PythonTemplate';
 import { baseLibraries } from './baselibs';
-import { pipList } from '../system/shell';
+import { pipList, pythonVersion } from '../system/shell';
 import * as output from '../databricks/DatabricksOutput';
 import { executionContexts } from '../databricks/ExecutionContext';
 import { Library } from './Library';
@@ -72,21 +72,27 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
         let locaLibs: string = pipList(python as string);
         this.parseLocal(locaLibs);
 
+        let pyVersion: string = pythonVersion(python as string).split(" ")[1];
+        this.localLibraries.set("python", pyVersion);
+
         const code = librariesCode();
         let remoteLibs = await this.remoteCommand.execute(code);
         this.parseResponse(remoteLibs["data"]);
         return [
             new Library(true, "Python", "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library(true, "DE and ML", "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library(true, "Base", "", "", vscode.TreeItemCollapsibleState.Collapsed)
+            new Library(true, "Spark", "", "", vscode.TreeItemCollapsibleState.Collapsed),
+            new Library(true, "DE and ML Libraries", "", "", vscode.TreeItemCollapsibleState.Collapsed),
+            new Library(true, "Base Libraries", "", "", vscode.TreeItemCollapsibleState.Collapsed)
         ];
     }
 
     private getLibraries(category: Library): Library[] {
         var libs: Library[] = [];
         if (category.name === "Python") {
-            libs.push(this.remoteLibraries.get("python") || this.errorResponse("python version is missing"));
-        } else if (category.name === "Base") {
+            libs.push(this.remoteLibraries.get("python") || this.errorResponse("python is missing"));
+        } else if (category.name === "Spark") {
+            libs.push(this.remoteLibraries.get("pyspark") || this.errorResponse("spark is missing"));
+        } else if (category.name === "Base Libraries") {
             Array.from(this.remoteLibraries.keys()).forEach(key => {
                 if (baseLibraries.includes(key) && !(key === "python")) {
                     libs.push(this.remoteLibraries.get(key) || this.errorResponse(`lib ${key} is missing`));

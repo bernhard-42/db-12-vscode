@@ -9,3 +9,12 @@ export function pipList(python: string): string {
         return "";
     };
 }
+
+export function pythonVersion(python: string): string {
+    try {
+        return execSync(`${python} --version`).toString();
+    } catch (error) {
+        output.info(error["stderr"].toString());
+        return "";
+    };
+}
