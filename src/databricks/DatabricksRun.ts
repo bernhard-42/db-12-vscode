@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import process from 'process';
+
 import { window } from 'vscode';
 
 import fs from 'fs';
@@ -62,15 +64,50 @@ export class DatabricksRun {
         const profiles = Object.keys(dbConfig);
 
         remoteFolder = this.databricksConfig.getRemoteFolder();
-        if (remoteFolder.indexOf("$USER") > 0) {
-            let name = username.sync();
-            if (name) {
-                remoteFolder = remoteFolder.replace("$USER", name);
-            } else {
-                vscode.window.showInformationMessage(`Cannot retrieve username, globally set environment variable USER or USERNAME`);
-                return;
+        if (!remoteFolder) {
+            let name = await username() || "<username>";
+            remoteFolder = await window.showInputBox({
+                prompt: 'Provide a remote working folder',
+                value: `dbfs:/home/${name}`
+            }) || "";
+            if (remoteFolder) {
+                this.databricksConfig.setRemoteFolder(remoteFolder, true);
             }
             output.info(`Using '${remoteFolder}' as remote work folder`);
+        }
+
+        let zipCommand = this.databricksConfig.getZipCommand();
+        if (!zipCommand) {
+            let defaultCmd = "";
+            if (process.platform === "win32") {
+                defaultCmd = "Compress-Archive -Force";
+            } else {
+                defaultCmd = 'zip -r -FS --exclude=*.DS_Store* --exclude=*__pycache__*';
+            }
+            zipCommand = await window.showInputBox({
+                prompt: 'Provide zip command (with path if necessary)',
+                value: defaultCmd
+            }) || "";
+            if (zipCommand) {
+                this.databricksConfig.setZipCommand(zipCommand, true);
+            }
+        }
+
+        let databricksCli = this.databricksConfig.getDatabricksCli();
+        if (!databricksCli) {
+            let defaultCmd = "";
+            if (process.platform === "win32") {
+                defaultCmd = "databricks.exe";
+            } else {
+                defaultCmd = '/opt/miniconda/bin/databricks';
+            }
+            databricksCli = await window.showInputBox({
+                prompt: 'Provide databricks cli command (with path if necessary)',
+                value: defaultCmd
+            }) || "";
+            if (databricksCli) {
+                this.databricksConfig.setDatabricksCli(databricksCli, true);
+            }
         }
 
         // Use workspace settings?
@@ -179,7 +216,10 @@ export class DatabricksRun {
                     .filter(dirent => ![".vscode", ".git"].includes(dirent.name))
                     .map(dirent => dirent.name);
                 if (folders.length > 0) {
-                    libFolder = await window.showQuickPick(folders, { placeHolder: 'Select local library folder' }) || "";
+                    libFolder = await window.showQuickPick(
+                        folders,
+                        { placeHolder: 'Select local library folder' }
+                    ) || "";
                     if (libFolder === "") {
                         vscode.window.showErrorMessage(`Selection of library folder cancelled`);
                         return;

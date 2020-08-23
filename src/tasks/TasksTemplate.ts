@@ -7,7 +7,7 @@ export function tasks() {
                 "type": "shell",
                 "command": "${config:databricks-run.zip-command} /tmp/${config:databricks-run.python-lib-folder}.zip ${config:databricks-run.python-lib-folder}/",
                 "windows": {
-                    "command": "echo 'NotImplemented'"
+                    "command": "${config:databricks-run.zip-command} -Path ${config:databricks-run.python-lib-folder} -DestinationPath C:\\Temp\\${config:databricks-run.python-lib-folder}"
                 },
                 "presentation": {
                     "reveal": "always",
@@ -21,7 +21,7 @@ export function tasks() {
                 "type": "shell",
                 "command": "${config:databricks-run.databricks-cli} --profile ${config:databricks-run.profile} fs cp --overwrite /tmp/${config:databricks-run.python-lib-folder}.zip ${config:databricks-run.remote-work-folder}",
                 "windows": {
-                    "command": "echo 'NotImplemented'"
+                    "command": "${config:databricks-run.databricks-cli} --profile ${config:databricks-run.profile} fs cp --overwrite C:\\Temp//${config:databricks-run.python-lib-folder}.zip ${config:databricks-run.remote-work-folder}"
                 },
                 "group": {
                     "kind": "build",
