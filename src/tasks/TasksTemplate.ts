@@ -5,7 +5,7 @@ export function tasks() {
             {
                 "label": "Zip library",
                 "type": "shell",
-                "command": "${config:databricks-run.zip-command} /tmp/${config:databricks-run.python.lib-folder}.zip ${config:databricks-run.python.lib-folder}/",
+                "command": "${config:databricks-run.zip-command} /tmp/${config:databricks-run.python-lib-folder}.zip ${config:databricks-run.python-lib-folder}/",
                 "windows": {
                     "command": "echo 'NotImplemented'"
                 },
@@ -19,7 +19,7 @@ export function tasks() {
             {
                 "label": "Upload library",
                 "type": "shell",
-                "command": "${config:databricks-run.databricks-cli} --profile ${config:databricks-run.profile} fs cp --overwrite /tmp/${config:databricks-run.python.lib-folder}.zip ${config:databricks-run.python.remote-folder}",
+                "command": "${config:databricks-run.databricks-cli} --profile ${config:databricks-run.profile} fs cp --overwrite /tmp/${config:databricks-run.python-lib-folder}.zip ${config:databricks-run.remote-work-folder}",
                 "windows": {
                     "command": "echo 'NotImplemented'"
                 },

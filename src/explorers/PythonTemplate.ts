@@ -80,11 +80,3 @@ export function librariesCode() {
         '[{"name": "pyspark", "version": spark.version}] + ' +
         '[{"name":p.key, "version":p.version} for p in pkg_resources.working_set]))';
 }
-
-export function environmentCode() {
-    return 'import os, json; ' +
-        'print(json.dumps({' +
-        '"CONDA_DEFAULT_ENV":os.environ.get("CONDA_DEFAULT_ENV", ""),' +
-        '"DATABRICKS_RUNTIME_VERSION":os.environ.get("DATABRICKS_RUNTIME_VERSION", "")' +
-        '}))';
-}

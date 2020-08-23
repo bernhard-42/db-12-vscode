@@ -7,16 +7,24 @@ interface ConfigObj {
 }
 
 export class DatabricksConfig {
-    private workspaceConfig: vscode.WorkspaceConfiguration;
+    workspaceFolder: string | undefined;
+    config = <ConfigObj>{};
 
-    constructor() {
-        this.workspaceConfig = vscode.workspace.getConfiguration("databricks-run");
+    private getConfig(key: string) {
+        const workspaceConfig = vscode.workspace.getConfiguration("databricks-run");
+        return workspaceConfig.get(key) as string;
     }
 
-    update(value: any, name: string) {
-        this.workspaceConfig.update(name, value, ConfigurationTarget.Workspace).then(
+    private setConfig(key: string, value: any, user: boolean) {
+        const target = (user) ? ConfigurationTarget.Global : ConfigurationTarget.Workspace;
+        const workspaceConfig = vscode.workspace.getConfiguration("databricks-run");
+        workspaceConfig.update(key, value, target).then(
             () => {
-                output.info(`Added ${name} to workspace config .vscode/settings.json`);
+                if (target === ConfigurationTarget.Global) {
+                    output.info(`Added ${key} to user config`);
+                } else {
+                    output.info(`Added ${key} to workspace config (.vscode/settings.json)`);
+                }
             },
             (error) => {
                 output.info(error);
@@ -25,12 +33,42 @@ export class DatabricksConfig {
         return value;
     }
 
-    getString(attribute: string): string {
-        return this.workspaceConfig.get(attribute) as string || "";
+    getRemoteFolder() {
+        return this.getConfig("remote-work-folder");
     }
-
-    getObject(attribute: string): ConfigObj {
-        return this.workspaceConfig.get(attribute) || {};
+    getPythonLibFolder() {
+        return this.getConfig("python-lib-folder");
+    }
+    getProfile() {
+        return this.getConfig("profile");
+    }
+    getCluster() {
+        return this.getConfig("cluster");
+    }
+    getZipCommand() {
+        return this.getConfig("zip-command");
+    }
+    getDatabricksCli() {
+        return this.getConfig("databricks-cli");
+    }
+    setRemoteFolder(value: string, user: boolean) {
+        this.setConfig("remote-work-folder", value, user);
+    }
+    setPythonLibFolder(value: string, user: boolean) {
+        this.setConfig("python-lib-folder", value, user);
+    }
+    setProfile(value: string, user: boolean) {
+        this.setConfig("profile", value, user);
+    }
+    setCluster(value: string, user: boolean) {
+        this.setConfig("cluster", value, user);
+    }
+    setZipCommand(value: string, user: boolean) {
+        this.setConfig("zip-command", value, user);
+    }
+    setDatabricksCli(value: string, user: boolean) {
+        this.setConfig("databricks-cli", value, user);
     }
 }
+
 

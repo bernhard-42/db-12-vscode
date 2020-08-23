@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
-import { window, ConfigurationTarget } from 'vscode';
+import { window } from 'vscode';
 
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import ini from 'ini';
+import username from 'username';
 
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { Clusters } from '../rest/Clusters';
@@ -25,7 +26,7 @@ import * as output from './DatabricksOutput';
 export let resourcesFolder = "";
 
 export class DatabricksRun {
-    private workspaceConfig: DatabricksConfig;
+    private databricksConfig = <DatabricksConfig>{};
     private statusBar: vscode.StatusBarItem;
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
@@ -36,7 +37,6 @@ export class DatabricksRun {
 
     constructor(resources: string, statusBar: vscode.StatusBarItem) {
         resourcesFolder = resources;
-        this.workspaceConfig = new DatabricksConfig();
         this.statusBar = statusBar;
     }
 
@@ -46,6 +46,8 @@ export class DatabricksRun {
 
         const fileName = executionContexts.getFilename();
         if (!fileName) { return; }
+
+        this.databricksConfig = new DatabricksConfig();
 
         let profile = "";
         let cluster = "";
@@ -58,24 +60,33 @@ export class DatabricksRun {
         const databrickscfg = fs.readFileSync(path.join(os.homedir(), '.databrickscfg'), 'utf8');
         const dbConfig = ini.parse(databrickscfg);
         const profiles = Object.keys(dbConfig);
-        this.workspaceConfig = new DatabricksConfig();
+
+        remoteFolder = this.databricksConfig.getRemoteFolder();
+        if (remoteFolder.indexOf("$USER") > 0) {
+            let name = username.sync();
+            if (name) {
+                remoteFolder = remoteFolder.replace("$USER", name);
+            } else {
+                vscode.window.showInformationMessage(`Cannot retrieve username, globally set environment variable USER or USERNAME`);
+                return;
+            }
+            output.info(`Using '${remoteFolder}' as remote work folder`);
+        }
 
         // Use workspace settings?
         let useSettings = await window.showQuickPick(["yes", "no"], {
-            placeHolder: 'Use stored settings from .vscode/settings.json?'
+            placeHolder: 'Use stored settings from .databricks-run.json?'
         }) || "";
 
         if (useSettings === "yes") {
-            if (vscode.workspace.workspaceFolders !== undefined) {
-                profile = this.workspaceConfig.getString("profile");
-                let clusterInfo = this.workspaceConfig.getString("cluster");
+            profile = this.databricksConfig.getProfile() || "";
+            let clusterInfo = this.databricksConfig.getCluster();
+            if (clusterInfo) {
                 const sep = clusterInfo.indexOf(" ");
-                cluster = clusterInfo.substring(0, sep);
-                clusterName = clusterInfo.substring(sep + 2, clusterInfo.length - 1);
-                let pythonConfig = this.workspaceConfig.getObject("python");
-                libFolder = pythonConfig["lib-folder"];
-                remoteFolder = pythonConfig["remote-folder"];
+                cluster = clusterInfo.substring(0, sep) || "";
+                clusterName = clusterInfo.substring(sep + 2, clusterInfo.length - 1) || "";
             }
+            libFolder = this.databricksConfig.getPythonLibFolder() || "";
         } else if (useSettings !== "no") {
             vscode.window.showErrorMessage(`Cancelled`);
             return;
@@ -83,12 +94,15 @@ export class DatabricksRun {
 
         // Select profile
         if (profile === "") {
-            profile = await window.showQuickPick(profiles, { placeHolder: 'Select Databricks CLI profile' }) || "";
+            profile = await window.showQuickPick(
+                profiles,
+                { placeHolder: 'Select Databricks CLI profile' }
+            ) || "";
             if (profile === "") {
                 vscode.window.showErrorMessage(`Selection of profile cancelled`);
                 return;
             } else {
-                this.workspaceConfig.update(profile, "profile");
+                this.databricksConfig.setProfile(profile, true);
             }
         }
 
@@ -112,13 +126,16 @@ export class DatabricksRun {
             clusters.forEach((row: [string, string]) => {
                 clusterList[`${row[0]} (${row[1]})`] = row;
             });
-            let clusterInfo = await window.showQuickPick(Object.keys(clusterList), { placeHolder: 'Select Databricks cluster' }) || "";
+            let clusterInfo = await window.showQuickPick(
+                Object.keys(clusterList),
+                { placeHolder: 'Select Databricks cluster' }
+            ) || "";
             if (clusterInfo === "") {
                 vscode.window.showErrorMessage(`Selection of cluster cancelled`);
                 return;
             } else {
                 [cluster, clusterName] = clusterList[clusterInfo];
-                this.workspaceConfig.update(clusterInfo, "cluster");
+                this.databricksConfig.setCluster(clusterInfo, true);
             }
         }
 
@@ -139,13 +156,14 @@ export class DatabricksRun {
 
         // Create Databricks Execution Context
         var remoteCommand = new RemoteCommand();
-        var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
 
         executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster, clusterName);
 
         // Register Cluster Explorer
         this.clusterExplorer = createClusterExplorer(cluster, host, token);
 
+        // Create remote execution context
+        var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
         if (result["status"] === "success") {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
@@ -155,7 +173,7 @@ export class DatabricksRun {
 
         if (language === "python") {
             if (libFolder === "") {
-                const wsFolder = vscode.workspace.rootPath || ".";
+                const wsFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fileName))?.uri.path || ".";
                 const folders = fs.readdirSync(wsFolder, { withFileTypes: true })
                     .filter(dirent => dirent.isDirectory())
                     .filter(dirent => ![".vscode", ".git"].includes(dirent.name))
@@ -167,16 +185,9 @@ export class DatabricksRun {
                         return;
                     }
                 }
+                this.databricksConfig.setPythonLibFolder(libFolder, false);
             }
 
-            if ((libFolder !== "") && (remoteFolder === "")) {
-                remoteFolder = await window.showInputBox({ prompt: "Remote folder on DBFS", placeHolder: 'dbfs:/home/' }) || "";
-                if (remoteFolder === "") {
-                    vscode.window.showErrorMessage(`Selection of library folder cancelled`);
-                    return;
-                }
-            }
-            this.workspaceConfig.update({ "lib-folder": libFolder, "remote-folder": remoteFolder }, "python");
 
             // Register Variable explorer
             this.variableExplorer = await createVariableExplorer(language, remoteCommand);
