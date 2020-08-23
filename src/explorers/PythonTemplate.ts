@@ -3,6 +3,8 @@ export function variablesCode() {
 import inspect
 import itertools
 import json
+import pyspark
+import pandas as pd
 from IPython import get_ipython
 from types import ModuleType
 
@@ -58,6 +60,10 @@ def __db_get_attributes__(variable):
         objs = [("%s" % v, t) for v, t in enumerate(var)]
     elif isinstance(var, dict):
         objs = var.items()
+    elif isinstance(var, pyspark.sql.DataFrame):
+        objs = [(c.name, c.dataType.simpleString()) for c in var.schema.fields]
+    elif isinstance(var, pd.DataFrame):
+        objs = [(k, v.name) for k,v in var.dtypes.to_dict().items()]
     elif type(var).__module__ == "builtins":
         objs = [(str(var), type(var))]
     else:
