@@ -3,13 +3,8 @@ import axios from 'axios';
 import { Response, headers } from './Helpers';
 
 export class Clusters {
-    host: string = "";
-    token: string = "";
 
-    constructor(host: string, token: string) {
-        this.host = host;
-        this.token = token;
-    }
+    constructor(private host: string, private token: string) { }
 
     async get(uri: string) {
         try {

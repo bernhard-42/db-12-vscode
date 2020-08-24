@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import process from 'process';
-
 import { window } from 'vscode';
 
 import fs from 'fs';
@@ -13,11 +11,11 @@ import { RemoteCommand } from '../rest/RemoteCommand';
 import { Clusters } from '../rest/Clusters';
 import { Response } from '../rest/Helpers';
 
-import { updateTasks } from "../tasks/Tasks";
-
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/LibraryExplorer';
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/ClusterExplorer';
+
+import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
 
 import { setImportPath } from '../python/ImportPath';
 
@@ -29,24 +27,25 @@ export let resourcesFolder = "";
 
 export class DatabricksRun {
     private databricksConfig = <DatabricksConfig>{};
-    private statusBar: vscode.StatusBarItem;
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
     private clusterApi: Clusters | undefined;
+    private fileWatcher: vscode.FileSystemWatcher | undefined;
+    private workspaceRoot: string;
 
     private clusterExplorer: ClusterExplorerProvider | undefined;
     private lastFilename = "";
 
-    constructor(resources: string, statusBar: vscode.StatusBarItem) {
+    constructor(resources: string, private statusBar: vscode.StatusBarItem) {
         resourcesFolder = resources;
-        this.statusBar = statusBar;
+        this.workspaceRoot = getWorkspaceRoot() || "";
     }
 
     async initialize() {
-        const editor = executionContexts.getEditor();
+        const editor = getEditor();
         if (!editor) { return; }
 
-        const fileName = executionContexts.getFilename();
+        const fileName = getCurrentFilename();
         if (!fileName) { return; }
 
         this.databricksConfig = new DatabricksConfig();
@@ -76,46 +75,14 @@ export class DatabricksRun {
             output.info(`Using '${remoteFolder}' as remote work folder`);
         }
 
-        let zipCommand = this.databricksConfig.getZipCommand();
-        if (!zipCommand) {
-            let defaultCmd = "";
-            if (process.platform === "win32") {
-                defaultCmd = "Compress-Archive -Force";
-            } else {
-                defaultCmd = 'zip -r -FS --exclude=*.DS_Store* --exclude=*__pycache__*';
-            }
-            zipCommand = await window.showInputBox({
-                prompt: 'Provide zip command (with path if necessary)',
-                value: defaultCmd
-            }) || "";
-            if (zipCommand) {
-                this.databricksConfig.setZipCommand(zipCommand, true);
-            }
-        }
-
-        let databricksCli = this.databricksConfig.getDatabricksCli();
-        if (!databricksCli) {
-            let defaultCmd = "";
-            if (process.platform === "win32") {
-                defaultCmd = "databricks.exe";
-            } else {
-                defaultCmd = '/opt/miniconda/bin/databricks';
-            }
-            databricksCli = await window.showInputBox({
-                prompt: 'Provide databricks cli command (with path if necessary)',
-                value: defaultCmd
-            }) || "";
-            if (databricksCli) {
-                this.databricksConfig.setDatabricksCli(databricksCli, true);
-            }
-        }
-
         // Use workspace settings?
         let useSettings = await window.showQuickPick(["yes", "no"], {
             placeHolder: 'Use stored settings from .databricks-run.json?'
         }) || "";
 
         if (useSettings === "yes") {
+            // avoid duplicate file watchers
+            this.unregisterFileWatcher();
             profile = this.databricksConfig.getProfile() || "";
             let clusterInfo = this.databricksConfig.getCluster();
             if (clusterInfo) {
@@ -210,8 +177,8 @@ export class DatabricksRun {
 
         if (language === "python") {
             if (libFolder === "") {
-                const wsFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fileName))?.uri.path || ".";
-                const folders = fs.readdirSync(wsFolder, { withFileTypes: true })
+                // const wsFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fileName))?.uri.path || ".";
+                const folders = fs.readdirSync(this.workspaceRoot, { withFileTypes: true })
                     .filter(dirent => dirent.isDirectory())
                     .filter(dirent => ![".vscode", ".git"].includes(dirent.name))
                     .map(dirent => dirent.name);
@@ -233,13 +200,13 @@ export class DatabricksRun {
             this.variableExplorer = await createVariableExplorer(language, remoteCommand);
 
             // Register Library explorer
-            this.libraryExplorer = createLibraryExplorer();
+            this.libraryExplorer = createLibraryExplorer(remoteCommand);
+
+            // Register file watcher
+            this.registerFileWatcher(libFolder);
 
             // Set import path
             await setImportPath(remoteFolder, libFolder, remoteCommand);
-
-            // create VS Code tasks.json
-            updateTasks();
         }
 
         if (language === "python") {
@@ -254,7 +221,7 @@ export class DatabricksRun {
     };
 
     async sendSelectionOrLine() {
-        const editor = executionContexts.getEditor();
+        const editor = getEditor();
         if (!editor) { return; }
 
         const context = executionContexts.getContext();
@@ -322,17 +289,19 @@ export class DatabricksRun {
         } else {
             output.write(result["data"]);
         }
-        this.variableExplorer?.refresh(executionContexts.getFilename());
+        this.variableExplorer?.refresh(getCurrentFilename());
     };
 
     async stop(filename?: string) {
+        if (filename && !filename?.startsWith("/")) { return; }
 
         let context = executionContexts.getContext(filename);
-        output.info(`DatabricksRun stop: ${context !== undefined}`);
         if (!context) { return; }
 
-        let fileName = executionContexts.getFilename();
+        let fileName = getCurrentFilename();
         if (!fileName) { return; }
+
+        output.info(`DatabricksRun stop for ${fileName}`);
 
         var result = await context.remoteCommand.stop() as Response;
         if (result["status"] === "success") {
@@ -344,6 +313,7 @@ export class DatabricksRun {
 
         this.refreshVariables(fileName);
         this.updateStatus(fileName, true);
+        this.unregisterFileWatcher();
     };
 
     refreshClusterAttributes() {
@@ -424,6 +394,31 @@ export class DatabricksRun {
             } else {
                 this.statusBar.hide();
             }
+        }
+    }
+
+    registerFileWatcher(libFolder: string) {
+        output.info("Registering file watcher");
+        const pattern = path.join(this.workspaceRoot, libFolder, '**/*.py');
+        this.fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+        this.fileWatcher.onDidChange(() => {
+            output.write("change");
+            vscode.commands.executeCommand("workbench.action.tasks.runTask", "Databricks Run: Upload Python Library")
+        });
+        this.fileWatcher.onDidCreate(() => {
+            output.write("create");
+            vscode.commands.executeCommand("workbench.action.tasks.runTask", "Databricks Run: Upload Python Library")
+        });
+        this.fileWatcher.onDidDelete(() => {
+            output.write("delete");
+            vscode.commands.executeCommand("workbench.action.tasks.runTask", "Databricks Run: Upload Python Library")
+        });
+    }
+
+    unregisterFileWatcher() {
+        if (this.fileWatcher) {
+            output.info("Disposing file watcher");
+            this.fileWatcher.dispose();
         }
     }
 }

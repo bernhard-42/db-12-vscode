@@ -64,6 +64,9 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
     readonly onDidChangeTreeData: vscode.Event<Variable | undefined> = this._onDidChangeTreeData.event;
 
     refresh(filename?: string): void {
+        if (filename && !filename?.startsWith("/")) {
+            return;
+        }
         output.info("VariableExplorer refresh");
         let context = executionContexts.getContext(filename);
         if (context) {

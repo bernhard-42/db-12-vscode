@@ -2,8 +2,12 @@ import * as vscode from 'vscode';
 
 import { DatabricksRun } from './databricks/DatabricksRun';
 import { DatabricksConfig } from './databricks/DatabricksConfig';
+import { DatabricksRunTaskProvider } from './tasks/PythonLibTask';
+
 import * as output from './databricks/DatabricksOutput';
 
+let pythonLibTaskProvider: vscode.Disposable;
+let databricksRun: DatabricksRun;
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -13,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	statusBar.command = 'databricks-run.set-connection-status';
 
-	let databricksRun = new DatabricksRun(execLocation, statusBar);
+	databricksRun = new DatabricksRun(execLocation, statusBar);
 
 	/*
 	 *	Commands
@@ -67,20 +71,6 @@ export function activate(context: vscode.ExtensionContext) {
 	 */
 
 	context.subscriptions.push(
-		vscode.workspace.onDidSaveTextDocument(doc => {
-			const workspaceConfig = new DatabricksConfig();
-			const libFolder = workspaceConfig.getPythonLibFolder();
-			const remoteFolder = workspaceConfig.getRemoteFolder() || "";
-			const file = vscode.workspace.asRelativePath(doc.fileName);
-
-			if ((libFolder !== "") && (remoteFolder !== "") && file.startsWith(libFolder)) {
-				output.info("vscode.workspace.onDidSaveTextDocument");
-				vscode.commands.executeCommand("workbench.action.tasks.runTask", "Upload library");
-			}
-		})
-	);
-
-	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(editor => {
 			databricksRun.updateStatus(editor?.document.fileName || "");
 		})
@@ -100,8 +90,19 @@ export function activate(context: vscode.ExtensionContext) {
 			databricksRun.stop(doc.fileName);
 		})
 	);
+
+	/*
+	 *  Task Provider
+	 */
+	pythonLibTaskProvider = vscode.tasks.registerTaskProvider(
+		DatabricksRunTaskProvider.type,
+		new DatabricksRunTaskProvider()
+	);
 }
 
 export function deactivate() {
 	console.log("deactivate");
+	if (pythonLibTaskProvider) {
+		pythonLibTaskProvider.dispose();
+	}
 }

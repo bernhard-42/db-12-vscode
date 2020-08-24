@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
 import { ConfigurationTarget } from 'vscode';
 
+import fs from 'fs';
+import os from 'os';
+import ini from 'ini';
+import path from 'path';
+
 import * as output from './DatabricksOutput';
 interface ConfigObj {
     [key: string]: any;
@@ -45,12 +50,6 @@ export class DatabricksConfig {
     getCluster() {
         return this.getConfig("cluster");
     }
-    getZipCommand() {
-        return this.getConfig("zip-command");
-    }
-    getDatabricksCli() {
-        return this.getConfig("databricks-cli");
-    }
     setRemoteFolder(value: string, user: boolean) {
         this.setConfig("remote-work-folder", value, user);
     }
@@ -63,11 +62,14 @@ export class DatabricksConfig {
     setCluster(value: string, user: boolean) {
         this.setConfig("cluster", value, user);
     }
-    setZipCommand(value: string, user: boolean) {
-        this.setConfig("zip-command", value, user);
-    }
-    setDatabricksCli(value: string, user: boolean) {
-        this.setConfig("databricks-cli", value, user);
+
+    getClusterConfig() {
+        let profile = this.getProfile();
+        const databrickscfg = fs.readFileSync(path.join(os.homedir(), '.databrickscfg'), 'utf8');
+        const dbConfig = ini.parse(databrickscfg);
+        const host = dbConfig[profile]["host"];
+        const token = dbConfig[profile]["token"];
+        return [host, token];
     }
 }
 

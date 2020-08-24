@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import * as output from './DatabricksOutput';
+import { getEditor, getCurrentFilename } from './utils';
 
 interface IExecutionContext {
     language: string;
@@ -20,35 +21,14 @@ export class ExecutionContexts {
         this.executionContexts = new Map<string, IExecutionContext>();
     }
 
-    getEditor() {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            output.info("No editor window open");
-        }
-        return editor;
-    }
-
-    getFilename(filename?: string) {
-        let fname: string | undefined = undefined;
-        if (filename) {
-            fname = filename;
-        } else {
-            const editor = this.getEditor();
-            if (editor) {
-                fname = editor.document.fileName;
-            }
-        }
-        return fname;
-    }
-
     getContext(filename?: string) {
-        let fname = this.getFilename(filename);
+        let fname = filename || getCurrentFilename();
         if (fname) {
             let context = this.executionContexts.get(fname);
             if (context) {
                 output.info(`Retrieved context for file ${fname}`);
             } else {
-                output.info(`No Databricks context available for file ${fname}`);
+                vscode.window.showErrorMessage(`No Databricks context available for file ${fname}`);
             }
             return context;
         }
@@ -56,7 +36,7 @@ export class ExecutionContexts {
     }
 
     setContext(fileName: string, language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string, clusterName: string) {
-        const editor = this.getEditor();
+        const editor = getEditor();
         if (editor) {
             this.executionContexts.set(fileName, {
                 language: language,
@@ -72,7 +52,7 @@ export class ExecutionContexts {
     }
 
     clearContext(filename?: string) {
-        let fname = this.getFilename(filename);
+        let fname = filename || getCurrentFilename();
         if (fname) {
             output.info(`Clearing context for file ${fname}`);
             this.executionContexts.delete(fname);

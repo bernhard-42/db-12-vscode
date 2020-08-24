@@ -2,17 +2,14 @@ import * as vscode from 'vscode';
 import { Clusters } from '../rest/Clusters';
 import * as output from '../databricks/DatabricksOutput';
 import { Response } from '../rest/Helpers';
-import { executionContexts } from '../databricks/ExecutionContext';
 import { ClusterAttribute } from './ClusterAttribute';
 
 
 export class ClusterExplorerProvider implements vscode.TreeDataProvider<ClusterAttribute> {
     clusterApi = <Clusters>{};
-    clusterId = "";
     clusterInfo = <Response>{};
 
-    constructor(clusterId: string, host: string, token: string) {
-        this.clusterId = clusterId;
+    constructor(private clusterId: string, host: string, token: string) {
         this.clusterApi = new Clusters(host, token);
     }
 
@@ -72,14 +69,6 @@ export class ClusterExplorerProvider implements vscode.TreeDataProvider<ClusterA
 
     refresh(): void {
         output.info("EnviromentExplorer refresh");
-        let context = executionContexts.getContext();
-        if (context) {
-            this.clusterApi = new Clusters(context.host, context.token);
-            this.clusterId = context.cluster;
-        } else {
-            this.clusterApi = <Clusters>{};
-            this.clusterId = "";
-        }
         this._onDidChangeTreeData.fire();
     }
 }

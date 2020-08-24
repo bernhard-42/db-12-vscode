@@ -117,14 +117,6 @@
 		"configuration": {
 			"title": "DB-12",
 			"properties": {
-				"databricks-run.zip-command": {
-					"type": "string",
-					"description": "Shell command to recursively create a zip file. Consider adding excludes"
-				},
-				"databricks-run.databricks-cli": {
-					"type": "string",
-					"description": "Fully qualified path to databricks cli. Consider installing it into your conda base environment"
-				},
 				"databricks-run.remote-work-folder": {
 					"type": "string",
 					"description": "Remote dbfs working folder, supports $USER to be replaces with username"
@@ -143,6 +135,9 @@
 				}
 			}
 		},
+		"taskDefinitions": [{
+			"type": "Databricks Run"
+		}],
 		"viewsContainers": {
 			"activitybar": [{
 				"id": "databricksExplorer",
@@ -228,8 +223,10 @@
 		"vsce": "^1.75.0"
 	},
 	"dependencies": {
+		"@types/archiver": "^3.1.0",
 		"@types/decomment": "^0.9.0",
 		"@types/uuid": "^8.3.0",
+		"archiver": "^5.0.0",
 		"axios": "^0.19.2",
 		"decomment": "^0.9.3",
 		"ini": "^1.3.5",
