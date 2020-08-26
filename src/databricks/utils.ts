@@ -3,7 +3,7 @@ import * as output from './DatabricksOutput';
 
 export function getEditor() {
     const editor = vscode.window.activeTextEditor;
-    if (!editor) {
+    if (editor === undefined) {
         output.info("No editor window open");
     }
     return editor;

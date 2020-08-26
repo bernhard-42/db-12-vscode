@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { DatabricksRun } from './databricks/DatabricksRun';
 import { DatabricksConfig } from './databricks/DatabricksConfig';
-import { DatabricksRunTaskProvider } from './tasks/PythonLibTask';
+import { DatabricksRunTaskProvider } from './tasks/DatabricksRunTaskProvider';
 
 import * as output from './databricks/DatabricksOutput';
 
@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
 	 *	Commands
 	 */
 	context.subscriptions.push(vscode.commands.registerCommand(
-		'databricks-run.initialize', () => databricksRun.initialize()
+		'databricks-run.initialize', (force?: boolean) => databricksRun.initialize(force)
 	));
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.sendSelectionOrLine', () => databricksRun.sendSelectionOrLine()
@@ -105,4 +105,5 @@ export function deactivate() {
 	if (pythonLibTaskProvider) {
 		pythonLibTaskProvider.dispose();
 	}
+	databricksRun.dispose();
 }

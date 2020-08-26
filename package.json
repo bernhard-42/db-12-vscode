@@ -136,7 +136,16 @@
 			}
 		},
 		"taskDefinitions": [{
-			"type": "Databricks Run"
+			"type": "Databricks Run",
+			"required": [
+				"action"
+			],
+			"properties": {
+				"action": {
+					"type": "string",
+					"description": "The build task. This can be 'upload-wheel' and 'restart'."
+				}
+			}
 		}],
 		"viewsContainers": {
 			"activitybar": [{

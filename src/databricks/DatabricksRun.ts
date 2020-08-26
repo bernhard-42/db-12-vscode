@@ -16,21 +16,24 @@ import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/Lib
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/ClusterExplorer';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
-
 import { setImportPath } from '../python/ImportPath';
+
+import { createBuildWheelTasks } from '../tasks/BuildWheelTask';
 
 import { executionContexts } from './ExecutionContext';
 import { DatabricksConfig } from './DatabricksConfig';
 import * as output from './DatabricksOutput';
 
 export let resourcesFolder = "";
+let fileWatcher: vscode.FileSystemWatcher | undefined;
+let taskStart = 0;
 
 export class DatabricksRun {
     private databricksConfig = <DatabricksConfig>{};
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
     private clusterApi: Clusters | undefined;
-    private fileWatcher: vscode.FileSystemWatcher | undefined;
+
     private workspaceRoot: string;
 
     private clusterExplorer: ClusterExplorerProvider | undefined;
@@ -41,12 +44,18 @@ export class DatabricksRun {
         this.workspaceRoot = getWorkspaceRoot() || "";
     }
 
-    async initialize() {
+    async initialize(force?: boolean) {
         const editor = getEditor();
-        if (!editor) { return; }
+        if (editor === undefined) {
+            vscode.window.showErrorMessage(`No VS Code editor open`);
+            return;
+        }
 
         const fileName = getCurrentFilename();
-        if (!fileName) { return; }
+        if (fileName === undefined) {
+            vscode.window.showErrorMessage(`No file open in VS Code`);
+            return;
+        }
 
         this.databricksConfig = new DatabricksConfig();
 
@@ -63,7 +72,7 @@ export class DatabricksRun {
         const profiles = Object.keys(dbConfig);
 
         remoteFolder = this.databricksConfig.getRemoteFolder();
-        if (!remoteFolder) {
+        if (remoteFolder === undefined) {
             let name = await username() || "<username>";
             remoteFolder = await window.showInputBox({
                 prompt: 'Provide a remote working folder',
@@ -76,13 +85,17 @@ export class DatabricksRun {
         }
 
         // Use workspace settings?
-        let useSettings = await window.showQuickPick(["yes", "no"], {
-            placeHolder: 'Use stored settings from .databricks-run.json?'
-        }) || "";
+        let useSettings: string
+        if (force) {
+            useSettings = "yes";
+        } else {
+            useSettings = await window.showQuickPick(["yes", "no"], {
+                placeHolder: 'Use stored settings from .databricks-run.json?'
+            }) || "";
+        }
 
         if (useSettings === "yes") {
             // avoid duplicate file watchers
-            this.unregisterFileWatcher();
             profile = this.databricksConfig.getProfile() || "";
             let clusterInfo = this.databricksConfig.getCluster();
             if (clusterInfo) {
@@ -203,10 +216,13 @@ export class DatabricksRun {
             this.libraryExplorer = createLibraryExplorer(remoteCommand);
 
             // Register file watcher
-            this.registerFileWatcher(libFolder);
+            // this.registerFileWatcher(libFolder);
 
             // Set import path
             await setImportPath(remoteFolder, libFolder, remoteCommand);
+
+            // Add Build wheel task
+            createBuildWheelTasks();
         }
 
         if (language === "python") {
@@ -222,10 +238,16 @@ export class DatabricksRun {
 
     async sendSelectionOrLine() {
         const editor = getEditor();
-        if (!editor) { return; }
+        if (editor === undefined) {
+            vscode.window.showErrorMessage(`No VS Code editor open`);
+            return;
+        }
 
         const context = executionContexts.getContext();
-        if (!context) { return; }
+        if (context === undefined) {
+            vscode.window.showErrorMessage(`No Databricks context available`);
+            return;
+        }
 
         // Prepare and print the input code
 
@@ -280,8 +302,10 @@ export class DatabricksRun {
 
     async cancel() {
         const context = executionContexts.getContext();
-        if (!context) { return; }
-
+        if (context === undefined) {
+            vscode.window.showErrorMessage(`No Databricks context available`);
+            return;
+        }
         // Send cancel command
         var result = await context.remoteCommand.cancel() as Response;
         if (result["status"] === "success") {
@@ -293,27 +317,37 @@ export class DatabricksRun {
     };
 
     async stop(filename?: string) {
-        if (filename && !filename?.startsWith("/")) { return; }
+        if (filename) {
+            if (!filename?.startsWith("/")) {
+                // ignore artificial files like extension-#10
+                return;
+            }
+        } else {
+            filename = getCurrentFilename();
+            if (filename === undefined) {
+                return;
+            }
+        }
 
         let context = executionContexts.getContext(filename);
-        if (!context) { return; }
-
-        let fileName = getCurrentFilename();
-        if (!fileName) { return; }
-
-        output.info(`DatabricksRun stop for ${fileName}`);
+        if (context === undefined) {
+            vscode.window.showErrorMessage(`No Databricks context available`);
+            return;
+        }
 
         var result = await context.remoteCommand.stop() as Response;
         if (result["status"] === "success") {
-            executionContexts.clearContext(filename);
-            vscode.window.showInformationMessage("Context stopped");
+            vscode.window.showInformationMessage(`Context stopped for ${filename}`);
+            let count = executionContexts.clearContext(filename);
+            // if (count === 0) {
+            //     this.unregisterFileWatcher();
+            // }
         } else {
             output.write(result["data"]);
         }
 
-        this.refreshVariables(fileName);
-        this.updateStatus(fileName, true);
-        this.unregisterFileWatcher();
+        this.refreshVariables(filename);
+        this.updateStatus(filename, true);
     };
 
     refreshClusterAttributes() {
@@ -397,28 +431,39 @@ export class DatabricksRun {
         }
     }
 
-    registerFileWatcher(libFolder: string) {
-        output.info("Registering file watcher");
-        const pattern = path.join(this.workspaceRoot, libFolder, '**/*.py');
-        this.fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
-        this.fileWatcher.onDidChange(() => {
-            output.write("change");
-            vscode.commands.executeCommand("workbench.action.tasks.runTask", "Databricks Run: Upload Python Library")
-        });
-        this.fileWatcher.onDidCreate(() => {
-            output.write("create");
-            vscode.commands.executeCommand("workbench.action.tasks.runTask", "Databricks Run: Upload Python Library")
-        });
-        this.fileWatcher.onDidDelete(() => {
-            output.write("delete");
-            vscode.commands.executeCommand("workbench.action.tasks.runTask", "Databricks Run: Upload Python Library")
-        });
+    private registerFileWatcher(libFolder: string) {
+        if (fileWatcher === undefined) {
+            output.info("Registering file watcher");
+            function runtask(trigger: string) {
+                let now = Date.now();
+                // handle duplicate events raised
+                if (now - taskStart > 500) {
+                    taskStart = now;
+                    vscode.commands.executeCommand(
+                        "workbench.action.tasks.runTask",
+                        "Databricks Run: Create and upload wheel"
+                    );
+                } else {
+                    output.write("ignored");
+                }
+            }
+            const pattern = path.join(this.workspaceRoot, libFolder, '**/*.py');
+            fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+            fileWatcher.onDidChange(() => { runtask("onDidChange"); });
+            fileWatcher.onDidCreate(() => { runtask("onDidCreate"); });
+            fileWatcher.onDidDelete(() => { runtask("onDidDelete"); });
+        }
     }
 
-    unregisterFileWatcher() {
-        if (this.fileWatcher) {
+    private unregisterFileWatcher() {
+        if (fileWatcher) {
             output.info("Disposing file watcher");
-            this.fileWatcher.dispose();
+            fileWatcher.dispose();
+            fileWatcher = undefined;
         }
+    }
+
+    dispose() {
+        this.unregisterFileWatcher();
     }
 }

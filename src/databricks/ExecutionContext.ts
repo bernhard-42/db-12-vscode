@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import * as output from './DatabricksOutput';
 import { getEditor, getCurrentFilename } from './utils';
@@ -27,8 +26,6 @@ export class ExecutionContexts {
             let context = this.executionContexts.get(fname);
             if (context) {
                 output.info(`Retrieved context for file ${fname}`);
-            } else {
-                vscode.window.showErrorMessage(`No Databricks context available for file ${fname}`);
             }
             return context;
         }
@@ -57,6 +54,7 @@ export class ExecutionContexts {
             output.info(`Clearing context for file ${fname}`);
             this.executionContexts.delete(fname);
         }
+        return Array.from(this.executionContexts.keys()).length;
     }
 }
 
