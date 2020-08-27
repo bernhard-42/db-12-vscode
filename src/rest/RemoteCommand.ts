@@ -1,7 +1,7 @@
 import url from 'url';
 import axios from 'axios';
-import { Response, headers, poll } from './Helpers';
-import * as output from '../databricks/DatabricksOutput';
+import { Json, headers, poll } from './utils';
+import * as output from '../databricks/Output';
 
 export class RemoteCommand {
     profile: string = "";
@@ -12,7 +12,7 @@ export class RemoteCommand {
     commandId: string = "";
     contextId: string = "";
 
-    async createContext(profile: string, host: string, token: string, language: string, cluster: string): Promise<Response> {
+    async createContext(profile: string, host: string, token: string, language: string, cluster: string): Promise<Json> {
         this.profile = profile;
         this.host = host;
         this.token = token;
@@ -26,7 +26,7 @@ export class RemoteCommand {
                 "clusterId": cluster
             };
             const response = await axios.post(uri, data, headers(token));
-            this.contextId = (response as Response)["data"].id;
+            this.contextId = (response as Json)["data"].id;
             output.info(`Remote Context id: ${this.contextId}`);
         } catch (error) {
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
@@ -45,7 +45,7 @@ export class RemoteCommand {
         }
     }
 
-    async stop(): Promise<Response> {
+    async stop(): Promise<Json> {
         output.info(`Stopping remote context with id: ${this.contextId}: `);
         try {
             const uri = url.resolve(this.host, 'api/1.2/contexts/destroy');
@@ -62,7 +62,7 @@ export class RemoteCommand {
         }
     }
 
-    async execute(code: string): Promise<Response> {
+    async execute(code: string): Promise<Json> {
         try {
             const uri = url.resolve(this.host, 'api/1.2/commands/execute');
             const data = {
@@ -72,7 +72,7 @@ export class RemoteCommand {
                 "command": code
             };
             const response = await axios.post(uri, data, headers(this.token));
-            this.commandId = (response as Response)["data"].id;
+            this.commandId = (response as Json)["data"].id;
         } catch (error) {
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
@@ -83,10 +83,10 @@ export class RemoteCommand {
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => ["Queued", "Running", "Cancelling"].indexOf(value) !== -1;
 
-            let response = await poll(uri, this.token, condition, 100) as Response;
+            let response = await poll(uri, this.token, condition, 100) as Json;
 
             if (response["data"].status === "Finished") {
-                let resultType = (response["data"] as Response)["results"]["resultType"];
+                let resultType = (response["data"] as Json)["results"]["resultType"];
                 if (resultType === "error") {
                     const out = response["data"]["results"]["cause"];
                     if (out.indexOf("CommandCancelledException") === -1) {
@@ -107,7 +107,7 @@ export class RemoteCommand {
         }
     }
 
-    async cancel(): Promise<Response> {
+    async cancel(): Promise<Json> {
         try {
             const uri = url.resolve(this.host, 'api/1.2/commands/cancel');
             const data = {

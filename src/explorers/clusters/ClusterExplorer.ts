@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
-import { Clusters } from '../rest/Clusters';
-import * as output from '../databricks/DatabricksOutput';
-import { Response } from '../rest/Helpers';
+import { Clusters } from '../../rest/Clusters';
+import * as output from '../../databricks/Output';
+import { Json } from '../../rest/utils';
 import { ClusterAttribute } from './ClusterAttribute';
 
 
 export class ClusterExplorerProvider implements vscode.TreeDataProvider<ClusterAttribute> {
     clusterApi = <Clusters>{};
-    clusterInfo = <Response>{};
+    clusterInfo = <Json>{};
 
     constructor(private clusterId: string, host: string, token: string) {
         this.clusterApi = new Clusters(host, token);
@@ -34,7 +34,7 @@ export class ClusterExplorerProvider implements vscode.TreeDataProvider<ClusterA
     }
 
     private async getClusterInfo(): Promise<ClusterAttribute[]> {
-        let result: Response = await this.clusterApi.info(this.clusterId);
+        let result: Json = await this.clusterApi.info(this.clusterId);
         if (result["status"] === "success") {
             this.clusterInfo = result["data"];
             return [

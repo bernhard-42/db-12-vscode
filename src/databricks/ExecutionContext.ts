@@ -1,5 +1,5 @@
 import { RemoteCommand } from '../rest/RemoteCommand';
-import * as output from './DatabricksOutput';
+import * as output from './Output';
 import { getEditor, getCurrentFilename } from './utils';
 
 interface IExecutionContext {

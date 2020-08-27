@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import path from 'path';
 import fs from 'fs';
 
-import { DatabricksConfig } from '../databricks/DatabricksConfig';
+import { DatabricksConfig } from '../databricks/Config';
 import { getWorkspaceRoot } from '../databricks/utils';
 
 export class BaseTask implements vscode.Pseudoterminal {

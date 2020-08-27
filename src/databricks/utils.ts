@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as output from './DatabricksOutput';
+import * as output from './Output';
 
 export function getEditor() {
     const editor = vscode.window.activeTextEditor;

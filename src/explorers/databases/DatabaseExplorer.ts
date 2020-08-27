@@ -1,14 +1,15 @@
 import * as vscode from 'vscode';
-import { RemoteCommand } from '../rest/RemoteCommand';
-import * as output from '../databricks/DatabricksOutput';
-import { Response } from '../rest/Helpers';
-import { executionContexts } from '../databricks/ExecutionContext';
+import { RemoteCommand } from '../../rest/RemoteCommand';
+import * as output from '../../databricks/Output';
+import { Json } from '../../rest/utils';
+import { executionContexts } from '../../databricks/ExecutionContext';
 import { DatabaseItem } from './Database';
+import { getDatabases, getTables, getSchema } from './DatabaseTemplate';
 
 export class DatabaseExplorerProvider implements vscode.TreeDataProvider<DatabaseItem> {
     remoteCommand: RemoteCommand = <RemoteCommand>{};
-    language = "";
-    temp: Response = { "0": "temporary", "1": "persistent" };
+    hasContext = false;
+    temp: Json = { "0": "temporary", "1": "persistent" };
 
     getTreeItem(database: DatabaseItem): vscode.TreeItem {
         return database;
@@ -26,11 +27,15 @@ export class DatabaseExplorerProvider implements vscode.TreeDataProvider<Databas
     }
 
     getChildren(database?: DatabaseItem): Thenable<DatabaseItem[]> {
-        if (Object.keys(this.remoteCommand).length > 0) {
-            if (database) {
-                return Promise.resolve(this.getTables(database));
+        if (this.hasContext) {
+            if (Object.keys(this.remoteCommand).length > 0) {
+                if (database) {
+                    return Promise.resolve(this.getTables(database));
+                } else {
+                    return Promise.resolve(this.getDatabases());
+                }
             } else {
-                return Promise.resolve(this.getDatabases());
+                return Promise.resolve([this.errorResponse("No remote command available")]);
             }
         } else {
             return Promise.resolve([this.errorResponse("No context")]);
@@ -42,7 +47,7 @@ export class DatabaseExplorerProvider implements vscode.TreeDataProvider<Databas
     }
 
     private async getDatabases(): Promise<DatabaseItem[]> {
-        const command = 'print(";".join([f"{row.namespace}:" for row in spark.sql("show databases").collect()]))';
+        const command = getDatabases();
         let result = await this.execute(command, true);
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"], "database", ""));
@@ -57,12 +62,10 @@ export class DatabaseExplorerProvider implements vscode.TreeDataProvider<Databas
         let type: string;
         if (databaseObj.type === "database") {
             type = "table";
-            key = databaseObj.name;
-            command = `print(";".join([f"{row.tableName}:{0 if row.isTemporary else 1}" for row in spark.sql("show tables in ${key}").collect()]))`;
+            command = getTables(databaseObj.name);
         } else {
             type = "column";
-            key = `${databaseObj.parent}.${databaseObj.name}`;
-            command = `print(";".join(([f"{c.name}:{c.dataType.simpleString()}" for c in spark.sql("select * from default.exampletable").schema.fields])))`;
+            command = getSchema(databaseObj.parent, databaseObj.name);
         }
         let result = await this.execute(command, true);
         if (result["status"] === "success") {
@@ -73,20 +76,13 @@ export class DatabaseExplorerProvider implements vscode.TreeDataProvider<Databas
         }
     }
 
-    private async execute(command: string, init: boolean): Promise<Response> {
+    private async execute(command: string, init: boolean): Promise<Json> {
         let result = await this.remoteCommand.execute(command);
         if (result["status"] === "success") {
             return result;
         }
-        // if (init) {
-        //     result = await this.remoteCommand.execute(databasesCode()) as Response;
-        //     if (result["status"] === "success") {
-        //         output.info("Successfully registered Database Explorer");
-        //         return this.execute(command, false);
-        //     }
-        // }
         vscode.window.showErrorMessage("Failed to retrieve remote databases");
-        return { "error": "Failed to retrieve remote databases" };
+        return { "error": result["data"] };
     }
 
     private _onDidChangeTreeData: vscode.EventEmitter<DatabaseItem | undefined> = new vscode.EventEmitter<DatabaseItem | undefined>();
@@ -101,6 +97,9 @@ export class DatabaseExplorerProvider implements vscode.TreeDataProvider<Databas
         let context = executionContexts.getContext(filename);
         if (context) {
             this.remoteCommand = context.remoteCommand;
+            this.hasContext = true;
+        } else {
+            this.hasContext = false;
         }
         this._onDidChangeTreeData.fire();
     }

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { Response } from '../rest/Helpers';
+import { Json } from '../../rest/utils';
 
 export class ClusterAttribute extends vscode.TreeItem {
     constructor(
         public readonly name: string,
-        public readonly value: Response,
+        public readonly value: Json,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState
     ) {
         super(name, collapsibleState);

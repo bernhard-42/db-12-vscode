@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import decomment from 'decomment';
 import fs from 'fs';
 
-import * as output from '../databricks/DatabricksOutput';
+import * as output from '../databricks/Output';
 
 import { buildWheelTask } from './BuildWheelTemplate';
 

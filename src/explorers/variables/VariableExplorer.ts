@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { RemoteCommand } from '../rest/RemoteCommand';
-import * as output from '../databricks/DatabricksOutput';
-import { Response } from '../rest/Helpers';
-import { variablesCode } from './PythonTemplate';
-import { executionContexts } from '../databricks/ExecutionContext';
+import { RemoteCommand } from '../../rest/RemoteCommand';
+import * as output from '../../databricks/Output';
+import { Json } from '../../rest/utils';
+import { variablesCode, getVariables, getAttributes } from './VariableTemplate';
+import { executionContexts } from '../../databricks/ExecutionContext';
 import { Variable } from './Variable';
 
 export class VariableExplorerProvider implements vscode.TreeDataProvider<Variable> {
@@ -45,7 +45,7 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
     }
 
     private async getVariables(): Promise<Variable[]> {
-        let result = await this.execute("__DB_Var_Explorer__.get_variables()", true);
+        let result = await this.execute(getVariables(), true);
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"]));
         } else {
@@ -55,7 +55,7 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
 
     private async getAttributes(variable: Variable): Promise<Variable[]> {
         var pythonVar = (variable.parent === "") ? variable.name : `${variable.parent}.${variable.name}`;
-        let result = await this.execute(`__DB_Var_Explorer__.get_attributes("${pythonVar}")`, true);
+        let result = await this.execute(getAttributes(pythonVar), true);
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"]));
         } else {
@@ -63,13 +63,13 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
         }
     }
 
-    private async execute(command: string, init: boolean): Promise<Response> {
+    private async execute(command: string, init: boolean): Promise<Json> {
         let result = await this.remoteCommand.execute(command);
         if (result["status"] === "success") {
             return result;
         }
         if (init) {
-            result = await this.remoteCommand.execute(variablesCode()) as Response;
+            result = await this.remoteCommand.execute(variablesCode()) as Json;
             if (result["status"] === "success") {
                 output.info("Successfully registered Variable Explorer");
                 return this.execute(command, false);

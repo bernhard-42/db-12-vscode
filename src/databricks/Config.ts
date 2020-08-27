@@ -6,7 +6,7 @@ import os from 'os';
 import ini from 'ini';
 import path from 'path';
 
-import * as output from './DatabricksOutput';
+import * as output from './Output';
 interface ConfigObj {
     [key: string]: any;
 }

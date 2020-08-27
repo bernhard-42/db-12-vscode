@@ -1,7 +1,7 @@
 import fs from 'fs';
 import url from 'url';
 import axios from 'axios';
-import { Response, headers } from './Helpers';
+import { Json, headers } from './utils';
 
 export class Dbfs {
 
@@ -25,12 +25,12 @@ export class Dbfs {
         }
     }
 
-    async upload(source: string, target: string): Promise<Response> {
+    async upload(source: string, target: string): Promise<Json> {
         // Create
         let uri = url.resolve(this.host, `api/2.0/dbfs/create`);
         let size = 500 * 1024;
 
-        let result: Response;
+        let result: Json;
         let handle: number;
         result = await this.post(uri, { "path": target, "overwrite": true });
         if (result["status"] === "success") {
@@ -67,7 +67,7 @@ export class Dbfs {
         return Promise.resolve({ "status": "success", "data": "" });
     }
 
-    async exists(path: string): Promise<Response> {
+    async exists(path: string): Promise<Json> {
         let uri = url.resolve(this.host, `api/2.0/dbfs/get-status`);
         let result = await this.post(uri, { "path": path });
         if (result["status"] !== "success") {

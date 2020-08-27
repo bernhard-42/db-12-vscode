@@ -1,15 +1,18 @@
 import * as vscode from 'vscode';
-import { RemoteCommand } from '../rest/RemoteCommand';
-import { librariesCode } from './PythonTemplate';
-import { baseLibraries } from './baselibs';
-import { pipList, pythonVersion } from '../system/shell';
-import * as output from '../databricks/DatabricksOutput';
+import { RemoteCommand } from '../../rest/RemoteCommand';
+import { pipList, pythonVersion } from '../../system/shell';
+import * as output from '../../databricks/Output';
+
 import { Library } from './Library';
+import { librariesCode } from './LibraryTemplate';
+import { baseLibraries } from './baselibs';
+import { executionContexts } from '../../databricks/ExecutionContext';
+
 
 export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library> {
-
     remoteLibraries = new Map<string, Library>();
     localLibraries = new Map<string, string>();
+    hasContext = false;
 
     constructor(private remoteCommand: RemoteCommand) { }
 
@@ -42,11 +45,15 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
     }
 
     getChildren(library?: Library): Thenable<Library[]> {
-        if (Object.keys(this.remoteCommand).length > 0) {
-            if (library) {
-                return Promise.resolve(this.getLibraries(library));
+        if (this.hasContext) {
+            if (Object.keys(this.remoteCommand).length > 0) {
+                if (library) {
+                    return Promise.resolve(this.getLibraries(library));
+                } else {
+                    return Promise.resolve(this.getCategories());
+                }
             } else {
-                return Promise.resolve(this.getCategories());
+                return Promise.resolve([this.errorResponse("No remote command avilable")]);
             }
         } else {
             return Promise.resolve([this.errorResponse("No context")]);
@@ -107,7 +114,16 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
 
     readonly onDidChangeTreeData: vscode.Event<Library | undefined> = this._onDidChangeTreeData.event;
 
-    refresh(): void {
+    refresh(filename?: string): void {
+        if (filename && !filename?.startsWith("/")) {
+            return;
+        }
+        let context = executionContexts.getContext();
+        if (context) {
+            this.hasContext = true;
+        } else {
+            this.hasContext = false;
+        }
         output.info("LibraryExplorer refresh");
         this._onDidChangeTreeData.fire();
     }

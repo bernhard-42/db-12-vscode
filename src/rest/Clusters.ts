@@ -1,6 +1,6 @@
 import url from 'url';
 import axios from 'axios';
-import { Response, headers } from './Helpers';
+import { Json, headers } from './utils';
 
 export class Clusters {
 
@@ -24,11 +24,11 @@ export class Clusters {
         }
     }
 
-    async names(): Promise<Response> {
+    async names(): Promise<Json> {
         let clusters: [string, string][] = [];
         const response = await this.list();
         if (response["status"] === "success") {
-            const clusterConfig: Response[] = response["data"]["clusters"];
+            const clusterConfig: Json[] = response["data"]["clusters"];
             clusterConfig.forEach(cluster => {
                 clusters.push([cluster["cluster_id"], cluster["cluster_name"]]);
             });
@@ -38,12 +38,12 @@ export class Clusters {
         }
     }
 
-    async list(): Promise<Response> {
+    async list(): Promise<Json> {
         const uri = url.resolve(this.host, 'api/2.0/clusters/list');
         return this.get(uri);
     }
 
-    async info(clusterId: string): Promise<Response> {
+    async info(clusterId: string): Promise<Json> {
         const uri = url.resolve(this.host, `api/2.0/clusters/get?cluster_id=${clusterId}`);
         try {
             const response = await axios.get(uri, headers(this.token));
@@ -53,17 +53,17 @@ export class Clusters {
         }
     }
 
-    async start(clusterId: string): Promise<Response> {
+    async start(clusterId: string): Promise<Json> {
         const uri = url.resolve(this.host, `api/2.0/clusters/start`);
         return this.post(uri, { "cluster_id": clusterId });
     }
 
-    async stop(clusterId: string): Promise<Response> {
+    async stop(clusterId: string): Promise<Json> {
         const uri = url.resolve(this.host, `api/2.0/clusters/delete`);
         return this.post(uri, { "cluster_id": clusterId });
     }
 
-    async restart(clusterId: string): Promise<Response> {
+    async restart(clusterId: string): Promise<Json> {
         const uri = url.resolve(this.host, `api/2.0/clusters/restart`);
         return this.post(uri, { "cluster_id": clusterId });
     }

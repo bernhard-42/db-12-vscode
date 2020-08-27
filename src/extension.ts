@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
 import { DatabricksRun } from './databricks/DatabricksRun';
-import { DatabricksConfig } from './databricks/DatabricksConfig';
+import { DatabricksConfig } from './databricks/Config';
 import { DatabricksRunTaskProvider } from './tasks/DatabricksRunTaskProvider';
 
-import * as output from './databricks/DatabricksOutput';
+import * as output from './databricks/Output';
 
 let pythonLibTaskProvider: vscode.Disposable;
 let databricksRun: DatabricksRun;
@@ -85,6 +85,8 @@ export function activate(context: vscode.ExtensionContext) {
 			if (editor) {
 				output.info(`window.onDidChangeActiveTextEditor: ${editor.document.fileName}`);
 				databricksRun.refreshVariables(editor.document.fileName);
+				databricksRun.refreshDatabases(editor.document.fileName);
+				databricksRun.refreshLibraries(editor.document.fileName);
 			}
 		}));
 

@@ -9,20 +9,20 @@ import username from 'username';
 
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { Clusters } from '../rest/Clusters';
-import { Response } from '../rest/Helpers';
+import { Json } from '../rest/utils';
 
-import { createVariableExplorer, VariableExplorerProvider } from '../explorers/VariableExplorer';
-import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/LibraryExplorer';
-import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/ClusterExplorer';
-import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/DatabaseExplorer';
+import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
+import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
+import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/clusters/ClusterExplorer';
+import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/databases/DatabaseExplorer';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
 
 import { createBuildWheelTasks } from '../tasks/BuildWheelTask';
 
 import { executionContexts } from './ExecutionContext';
-import { DatabricksConfig } from './DatabricksConfig';
-import * as output from './DatabricksOutput';
+import { DatabricksConfig } from './Config';
+import * as output from './Output';
 
 export let resourcesFolder = "";
 
@@ -181,7 +181,7 @@ export class DatabricksRun {
         this.clusterExplorer = createClusterExplorer(cluster, host, token);
 
         // Create remote execution context
-        var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Response;
+        var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Json;
         if (result["status"] === "success") {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
@@ -273,7 +273,7 @@ export class DatabricksRun {
         output.thinBorder();
 
         // Send code as a command
-        var result = await context.remoteCommand.execute(code) as Response;
+        var result = await context.remoteCommand.execute(code) as Json;
         if (result["status"] === "success") {
             var data = result["data"];
 
@@ -304,7 +304,7 @@ export class DatabricksRun {
             return;
         }
         // Send cancel command
-        var result = await context.remoteCommand.cancel() as Response;
+        var result = await context.remoteCommand.cancel() as Json;
         if (result["status"] === "success") {
             output.write("Command cancelled");
         } else {
@@ -332,7 +332,7 @@ export class DatabricksRun {
             return;
         }
 
-        var result = await context.remoteCommand.stop() as Response;
+        var result = await context.remoteCommand.stop() as Json;
         if (result["status"] === "success") {
             vscode.window.showInformationMessage(`Context stopped for ${filename}`);
             executionContexts.clearContext(filename);
@@ -341,6 +341,8 @@ export class DatabricksRun {
         }
 
         this.refreshVariables(filename);
+        this.refreshDatabases();
+        this.refreshLibraries();
         this.updateStatus(filename, true);
     };
 
@@ -354,7 +356,7 @@ export class DatabricksRun {
         if (await window.showQuickPick(["yes", "no"], { placeHolder: `${command} cluster?` }) !== "yes") { return; }
 
         let context = executionContexts.getContext();
-        let result: Response;
+        let result: Json;
         if (context?.cluster) {
             let clusterApi = new Clusters(context.host, context.token);
             if (command === "start") {
@@ -393,27 +395,27 @@ export class DatabricksRun {
         this.manageCluster("stop");
     }
 
-    refreshLibraries() {
+    refreshVariables(filename?: string) {
+        if (this.variableExplorer) {
+            this.variableExplorer.refresh(filename);
+        }
+    }
+
+    refreshDatabases(filename?: string) {
+        if (this.databaseExplorer) {
+            this.databaseExplorer.refresh(filename);
+        }
+    }
+
+    refreshLibraries(filename?: string) {
         if (this.libraryExplorer) {
-            this.libraryExplorer.refresh();
+            this.libraryExplorer.refresh(filename);
         }
     }
 
     createEnvFile() {
         if (this.libraryExplorer) {
             this.libraryExplorer.downloadEnvFile();
-        }
-    }
-
-    refreshVariables(filename?: string) {
-        if (this.variableExplorer) {
-            this.variableExplorer.refresh();
-        }
-    }
-
-    refreshDatabases(filename?: string) {
-        if (this.databaseExplorer) {
-            this.databaseExplorer.refresh();
         }
     }
 

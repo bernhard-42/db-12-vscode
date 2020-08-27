@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { resourcesFolder } from '../databricks/DatabricksRun';
+import { resourcesFolder } from '../../databricks/DatabricksRun';
 
 export class Library extends vscode.TreeItem {
     constructor(

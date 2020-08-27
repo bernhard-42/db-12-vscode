@@ -1,7 +1,7 @@
 import axios from 'axios';
-import * as output from '../databricks/DatabricksOutput';
+import * as output from '../databricks/Output';
 
-export interface Response {
+export interface Json {
     [key: string]: any;
 }
 
@@ -18,7 +18,7 @@ export async function poll(
     const fn = () => axios.get(uri, headers(token));
     let response = await fn();
     let progress = false;
-    while (condition((response as Response)["data"].status)) {
+    while (condition((response as Json)["data"].status)) {
         output.write("»", false);
         progress = true;
         await wait(ms);

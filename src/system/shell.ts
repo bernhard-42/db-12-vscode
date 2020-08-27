@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import * as output from '../databricks/DatabricksOutput';
+import * as output from '../databricks/Output';
 
 export function pipList(python: string): string {
     try {
