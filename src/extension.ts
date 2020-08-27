@@ -63,6 +63,10 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-databases', () => databricksRun.refreshDatabases()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.set-connection-status', () => databricksRun.updateStatus()
 	));
 

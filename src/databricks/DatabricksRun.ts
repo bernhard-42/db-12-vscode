@@ -14,6 +14,7 @@ import { Response } from '../rest/Helpers';
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/LibraryExplorer';
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/ClusterExplorer';
+import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/DatabaseExplorer';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
 
@@ -24,13 +25,14 @@ import { DatabricksConfig } from './DatabricksConfig';
 import * as output from './DatabricksOutput';
 
 export let resourcesFolder = "";
-let fileWatcher: vscode.FileSystemWatcher | undefined;
-let taskStart = 0;
+
 
 export class DatabricksRun {
     private databricksConfig = <DatabricksConfig>{};
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
+    private databaseExplorer: DatabaseExplorerProvider | undefined;
+
     private clusterApi: Clusters | undefined;
 
     private workspaceRoot: string;
@@ -218,6 +220,10 @@ export class DatabricksRun {
             this.libraryExplorer = createLibraryExplorer(remoteCommand);
             this.libraryExplorer?.refresh();
 
+
+            // Register Database explorer
+            this.databaseExplorer = createDatabaseExplorer(remoteCommand);
+            this.databaseExplorer?.refresh();
         }
 
         this.clusterExplorer?.refresh();
@@ -402,6 +408,12 @@ export class DatabricksRun {
     refreshVariables(filename?: string) {
         if (this.variableExplorer) {
             this.variableExplorer.refresh();
+        }
+    }
+
+    refreshDatabases(filename?: string) {
+        if (this.databaseExplorer) {
+            this.databaseExplorer.refresh();
         }
     }
 

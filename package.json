@@ -65,6 +65,14 @@
 				}
 			},
 			{
+				"command": "databricks-run.refresh-databases",
+				"title": "Refresh Remote Databases",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
 				"command": "databricks-run.start-cluster",
 				"title": "Start Remote Cluster",
 				"icon": {
@@ -164,8 +172,12 @@
 					"name": "Remote Python Libraries"
 				},
 				{
+					"id": "databricksDatabaseExplorer",
+					"name": "Remote Databases"
+				},
+				{
 					"id": "databricksClusterExplorer",
-					"name": "Remote Databricks Cluster"
+					"name": "Remote Cluster"
 				}
 			]
 		},
@@ -183,6 +195,11 @@
 				{
 					"command": "databricks-run.refresh-variables",
 					"when": "view == databricksVariableExplorer",
+					"group": "navigation"
+				},
+				{
+					"command": "databricks-run.refresh-databases",
+					"when": "view == databricksDatabaseExplorer",
 					"group": "navigation"
 				},
 				{

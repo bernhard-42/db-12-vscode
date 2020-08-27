@@ -45,7 +45,7 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
     }
 
     private async getVariables(): Promise<Variable[]> {
-        let result = await this.execute("__db_get_variables__()", true);
+        let result = await this.execute("__DB_Var_Explorer__.get_variables()", true);
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"]));
         } else {
@@ -55,7 +55,7 @@ export class VariableExplorerProvider implements vscode.TreeDataProvider<Variabl
 
     private async getAttributes(variable: Variable): Promise<Variable[]> {
         var pythonVar = (variable.parent === "") ? variable.name : `${variable.parent}.${variable.name}`;
-        let result = await this.execute(`__db_get_attributes__("${pythonVar}")`, true);
+        let result = await this.execute(`__DB_Var_Explorer__.get_attributes("${pythonVar}")`, true);
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"]));
         } else {
