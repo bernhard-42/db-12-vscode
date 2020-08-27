@@ -16,7 +16,6 @@ import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/Lib
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/ClusterExplorer';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
-import { setImportPath } from '../python/ImportPath';
 
 import { createBuildWheelTasks } from '../tasks/BuildWheelTask';
 
@@ -85,7 +84,7 @@ export class DatabricksRun {
         }
 
         // Use workspace settings?
-        let useSettings: string
+        let useSettings: string;
         if (force) {
             useSettings = "yes";
         } else {
@@ -208,30 +207,22 @@ export class DatabricksRun {
                 this.databricksConfig.setPythonLibFolder(libFolder, false);
             }
 
+            // Add Build wheel task
+            createBuildWheelTasks();
 
             // Register Variable explorer
-            this.variableExplorer = await createVariableExplorer(language, remoteCommand);
+            this.variableExplorer = createVariableExplorer(language, remoteCommand);
+            this.variableExplorer?.refresh();
 
             // Register Library explorer
             this.libraryExplorer = createLibraryExplorer(remoteCommand);
-
-            // Register file watcher
-            // this.registerFileWatcher(libFolder);
-
-            // Set import path
-            await setImportPath(remoteFolder, libFolder, remoteCommand);
-
-            // Add Build wheel task
-            createBuildWheelTasks();
-        }
-
-        if (language === "python") {
-            this.variableExplorer?.refresh();
             this.libraryExplorer?.refresh();
-        }
-        this.clusterExplorer?.refresh();
 
+        }
+
+        this.clusterExplorer?.refresh();
         this.updateStatus(fileName, true);
+
         output.write("Ready");
         output.thickBorder();
     };
@@ -338,10 +329,7 @@ export class DatabricksRun {
         var result = await context.remoteCommand.stop() as Response;
         if (result["status"] === "success") {
             vscode.window.showInformationMessage(`Context stopped for ${filename}`);
-            let count = executionContexts.clearContext(filename);
-            // if (count === 0) {
-            //     this.unregisterFileWatcher();
-            // }
+            executionContexts.clearContext(filename);
         } else {
             output.write(result["data"]);
         }
@@ -412,8 +400,8 @@ export class DatabricksRun {
     }
 
     refreshVariables(filename?: string) {
-        if (filename && this.variableExplorer) {
-            this.variableExplorer.refresh(filename);
+        if (this.variableExplorer) {
+            this.variableExplorer.refresh();
         }
     }
 
@@ -431,39 +419,7 @@ export class DatabricksRun {
         }
     }
 
-    private registerFileWatcher(libFolder: string) {
-        if (fileWatcher === undefined) {
-            output.info("Registering file watcher");
-            function runtask(trigger: string) {
-                let now = Date.now();
-                // handle duplicate events raised
-                if (now - taskStart > 500) {
-                    taskStart = now;
-                    vscode.commands.executeCommand(
-                        "workbench.action.tasks.runTask",
-                        "Databricks Run: Create and upload wheel"
-                    );
-                } else {
-                    output.write("ignored");
-                }
-            }
-            const pattern = path.join(this.workspaceRoot, libFolder, '**/*.py');
-            fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
-            fileWatcher.onDidChange(() => { runtask("onDidChange"); });
-            fileWatcher.onDidCreate(() => { runtask("onDidCreate"); });
-            fileWatcher.onDidDelete(() => { runtask("onDidDelete"); });
-        }
-    }
-
-    private unregisterFileWatcher() {
-        if (fileWatcher) {
-            output.info("Disposing file watcher");
-            fileWatcher.dispose();
-            fileWatcher = undefined;
-        }
-    }
-
     dispose() {
-        this.unregisterFileWatcher();
+        // this.unregisterFileWatcher();
     }
 }
