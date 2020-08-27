@@ -4,3 +4,5 @@ out
 .metals/
 examples/
 scratch
+TODO
+__pycache__
