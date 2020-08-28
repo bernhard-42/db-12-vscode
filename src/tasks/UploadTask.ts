@@ -1,32 +1,40 @@
 import path from 'path';
+import glob from 'glob';
+import fs from 'fs';
 
 import { Dbfs } from '../rest/Dbfs';
 import { BaseTask } from './BaseTask';
 
 export class UploadTask extends BaseTask {
-    file: string;
+    localFile: string;
+    remoteFile: string;
+    remoteFolder: string;
 
     constructor(private type: string) {
         super();
+        this.remoteFolder = this.databricksConfig.getRemoteFolder();
         if (type === "zip") {
-            this.file = path.join(this.buildFolder, `${this.libFolder}.zip`);
+            this.localFile = path.join(this.buildFolder, `${this.libFolder}.zip`);
+            this.remoteFile = `${this.remoteFolder}/${this.libFolder}.zip`; // force unix separator
         } else {
-            this.file = path.join(this.distFolder, `${this.libFolder}-0.1-py3-none-any.whl`);
+            this.localFile = glob.sync(path.join(this.distFolder, '*.whl'))
+                .map(name => ({ name, time: fs.statSync(name).ctime.getTime() }))
+                .sort((a, b) => b.time - a.time)[0].name;
+            let wheel = path.basename(this.localFile);
+            this.remoteFile = `${this.remoteFolder}/${wheel}`; // force unix separator
         }
     }
 
     protected async doBuild(): Promise<void> {
         return new Promise<void>(async (resolve) => {
-            this.writeEmitter.fire(`Starting upload of ${this.file} ...\r\n`);
+            this.writeEmitter.fire(`Starting upload of ${this.localFile} ...\r\n`);
             let [host, token] = this.databricksConfig.getClusterConfig();
-            let remoteFolder = this.databricksConfig.getRemoteFolder();
 
             const dbfs = new Dbfs(host, token);
-            const remoteFile = path.join(remoteFolder, `${this.libFolder}-0.1-py3-none-any.whl`);
-            let result = await dbfs.upload(this.file, remoteFile);
+            let result = await dbfs.upload(this.localFile, this.remoteFile);
             if (result["status"] === "success") {
-                this.writeEmitter.fire(`${this.type} uploaded to ${remoteFolder}\r\n`);
-                this.writeEmitter.fire(`\r\nUse\r\n    %pip install ${remoteFile.replace("dbfs:", "/dbfs")}'\r\n`);
+                this.writeEmitter.fire(`${this.type} uploaded to ${this.remoteFolder}\r\n`);
+                this.writeEmitter.fire(`\r\nUse\r\n    %pip install ${this.remoteFile.replace("dbfs:", "/dbfs")}'\r\n`);
                 this.writeEmitter.fire("to enable the library on the remote cluster\r\n");
             } else {
                 this.writeEmitter.fire(`${result["data"]}\r\n`);
