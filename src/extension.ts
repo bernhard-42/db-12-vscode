@@ -50,10 +50,14 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.stop-cluster', () => databricksRun.stopCluster()
 	));
+
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.refresh-libraries', () => databricksRun.refreshLibraries()
 	));
 
+	context.subscriptions.push(vscode.commands.registerCommand(
+		"databricks-run.install-library", library => databricksRun.installLibrary(library)
+	));
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.create-env-file', () => databricksRun.createEnvFile()
 	));

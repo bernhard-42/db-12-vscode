@@ -10,6 +10,19 @@ export function pipList(python: string): string {
     };
 }
 
+export function pipInstall(python: string, library: string, version?: string): string {
+    try {
+        if (version) {
+            return execSync(`${python} -m pip install --upgrade ${library}==${version}`).toString();
+        } else {
+            return execSync(`${python} -m pip install --upgrade ${library}`).toString();
+        }
+    } catch (error) {
+        output.info(error["stderr"].toString());
+        return "";
+    };
+}
+
 export function pythonVersion(python: string): string {
     try {
         return execSync(`${python} --version`).toString();

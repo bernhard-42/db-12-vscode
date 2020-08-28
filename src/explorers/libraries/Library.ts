@@ -36,4 +36,9 @@ export class Library extends vscode.TreeItem {
     get description(): string {
         return `${this.version}`;
     }
+
+    get contextValue() {
+        return (this.category || (this.name === "python")) ? "category" : 'library';
+    }
+
 }

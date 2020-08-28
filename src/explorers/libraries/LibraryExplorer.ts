@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../../rest/RemoteCommand';
-import { pipList, pythonVersion } from '../../system/shell';
+import { pipList, pythonVersion, pipInstall } from '../../system/shell';
 import * as output from '../../databricks/Output';
 
 import { Library } from './Library';
@@ -25,7 +25,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
         var data = JSON.parse(jsonData);
         Object.keys(data).forEach(key => {
             this.remoteLibraries.set(data[key]["name"], new Library(
-                data[key]["name"],
+                data[key]["name"].toLowerCase(),
                 false,
                 data[key]["version"],
                 (this.localLibraries.has(data[key]["name"])) ? this.localLibraries.get(data[key]["name"]) || "missing" : "missing",
@@ -37,7 +37,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
     parseLocal(jsonData: string) {
         var data = JSON.parse(jsonData);
         Object.keys(data).forEach(key => {
-            this.localLibraries.set(data[key]["name"], data[key]["version"]);
+            this.localLibraries.set(data[key]["name"].toLowerCase(), data[key]["version"]);
         });
     }
 
@@ -89,6 +89,17 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
             });
         }
         return Promise.resolve(libs.sort((a, b) => a.name.localeCompare(b.name)));
+    }
+
+    install(library?: Library) {
+        output.write(`Installing ${library?.name} ${library?.version}`);
+        let pythonConfig = vscode.workspace.getConfiguration("python");
+        let python = pythonConfig.get("pythonPath");
+        if (python && library) {
+            let result = pipInstall(python as string, library.name, library.version);
+            output.write(result);
+            this.refresh();
+        }
     }
 
     downloadEnvFile() {

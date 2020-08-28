@@ -15,6 +15,7 @@ import { createVariableExplorer, VariableExplorerProvider } from '../explorers/v
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/clusters/ClusterExplorer';
 import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/databases/DatabaseExplorer';
+import { Library } from '../explorers/libraries/Library';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
 
@@ -57,9 +58,6 @@ export class DatabricksRun {
             vscode.window.showErrorMessage(`No file open in VS Code`);
             return;
         }
-
-        // in case of restart stop the current context
-        await this.stop();
 
         this.databricksConfig = new DatabricksConfig();
 
@@ -112,6 +110,9 @@ export class DatabricksRun {
             vscode.window.showErrorMessage(`Cancelled`);
             return;
         }
+
+        // in case of restart stop the current context
+        await this.stop();
 
         // Select profile
         if (profile === "") {
@@ -428,6 +429,10 @@ export class DatabricksRun {
         if (this.libraryExplorer) {
             this.libraryExplorer.refresh(filename);
         }
+    }
+
+    installLibrary(library: Library) {
+        this.libraryExplorer?.install(library);
     }
 
     createEnvFile() {
