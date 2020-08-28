@@ -58,6 +58,9 @@ export class DatabricksRun {
             return;
         }
 
+        // in case of restart stop the current context
+        await this.stop();
+
         this.databricksConfig = new DatabricksConfig();
 
         let profile = "";
@@ -91,7 +94,7 @@ export class DatabricksRun {
             useSettings = "yes";
         } else {
             useSettings = await window.showQuickPick(["yes", "no"], {
-                placeHolder: 'Use stored settings from .databricks-run.json?'
+                placeHolder: 'To (re)start the extension, use the stored settings?'
             }) || "";
         }
 
@@ -185,7 +188,21 @@ export class DatabricksRun {
         if (result["status"] === "success") {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
-            vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result["data"]}`);
+            if (result["data"].startsWith("ClusterNotReadyException")) {
+                if (await window.showQuickPick(["yes", "no"], { placeHolder: `Cluster not running, start it?` }) === "yes") {
+                    let clusterApi = new Clusters(host, token);
+                    result = await clusterApi.start(cluster);
+                }
+                for (let dummy of [0, 2]) {
+                    setTimeout(() => {
+                        console.log('Test');
+                        this.refreshClusterAttributes();
+                    }, 1000);
+                }
+                output.write("Please re-initialize the extension once the cluster is started");
+            } else {
+                vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result["data"]}`);
+            }
             return;
         }
 
@@ -328,7 +345,7 @@ export class DatabricksRun {
 
         let context = executionContexts.getContext(filename);
         if (context === undefined) {
-            vscode.window.showErrorMessage(`No Databricks context available`);
+            output.info(`No Databricks context available`);
             return;
         }
 

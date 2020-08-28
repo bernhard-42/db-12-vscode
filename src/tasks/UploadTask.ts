@@ -4,6 +4,7 @@ import fs from 'fs';
 
 import { Dbfs } from '../rest/Dbfs';
 import { BaseTask } from './BaseTask';
+import * as output from '../databricks/Output';
 
 export class UploadTask extends BaseTask {
     localFile: string;
@@ -34,8 +35,10 @@ export class UploadTask extends BaseTask {
             let result = await dbfs.upload(this.localFile, this.remoteFile);
             if (result["status"] === "success") {
                 this.writeEmitter.fire(`${this.type} uploaded to ${this.remoteFolder}\r\n`);
-                this.writeEmitter.fire(`\r\nUse\r\n    %pip install ${this.remoteFile.replace("dbfs:", "/dbfs")}'\r\n`);
-                this.writeEmitter.fire("to enable the library on the remote cluster\r\n");
+                output.write(
+                    "To enable the library on the remote cluster, use\n" +
+                    `    %pip install ${this.remoteFile.replace("dbfs:", "/dbfs")}'\n`
+                );
             } else {
                 this.writeEmitter.fire(`${result["data"]}\r\n`);
             }

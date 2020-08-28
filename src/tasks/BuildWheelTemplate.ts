@@ -12,7 +12,7 @@ export function buildWheelTask() {
                 "presentation": {
                     "reveal": "always",
                     "panel": "shared",
-                    "clear": false
+                    "clear": true
                 },
                 "problemMatcher": []
             },

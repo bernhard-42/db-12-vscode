@@ -10,7 +10,7 @@ export class RestartTask extends BaseTask {
     protected async doBuild(): Promise<void> {
         return new Promise<void>(async (resolve) => {
             this.writeEmitter.fire(`Restarting extension ...\r\n`);
-            vscode.commands.executeCommand("databricks-run.initialize", true);
+            vscode.commands.executeCommand("databricks-run.initialize", false);
             this.closeEmitter.fire();
             resolve();
         });
