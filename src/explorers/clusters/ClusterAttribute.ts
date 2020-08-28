@@ -1,13 +1,14 @@
 import * as vscode from 'vscode';
 import { Json } from '../../rest/utils';
+import { Cluster } from 'cluster';
 
 export class ClusterAttribute extends vscode.TreeItem {
     constructor(
         public readonly name: string,
-        public readonly value: Json,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+        public readonly value?: Json,
+        public readonly collapsibleState?: vscode.TreeItemCollapsibleState
     ) {
-        super(name, collapsibleState);
+        super(name, collapsibleState || vscode.TreeItemCollapsibleState.None);
     }
 
     get tooltip(): string {
@@ -20,5 +21,9 @@ export class ClusterAttribute extends vscode.TreeItem {
         } else {
             return `${this.value}`;
         }
+    }
+
+    getValue(): Json {
+        return this.value || {};
     }
 }

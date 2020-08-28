@@ -6,18 +6,15 @@ import * as output from '../../databricks/Output';
 import { Library } from './Library';
 import { librariesCode } from './LibraryTemplate';
 import { baseLibraries } from './baselibs';
-import { executionContexts } from '../../databricks/ExecutionContext';
+import { BaseExplorer } from '../BaseExplorer';
 
-
-export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library> {
+export class LibraryExplorerProvider extends BaseExplorer<Library> {
     remoteLibraries = new Map<string, Library>();
     localLibraries = new Map<string, string>();
     hasContext = false;
 
-    constructor(private remoteCommand: RemoteCommand) { }
-
-    errorResponse(msg: string) {
-        return new Library(false, msg, "", "", vscode.TreeItemCollapsibleState.None);
+    constructor(remoteCommand: RemoteCommand) {
+        super((msg: string): Library => new Library(msg));
     }
 
     getTreeItem(variable: Library): vscode.TreeItem {
@@ -28,8 +25,8 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
         var data = JSON.parse(jsonData);
         Object.keys(data).forEach(key => {
             this.remoteLibraries.set(data[key]["name"], new Library(
-                false,
                 data[key]["name"],
+                false,
                 data[key]["version"],
                 (this.localLibraries.has(data[key]["name"])) ? this.localLibraries.get(data[key]["name"]) || "missing" : "missing",
                 vscode.TreeItemCollapsibleState.None
@@ -44,23 +41,7 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
         });
     }
 
-    getChildren(library?: Library): Thenable<Library[]> {
-        if (this.hasContext) {
-            if (Object.keys(this.remoteCommand).length > 0) {
-                if (library) {
-                    return Promise.resolve(this.getLibraries(library));
-                } else {
-                    return Promise.resolve(this.getCategories());
-                }
-            } else {
-                return Promise.resolve([this.errorResponse("No remote command avilable")]);
-            }
-        } else {
-            return Promise.resolve([this.errorResponse("No context")]);
-        }
-    }
-
-    private async getCategories(): Promise<Library[]> {
+    async getTopLevel(): Promise<Library[]> {
         this.localLibraries = new Map<string, string>();
         // TODO: python.pythonPath is deprecated!
         let pythonConfig = vscode.workspace.getConfiguration("python");
@@ -80,52 +61,34 @@ export class LibraryExplorerProvider implements vscode.TreeDataProvider<Library>
         const code = librariesCode();
         let remoteLibs = await this.remoteCommand.execute(code);
         this.parseResponse(remoteLibs["data"]);
-        return [
-            new Library(true, "Python", "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library(true, "Spark", "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library(true, "DE and ML Libraries", "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library(true, "Base Libraries", "", "", vscode.TreeItemCollapsibleState.Collapsed)
-        ];
+        return Promise.resolve([
+            new Library("Python", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
+            new Library("Spark", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
+            new Library("DE and ML Libraries", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
+            new Library("Base Libraries", true, "", "", vscode.TreeItemCollapsibleState.Collapsed)
+        ]);
     }
 
-    private getLibraries(category: Library): Library[] {
+    async getNextLevel(category: Library): Promise<Library[]> {
         var libs: Library[] = [];
         if (category.name === "Python") {
-            libs.push(this.remoteLibraries.get("python") || this.errorResponse("python is missing"));
+            libs.push(this.remoteLibraries.get("python") || new Library("python is missing"));
         } else if (category.name === "Spark") {
-            libs.push(this.remoteLibraries.get("pyspark") || this.errorResponse("spark is missing"));
+            libs.push(this.remoteLibraries.get("pyspark") || new Library("spark is missing"));
         } else if (category.name === "Base Libraries") {
             Array.from(this.remoteLibraries.keys()).forEach(key => {
                 if (baseLibraries.includes(key) && !(key === "python")) {
-                    libs.push(this.remoteLibraries.get(key) || this.errorResponse(`lib ${key} is missing`));
+                    libs.push(this.remoteLibraries.get(key) || new Library(`lib ${key} is missing`));
                 }
             });
         } else {
             Array.from(this.remoteLibraries.keys()).forEach(key => {
                 if (!baseLibraries.includes(key) && !(key === "python")) {
-                    libs.push(this.remoteLibraries.get(key) || this.errorResponse(`lib ${key} is missing`));
+                    libs.push(this.remoteLibraries.get(key) || new Library(`lib ${key} is missing`));
                 }
             });
         }
-        return libs.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    private _onDidChangeTreeData: vscode.EventEmitter<Library | undefined> = new vscode.EventEmitter<Library | undefined>();
-
-    readonly onDidChangeTreeData: vscode.Event<Library | undefined> = this._onDidChangeTreeData.event;
-
-    refresh(filename?: string): void {
-        if (filename && !filename?.startsWith("/")) {
-            return;
-        }
-        let context = executionContexts.getContext();
-        if (context) {
-            this.hasContext = true;
-        } else {
-            this.hasContext = false;
-        }
-        output.info("LibraryExplorer refresh");
-        this._onDidChangeTreeData.fire();
+        return Promise.resolve(libs.sort((a, b) => a.name.localeCompare(b.name)));
     }
 
     downloadEnvFile() {

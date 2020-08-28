@@ -6,7 +6,12 @@ export interface Json {
 }
 
 export function headers(token: string) {
-    return { headers: { "Authorization": `Bearer ${token}` } };
+    return {
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            // "User-Agent": `VSCodeDatabricksRun/0.9.0`
+        }
+    };
 };
 
 export async function poll(

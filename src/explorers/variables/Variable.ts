@@ -3,12 +3,12 @@ import * as vscode from 'vscode';
 export class Variable extends vscode.TreeItem {
     constructor(
         public readonly name: string,
-        public readonly type: string,
-        public readonly value: string,
-        public readonly parent: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+        public readonly type?: string,
+        public readonly value?: string,
+        public readonly parent?: string,
+        public readonly collapsibleState?: vscode.TreeItemCollapsibleState
     ) {
-        super(name, collapsibleState);
+        super(name, collapsibleState || vscode.TreeItemCollapsibleState.None);
     }
 
     get tooltip(): string {

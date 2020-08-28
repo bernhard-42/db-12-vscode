@@ -3,38 +3,20 @@ import { Clusters } from '../../rest/Clusters';
 import * as output from '../../databricks/Output';
 import { Json } from '../../rest/utils';
 import { ClusterAttribute } from './ClusterAttribute';
+import { BaseExplorer } from '../BaseExplorer';
 
-
-export class ClusterExplorerProvider implements vscode.TreeDataProvider<ClusterAttribute> {
+export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     clusterApi = <Clusters>{};
     clusterInfo = <Json>{};
 
     constructor(private clusterId: string, host: string, token: string) {
+        super((msg: string): ClusterAttribute => new ClusterAttribute(msg));
         this.clusterApi = new Clusters(host, token);
+        this.hasContext = true;
     }
 
-    errorResponse(msg: string) {
-        return new ClusterAttribute(msg, {}, vscode.TreeItemCollapsibleState.None);
-    }
-
-    getTreeItem(clusterAttribute: ClusterAttribute): vscode.TreeItem {
-        return clusterAttribute;
-    }
-
-    getChildren(clusterAttribute?: ClusterAttribute): Thenable<ClusterAttribute[]> {
-        if (this.clusterId) {
-            if (clusterAttribute) {
-                return Promise.resolve(this.getAttributes(clusterAttribute));
-            } else {
-                return Promise.resolve(this.getClusterInfo());
-            }
-        } else {
-            return Promise.resolve([this.errorResponse("No context")]);
-        }
-    }
-
-    private async getClusterInfo(): Promise<ClusterAttribute[]> {
-        let result: Json = await this.clusterApi.info(this.clusterId);
+    async getTopLevel(): Promise<ClusterAttribute[]> {
+        let result: Json = await this.execute();
         if (result["status"] === "success") {
             this.clusterInfo = result["data"];
             return [
@@ -44,14 +26,14 @@ export class ClusterExplorerProvider implements vscode.TreeDataProvider<ClusterA
                     vscode.TreeItemCollapsibleState.Collapsed)
             ];
         } else {
-            return Promise.resolve([this.errorResponse("Retrieving cluster config failed")]);
+            return Promise.resolve([new ClusterAttribute("Retrieving cluster config failed")]);
         }
     }
 
-    private async getAttributes(environmentAttribute: ClusterAttribute): Promise<ClusterAttribute[]> {
+    async getNextLevel(parent: ClusterAttribute): Promise<ClusterAttribute[]> {
         let attributes: ClusterAttribute[] = [];
-        for (let key of Object.keys(environmentAttribute.value)) {
-            const obj = environmentAttribute.value[key];
+        for (let key of Object.keys(parent.getValue())) {
+            const obj = parent.getValue()[key];
             attributes.push(
                 new ClusterAttribute(
                     key,
@@ -63,12 +45,11 @@ export class ClusterExplorerProvider implements vscode.TreeDataProvider<ClusterA
         return Promise.resolve(attributes);
     }
 
-    private _onDidChangeTreeData: vscode.EventEmitter<ClusterAttribute | undefined> = new vscode.EventEmitter<ClusterAttribute | undefined>();
-
-    readonly onDidChangeTreeData: vscode.Event<ClusterAttribute | undefined> = this._onDidChangeTreeData.event;
+    async execute(): Promise<Json> {
+        return this.clusterApi.info(this.clusterId);
+    }
 
     refresh(): void {
-        output.info("EnviromentExplorer refresh");
         this._onDidChangeTreeData.fire();
     }
 }

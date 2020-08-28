@@ -5,13 +5,13 @@ import { resourcesFolder } from '../../databricks/DatabricksRun';
 
 export class Library extends vscode.TreeItem {
     constructor(
-        public readonly category: boolean,
         public readonly name: string,
-        public readonly version: string,
-        public readonly localVersion: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+        public readonly category?: boolean,
+        public readonly version?: string,
+        public readonly localVersion?: string,
+        public readonly collapsibleState?: vscode.TreeItemCollapsibleState
     ) {
-        super(name, collapsibleState);
+        super(name, collapsibleState || vscode.TreeItemCollapsibleState.None);
 
         let icon = "python.png";
         if (!category) {

@@ -1,18 +1,15 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../../rest/RemoteCommand';
-import * as output from '../../databricks/Output';
 import { Json } from '../../rest/utils';
-import { executionContexts } from '../../databricks/ExecutionContext';
 import { DatabaseItem } from './Database';
 import { getDatabases, getTables, getSchema } from './DatabaseTemplate';
+import { BaseExplorer } from '../BaseExplorer';
 
-export class DatabaseExplorerProvider implements vscode.TreeDataProvider<DatabaseItem> {
-    remoteCommand: RemoteCommand = <RemoteCommand>{};
-    hasContext = false;
+export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
     temp: Json = { "0": "temporary", "1": "persistent" };
 
-    getTreeItem(database: DatabaseItem): vscode.TreeItem {
-        return database;
+    constructor() {
+        super((msg: string): DatabaseItem => new DatabaseItem(msg));
     }
 
     parse(list: string, type: string, parent: string) {
@@ -26,85 +23,36 @@ export class DatabaseExplorerProvider implements vscode.TreeDataProvider<Databas
         ));
     }
 
-    getChildren(database?: DatabaseItem): Thenable<DatabaseItem[]> {
-        if (this.hasContext) {
-            if (Object.keys(this.remoteCommand).length > 0) {
-                if (database) {
-                    return Promise.resolve(this.getTables(database));
-                } else {
-                    return Promise.resolve(this.getDatabases());
-                }
-            } else {
-                return Promise.resolve([this.errorResponse("No remote command available")]);
-            }
-        } else {
-            return Promise.resolve([this.errorResponse("No context")]);
-        }
-    }
-
-    private errorResponse(msg: string) {
-        return new DatabaseItem(msg, "", "", "", vscode.TreeItemCollapsibleState.None);
-    }
-
-    private async getDatabases(): Promise<DatabaseItem[]> {
+    async getTopLevel(): Promise<DatabaseItem[]> {
         const command = getDatabases();
-        let result = await this.execute(command, true);
+        let result = await this.execute(command);
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"], "database", ""));
         } else {
-            return Promise.resolve([this.errorResponse("missing")]);
+            return Promise.resolve([new DatabaseItem("missing")]);
         }
     }
 
-    private async getTables(databaseObj: DatabaseItem): Promise<DatabaseItem[]> {
+    async getNextLevel(databaseItem: DatabaseItem): Promise<DatabaseItem[]> {
         let command: string;
         let key: string;
         let type: string;
-        if (databaseObj.type === "database") {
+        if (databaseItem.type === "database") {
             type = "table";
-            command = getTables(databaseObj.name);
+            command = getTables(databaseItem.name);
         } else {
             type = "column";
-            command = getSchema(databaseObj.parent, databaseObj.name);
+            command = getSchema(databaseItem.getParent(), databaseItem.name);
         }
-        let result = await this.execute(command, true);
+        let result = await this.execute(command);
         if (result["status"] === "success") {
-            const objs = this.parse(result["data"], type, databaseObj.parent);
+            const objs = this.parse(result["data"], type, databaseItem.getParent());
             return Promise.resolve(objs);
         } else {
-            return Promise.resolve([this.errorResponse("Missing")]);
+            return Promise.resolve([new DatabaseItem("Missing")]);
         }
-    }
-
-    private async execute(command: string, init: boolean): Promise<Json> {
-        let result = await this.remoteCommand.execute(command);
-        if (result["status"] === "success") {
-            return result;
-        }
-        vscode.window.showErrorMessage("Failed to retrieve remote databases");
-        return { "error": result["data"] };
-    }
-
-    private _onDidChangeTreeData: vscode.EventEmitter<DatabaseItem | undefined> = new vscode.EventEmitter<DatabaseItem | undefined>();
-
-    readonly onDidChangeTreeData: vscode.Event<DatabaseItem | undefined> = this._onDidChangeTreeData.event;
-
-    refresh(filename?: string): void {
-        if (filename && !filename?.startsWith("/")) {
-            return;
-        }
-        output.info("DatabaseExplorer refresh");
-        let context = executionContexts.getContext(filename);
-        if (context) {
-            this.remoteCommand = context.remoteCommand;
-            this.hasContext = true;
-        } else {
-            this.hasContext = false;
-        }
-        this._onDidChangeTreeData.fire();
     }
 }
-
 
 export function createDatabaseExplorer(remoteCommand: RemoteCommand) {
     const databaseExplorer = new DatabaseExplorerProvider();
