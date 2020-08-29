@@ -10,7 +10,7 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     clusterInfo = <Json>{};
 
     constructor(private clusterId: string, host: string, token: string) {
-        super((msg: string): ClusterAttribute => new ClusterAttribute(msg));
+        super(["python", "sql", "scala", "r"], (msg: string): ClusterAttribute => new ClusterAttribute(msg));
         this.clusterApi = new Clusters(host, token);
         this.hasContext = true;
     }

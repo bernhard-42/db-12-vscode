@@ -132,4 +132,35 @@ export class RemoteCommand {
             return Promise.resolve({ "status": "error", "data": error.response.data.error });
         }
     }
+
+    private async databaseInfo(sqlCommand: string): Promise<Json> {
+        let command = "";
+        switch (this.language) {
+            case "sql":
+                command = sqlCommand;
+                break;
+            case "python":
+                command = `display(spark.sql("${sqlCommand}"))`;
+                break;
+            case "scala":
+                command = `display(spark.sql("${sqlCommand}"))`;
+                break;
+            default:
+                return Promise.resolve({ "status": "error", "data": `Language ${this.language} is not supported` });
+                break;
+        }
+        return this.execute(command);
+    }
+
+    async getDatabases(): Promise<Json> {
+        return this.databaseInfo("show databases");
+    }
+
+    async getTables(database: string): Promise<Json> {
+        return this.databaseInfo(`show tables in ${database}`);
+    }
+
+    async getSchema(database: string, table: string): Promise<Json> {
+        return this.databaseInfo(`describe ${database}.${table}`);
+    }
 }

@@ -240,8 +240,9 @@ export class DatabricksRun {
             // Register Library explorer
             this.libraryExplorer = createLibraryExplorer(remoteCommand);
             this.libraryExplorer?.refresh();
+        }
 
-
+        if (language !== "r") {
             // Register Database explorer
             this.databaseExplorer = createDatabaseExplorer(remoteCommand);
             this.databaseExplorer?.refresh();

@@ -16,7 +16,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
     hasContext = false;
 
     constructor(remoteCommand: RemoteCommand) {
-        super((msg: string): Library => new Library(msg));
+        super(["python"], (msg: string): Library => new Library(msg));
     }
 
     getTreeItem(variable: Library): vscode.TreeItem {

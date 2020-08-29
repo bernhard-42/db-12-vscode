@@ -1,31 +1,28 @@
 import * as vscode from 'vscode';
-import { RemoteCommand } from '../../rest/RemoteCommand';
+import { RemoteCommand, } from '../../rest/RemoteCommand';
 import { Json } from '../../rest/utils';
 import { DatabaseItem } from './Database';
-import { getDatabases, getTables, getSchema } from './DatabaseTemplate';
 import { BaseExplorer } from '../BaseExplorer';
 
 export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
-    temp: Json = { "0": "temporary", "1": "persistent" };
+    temp: Json = { true: "temporary", false: "persistent" };
 
     constructor() {
-        super((msg: string): DatabaseItem => new DatabaseItem(msg));
+        super(["python", "sql", "scala"], (msg: string): DatabaseItem => new DatabaseItem(msg));
     }
 
-    parse(list: string, type: string, parent: string) {
-        var objs = list.split(";");
-        return objs.map(key => new DatabaseItem(
-            key.split(":")[0],
+    parse(table: string[][], type: string, parent: string) {
+        return table.map(row => new DatabaseItem(
+            (type === "table") ? row[1] : row[0],
             type,
-            (type === "table") ? this.temp[key.split(":")[1]] : key.split(":")[1],
-            (type === "database") ? key.split(":")[0] : parent,
+            (type === "table") ? this.temp[row[2]] : ((type === "database") ? "" : row[1]),
+            (type === "database") ? row[0] : parent,
             (type === "column") ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed
         ));
     }
 
     async getTopLevel(): Promise<DatabaseItem[]> {
-        const command = getDatabases();
-        let result = await this.execute(command);
+        let result = await this.remoteCommand.getDatabases();
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"], "database", ""));
         } else {
@@ -37,14 +34,14 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
         let command: string;
         let key: string;
         let type: string;
+        let result: Json;
         if (databaseItem.type === "database") {
             type = "table";
-            command = getTables(databaseItem.name);
+            result = await this.remoteCommand.getTables(databaseItem.name);
         } else {
             type = "column";
-            command = getSchema(databaseItem.getParent(), databaseItem.name);
+            result = await this.remoteCommand.getSchema(databaseItem.getParent(), databaseItem.name);
         }
-        let result = await this.execute(command);
         if (result["status"] === "success") {
             const objs = this.parse(result["data"], type, databaseItem.getParent());
             return Promise.resolve(objs);

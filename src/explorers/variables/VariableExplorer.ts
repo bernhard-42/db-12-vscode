@@ -8,7 +8,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
     language = "";
 
     constructor() {
-        super((msg: string): Variable => new Variable(msg));
+        super(["python"], (msg: string): Variable => new Variable(msg));
     }
 
     parse(jsonData: string, dataframe: boolean) {

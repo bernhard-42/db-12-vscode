@@ -9,7 +9,7 @@ export abstract class BaseExplorer<T> implements vscode.TreeDataProvider<T>  {
     hasContext = false;
     remoteCommand: RemoteCommand = <RemoteCommand>{};
 
-    constructor(private error: (msg: string) => T) { }
+    constructor(private languages: string[], private error: (msg: string) => T) { }
 
     getTreeItem(item: T): vscode.TreeItem {
         return item;
@@ -40,7 +40,7 @@ export abstract class BaseExplorer<T> implements vscode.TreeDataProvider<T>  {
             return;
         }
         let context = executionContexts.getContext(filename);
-        if (context && context.language === "python") {
+        if (context && this.languages.includes(context.language)) {
             this.remoteCommand = context.remoteCommand;
             this.hasContext = true;
         } else {
