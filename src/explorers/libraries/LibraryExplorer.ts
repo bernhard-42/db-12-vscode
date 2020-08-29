@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../../rest/RemoteCommand';
 import { pipList, pythonVersion, pipInstall } from '../../system/shell';
+import { TerminalExecute } from '../../system/terminal';
+
 import * as output from '../../databricks/Output';
 
 import { Library } from './Library';
@@ -91,14 +93,18 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
         return Promise.resolve(libs.sort((a, b) => a.name.localeCompare(b.name)));
     }
 
-    install(library?: Library) {
-        output.write(`Installing ${library?.name} ${library?.version}`);
+    async install(library?: Library) {
+
         let pythonConfig = vscode.workspace.getConfiguration("python");
         let python = pythonConfig.get("pythonPath");
         if (python && library) {
-            let result = pipInstall(python as string, library.name, library.version);
-            output.write(result);
-            this.refresh();
+            if ((await vscode.window.showQuickPick(["yes", "no"], {
+                placeHolder: `Install library ${library.name} in the local environment with pip?`
+            }) || "") === "yes") {
+                let terminal = new TerminalExecute("Installing... ");
+                await terminal.execute(`${python} -m pip install --upgrade ${library.name}==${library.version}`);
+                this.refresh();
+            }
         }
     }
 
