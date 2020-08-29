@@ -6,6 +6,7 @@ import os from 'os';
 import path from 'path';
 import ini from 'ini';
 import username from 'username';
+import Table from 'cli-table';
 
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { Clusters } from '../rest/Clusters';
@@ -269,6 +270,7 @@ export class DatabricksRun {
         context.executionId++;
         const isPython = (context.language === "python");
         const isR = (context.language === "r");
+        const isSQL = (context.language === "sql");
 
         let code = "";
         let selection = editor.selection;
@@ -295,18 +297,42 @@ export class DatabricksRun {
         if (result["status"] === "success") {
             var data = result["data"];
 
-            // strip R output HTML tags
             if (isR) {
+                // strip R output HTML tags
                 data = data.replace(/<pre[^>]+>/g, "").replace(/<\/pre>/g, "");
-            }
-            data.split("\n").forEach((line: string) => {
-                if (isPython && (line.search(/^Out\[\d+\]:\s/) === 0)) {
-                    // "In" and "Out" numbers are out of sync because of the variable explorer execution
-                    // So patch "Out" number to match "In" number
-                    line = line.replace(/^Out\[\d+\]:\s/, outPrompt);
+                data.forEach((line: string) => {
+                    output.write(line);
+                });
+            } else if (isPython) {
+                if (result["schema"]) {
+                    let columns = result["schema"].map((col: Json) => col.name);
+                    const table = new Table({ head: columns });
+                    data.forEach((line: string[]) => {
+                        table.push(line);
+                    });
+                    table.toString().split("\n").forEach(line => output.write(line));
+                } else {
+                    data.split("\n").forEach((line: string) => {
+                        if (line.search(/^Out\[\d+\]:\s/) === 0) {
+                            // "In" and "Out" numbers are out of sync because of the variable explorer execution
+                            // So patch "Out" number to match "In" number
+                            line = line.replace(/^Out\[\d+\]:\s/, outPrompt);
+                        }
+                        output.write(line);
+                    });
                 }
-                output.write(line);
-            });
+            } else if (isSQL) {
+                let columns = result["schema"].map((col: Json) => col.name);
+                const table = new Table({ head: columns });
+                data.forEach((line: string[]) => {
+                    table.push(line);
+                });
+                table.toString().split("\n").forEach(line => output.write(line));
+            } else {
+                data.split("\n").forEach((line: string) => {
+                    output.write(line);
+                });
+            }
         } else {
             output.write("Error: " + result["data"]);
         }

@@ -94,8 +94,19 @@ export class RemoteCommand {
                     }
                     return Promise.resolve({ "status": "warning", "data": "Command cancelled" });
                 } else {
-                    const result = response["data"]["results"]["data"] as string;
-                    return Promise.resolve({ "status": "success", "data": result });
+                    if (response["data"]["results"]["schema"]) {
+                        return Promise.resolve({
+                            "status": "success",
+                            "data": response["data"]["results"]["data"],
+                            "schema": response["data"]["results"]["schema"],
+                        });
+
+                    } else {
+                        return Promise.resolve({
+                            "status": "success",
+                            "data": response["data"]["results"]["data"]
+                        });
+                    }
                 }
             } else if (response["data"].status === "Cancelled") {
                 return Promise.resolve({ "status": "error", "data": "Command execution cancelled" });
