@@ -329,9 +329,12 @@ export class DatabricksRun {
                 let columns = result["schema"].map((col: Json) => col.name);
                 const table = new Table({ head: columns });
                 data.forEach((line: string[]) => {
-                    table.push(line);
+                    // eslint-disable-next-line eqeqeq
+                    table.push(line.map(col => (col == null) ? "" : col));
                 });
-                table.toString().split(/\r?\n/).forEach(line => output.write(line));
+                let tableStr = table.toString();
+                let tableLines = tableStr.split(/\r?\n/);
+                tableLines.forEach(line => output.write(line));
             } else {
                 data.split(/\r?\n/).forEach((line: string) => {
                     output.write(line);
