@@ -147,25 +147,8 @@
 			}
 		],
 		"configuration": {
-			"title": "DB-12",
-			"properties": {
-				"databricks-run.remote-work-folder": {
-					"type": "string",
-					"description": "Remote dbfs working folder, supports $USER to be replaces with username"
-				},
-				"databricks-run.python-lib-folder": {
-					"type": "string",
-					"description": "Local library folder"
-				},
-				"databricks-run.profile": {
-					"type": "string",
-					"description": "Databricks CLI profile"
-				},
-				"databricks-run.cluster": {
-					"type": "string",
-					"description": "Databricks cluster"
-				}
-			}
+			"title": "Databricks Run",
+			"properties": {}
 		},
 		"taskDefinitions": [{
 			"type": "Databricks Run",

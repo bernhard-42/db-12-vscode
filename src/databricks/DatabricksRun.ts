@@ -63,6 +63,7 @@ export class DatabricksRun {
         }
 
         this.databricksConfig = new DatabricksConfig();
+        this.databricksConfig.init();
 
         let profile = "";
         let cluster = "";
@@ -84,7 +85,7 @@ export class DatabricksRun {
                 value: `dbfs:/home/${name}`
             }) || "";
             if (remoteFolder) {
-                this.databricksConfig.setRemoteFolder(remoteFolder, true);
+                this.databricksConfig.setRemoteFolder(remoteFolder);
             }
             output.info(`Using '${remoteFolder}' as remote work folder`);
         }
@@ -127,7 +128,7 @@ export class DatabricksRun {
                 vscode.window.showErrorMessage(`Selection of profile cancelled`);
                 return;
             } else {
-                this.databricksConfig.setProfile(profile, true);
+                this.databricksConfig.setProfile(profile);
             }
         }
 
@@ -160,7 +161,7 @@ export class DatabricksRun {
                 return;
             } else {
                 [cluster, clusterName] = clusterList[clusterInfo];
-                this.databricksConfig.setCluster(clusterInfo, true);
+                this.databricksConfig.setCluster(clusterInfo);
             }
         }
 
@@ -227,7 +228,7 @@ export class DatabricksRun {
                         return;
                     }
                 }
-                this.databricksConfig.setPythonLibFolder(libFolder, false);
+                this.databricksConfig.setPythonLibFolder(libFolder);
             }
 
             // Add Build wheel task
@@ -290,7 +291,7 @@ export class DatabricksRun {
             outPrompt = `Out[${context.executionId}]: `;
             output.write(inPrompt);
         }
-        code.split("\n").forEach((line) => {
+        code.split(/\r?\n/).forEach((line) => {
             output.write(line);
         });
         output.thinBorder();
@@ -313,9 +314,9 @@ export class DatabricksRun {
                     data.forEach((line: string[]) => {
                         table.push(line);
                     });
-                    table.toString().split("\n").forEach(line => output.write(line));
+                    table.toString().split(/\r?\n/).forEach(line => output.write(line));
                 } else {
-                    data.split("\n").forEach((line: string) => {
+                    data.split(/\r?\n/).forEach((line: string) => {
                         if (line.search(/^Out\[\d+\]:\s/) === 0) {
                             // "In" and "Out" numbers are out of sync because of the variable explorer execution
                             // So patch "Out" number to match "In" number
@@ -330,9 +331,9 @@ export class DatabricksRun {
                 data.forEach((line: string[]) => {
                     table.push(line);
                 });
-                table.toString().split("\n").forEach(line => output.write(line));
+                table.toString().split(/\r?\n/).forEach(line => output.write(line));
             } else {
-                data.split("\n").forEach((line: string) => {
+                data.split(/\r?\n/).forEach((line: string) => {
                     output.write(line);
                 });
             }

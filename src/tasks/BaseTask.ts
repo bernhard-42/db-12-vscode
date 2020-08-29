@@ -7,7 +7,7 @@ import { getWorkspaceRoot } from '../databricks/utils';
 
 export class BaseTask implements vscode.Pseudoterminal {
     databricksConfig: DatabricksConfig;
-    workspaceRoot = "";
+    workspaceRoot: string | undefined;
     buildFolder = "";
     distFolder = "";
     libFolder = "";
@@ -21,13 +21,17 @@ export class BaseTask implements vscode.Pseudoterminal {
     onDidClose?: vscode.Event<void> = this.closeEmitter.event;
 
     constructor() {
-        this.workspaceRoot = getWorkspaceRoot() || "";
-        this.buildFolder = path.join(this.workspaceRoot, "build");
-        this.distFolder = path.join(this.workspaceRoot, "dist");
+        this.workspaceRoot = getWorkspaceRoot();
         this.databricksConfig = new DatabricksConfig();
-        this.libFolder = this.databricksConfig.getPythonLibFolder();
-
-        this.ready = (this.workspaceRoot !== "") && (this.libFolder !== "");
+        this.databricksConfig.init();
+        if (this.workspaceRoot) {
+            this.buildFolder = path.join(this.workspaceRoot, "build");
+            this.distFolder = path.join(this.workspaceRoot, "dist");
+            this.libFolder = this.databricksConfig.getPythonLibFolder();
+            this.ready = (this.libFolder !== "");
+        } else {
+            this.ready = false;
+        }
     }
 
     open(initialDimensions: vscode.TerminalDimensions | undefined): void {

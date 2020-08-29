@@ -7,6 +7,8 @@ import ini from 'ini';
 import path from 'path';
 
 import * as output from './Output';
+import { getWorkspaceRoot } from './utils';
+
 interface ConfigObj {
     [key: string]: any;
 }
@@ -14,28 +16,55 @@ interface ConfigObj {
 export class DatabricksConfig {
     workspaceFolder: string | undefined;
     config = <ConfigObj>{};
+    gitignore = ".gitignore";
+    configFile = ".databricks-run.json";
 
-    private getConfig(key: string) {
-        const workspaceConfig = vscode.workspace.getConfiguration("databricks-run");
-        return workspaceConfig.get(key) as string;
+    constructor() {
+        this.workspaceFolder = getWorkspaceRoot();
     }
 
-    private setConfig(key: string, value: any, user: boolean) {
-        const target = (user) ? ConfigurationTarget.Global : ConfigurationTarget.Workspace;
-        const workspaceConfig = vscode.workspace.getConfiguration("databricks-run");
-        workspaceConfig.update(key, value, target).then(
-            () => {
-                if (target === ConfigurationTarget.Global) {
-                    output.info(`Added ${key} to user config`);
-                } else {
-                    output.info(`Added ${key} to workspace config (.vscode/settings.json)`);
-                }
-            },
-            (error) => {
-                output.info(error);
+    init() {
+        if (this.workspaceFolder) {
+            const fqConfigFile = path.join(this.workspaceFolder, this.configFile);
+            const fqGitignore = path.join(this.workspaceFolder, this.gitignore);
+            if (fs.existsSync(fqConfigFile)) {
+                this.config = this.load();
+            } else {
+                this.config = {};
+                this.save();
             }
-        );
-        return value;
+            if (fs.existsSync(fqGitignore)) {
+                if (!fs.readFileSync(fqGitignore).toString().split(/\r?\n/).includes(this.configFile)) {
+                    fs.appendFileSync(fqGitignore, os.EOL + this.configFile);
+                }
+            } else {
+                fs.writeFileSync(fqGitignore, this.configFile + os.EOL);
+            }
+        }
+    }
+
+    load(): ConfigObj {
+        if (this.workspaceFolder) {
+            const fqConfigFile = path.join(this.workspaceFolder, this.configFile);
+            return JSON.parse(fs.readFileSync(fqConfigFile).toString());
+        }
+        return {};
+    }
+
+    save() {
+        if (this.workspaceFolder) {
+            const fqConfigFile = path.join(this.workspaceFolder, this.configFile);
+            fs.writeFileSync(fqConfigFile, JSON.stringify(this.config, null, 2));
+        }
+    }
+
+    private getConfig(key: string) {
+        return this.config[key];
+    }
+
+    private setConfig(key: string, value: any) {
+        this.config[key] = value;
+        this.save();
     }
 
     getRemoteFolder() {
@@ -50,17 +79,17 @@ export class DatabricksConfig {
     getCluster() {
         return this.getConfig("cluster");
     }
-    setRemoteFolder(value: string, user: boolean) {
-        this.setConfig("remote-work-folder", value, user);
+    setRemoteFolder(value: string) {
+        this.setConfig("remote-work-folder", value);
     }
-    setPythonLibFolder(value: string, user: boolean) {
-        this.setConfig("python-lib-folder", value, user);
+    setPythonLibFolder(value: string) {
+        this.setConfig("python-lib-folder", value);
     }
-    setProfile(value: string, user: boolean) {
-        this.setConfig("profile", value, user);
+    setProfile(value: string) {
+        this.setConfig("profile", value);
     }
-    setCluster(value: string, user: boolean) {
-        this.setConfig("cluster", value, user);
+    setCluster(value: string) {
+        this.setConfig("cluster", value);
     }
 
     getClusterConfig() {

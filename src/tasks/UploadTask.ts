@@ -7,22 +7,24 @@ import { BaseTask } from './BaseTask';
 import * as output from '../databricks/Output';
 
 export class UploadTask extends BaseTask {
-    localFile: string;
-    remoteFile: string;
-    remoteFolder: string;
+    localFile = "";
+    remoteFile = "";
+    remoteFolder = "";
 
     constructor(private type: string) {
         super();
         this.remoteFolder = this.databricksConfig.getRemoteFolder();
-        if (type === "zip") {
-            this.localFile = path.join(this.buildFolder, `${this.libFolder}.zip`);
-            this.remoteFile = `${this.remoteFolder}/${this.libFolder}.zip`; // force unix separator
-        } else {
-            this.localFile = glob.sync(path.join(this.distFolder, '*.whl'))
-                .map(name => ({ name, time: fs.statSync(name).ctime.getTime() }))
-                .sort((a, b) => b.time - a.time)[0].name;
-            let wheel = path.basename(this.localFile);
-            this.remoteFile = `${this.remoteFolder}/${wheel}`; // force unix separator
+        if (this.remoteFolder) {
+            if (type === "zip") {
+                this.localFile = path.join(this.buildFolder, `${this.libFolder}.zip`);
+                this.remoteFile = `${this.remoteFolder}/${this.libFolder}.zip`; // force unix separator
+            } else {
+                this.localFile = glob.sync(path.join(this.distFolder, '*.whl'))
+                    .map(name => ({ name, time: fs.statSync(name).ctime.getTime() }))
+                    .sort((a, b) => b.time - a.time)[0].name;
+                let wheel = path.basename(this.localFile);
+                this.remoteFile = `${this.remoteFolder}/${wheel}`; // force unix separator
+            }
         }
     }
 

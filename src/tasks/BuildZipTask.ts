@@ -11,7 +11,7 @@ export class BuildZipTask extends BaseTask {
     }
     protected async doBuild(): Promise<void> {
         return new Promise<void>(async (resolve) => {
-            if (this.prepare()) {
+            if (this.workspaceRoot && this.prepare()) {
                 this.writeEmitter.fire(`Starting build ${this.workspaceRoot}/${this.libFolder}...\r\n`);
 
                 const zipFile = path.join(this.buildFolder, `${this.libFolder}.zip`);

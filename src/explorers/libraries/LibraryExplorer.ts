@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { RemoteCommand } from '../../rest/RemoteCommand';
 import { pipList, pythonVersion, pipInstall } from '../../system/shell';
 import { TerminalExecute } from '../../system/terminal';
+import { EOL } from 'os';
 
 import * as output from '../../databricks/Output';
 
@@ -155,7 +156,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
 
         vscode.workspace.openTextDocument({
             language: "yaml",
-            content: envFile.join("\n"),
+            content: envFile.join(EOL),
         }).then(document => {
             vscode.window.showTextDocument(document);
         });

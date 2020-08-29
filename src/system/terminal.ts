@@ -34,7 +34,7 @@ export class TerminalExecute {
     }
 
     print(msg: string) {
-        for (let line of msg.split("\n")) {
+        for (let line of msg.split(/\r?\n/)) {
             this.writeEmitter.fire('\x1b[D');
             this.writeEmitter.fire(line + "\r\n");
         }
