@@ -65,6 +65,14 @@
 				}
 			},
 			{
+				"command": "databricks-run.paste-from-dataframe",
+				"title": "Paste colum of dataframe",
+				"icon": {
+					"light": "resources/light/open-file.svg",
+					"dark": "resources/dark/open-file.svg"
+				}
+			},
+			{
 				"command": "databricks-run.refresh-cluster-attributes",
 				"title": "Refresh Remote Cluster Attributes",
 				"icon": {
@@ -78,6 +86,14 @@
 				"icon": {
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.paste-from-database",
+				"title": "Paste database/table/colum name of database",
+				"icon": {
+					"light": "resources/light/open-file.svg",
+					"dark": "resources/dark/open-file.svg"
 				}
 			},
 			{
@@ -232,10 +248,21 @@
 				}
 			],
 			"view/item/context": [{
-				"command": "databricks-run.install-library",
-				"when": "view == databricksLibraryExplorer && viewItem == library",
-				"group": "inline"
-			}]
+					"command": "databricks-run.install-library",
+					"when": "view == databricksLibraryExplorer && viewItem == library",
+					"group": "inline"
+				},
+				{
+					"command": "databricks-run.paste-from-dataframe",
+					"when": "view == databricksVariableExplorer && viewItem == dataframe",
+					"group": "inline"
+				},
+				{
+					"command": "databricks-run.paste-from-database",
+					"when": "view == databricksDatabaseExplorer",
+					"group": "inline"
+				}
+			]
 		}
 	},
 	"scripts": {

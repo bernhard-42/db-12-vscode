@@ -67,7 +67,15 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
+		"databricks-run.paste-from-dataframe", (dataframe) => databricksRun.pasteFromDataframe(dataframe)
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.refresh-databases', () => databricksRun.refreshDatabases()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.paste-from-database', (database) => databricksRun.pasteFromDatabase(database)
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(

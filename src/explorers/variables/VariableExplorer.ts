@@ -11,13 +11,14 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
         super((msg: string): Variable => new Variable(msg));
     }
 
-    parse(jsonData: string) {
+    parse(jsonData: string, dataframe: boolean) {
         var data = JSON.parse(jsonData);
         return Object.keys((data)).map(key => new Variable(
             key,
             data[key]["type"],
             data[key]["value"],
             data[key]["parent"],
+            dataframe,
             (!data[key]["leaf"]) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
         ));
     }
@@ -25,7 +26,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
     async getTopLevel(): Promise<Variable[]> {
         let result = await this.execute(getVariables(), variablesCode());
         if (result["status"] === "success") {
-            return Promise.resolve(this.parse(result["data"]));
+            return Promise.resolve(this.parse(result["data"], false));
         } else {
             return Promise.resolve([new Variable("missing")]);
         }
@@ -33,12 +34,19 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
 
     async getNextLevel(variable: Variable): Promise<Variable[]> {
         var pythonVar = (variable.parent === "") ? variable.name : `${variable.parent}.${variable.name}`;
+        const dataframe =
+            variable.type === "pyspark.sql.dataframe.DataFrame" ||
+            variable.type === "pandas.core.frame.Dataframe";
         let result = await this.execute(getAttributes(pythonVar), variablesCode());
         if (result["status"] === "success") {
-            return Promise.resolve(this.parse(result["data"]));
+            return Promise.resolve(this.parse(result["data"], dataframe));
         } else {
             return Promise.resolve([new Variable("Missing")]);
         }
+    }
+
+    getSnippet(variable: Variable) {
+        return variable.name;
     }
 }
 

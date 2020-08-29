@@ -52,6 +52,10 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
             return Promise.resolve([new DatabaseItem("Missing")]);
         }
     }
+
+    getSnippet(database: DatabaseItem) {
+        return database.name;
+    }
 }
 
 export function createDatabaseExplorer(remoteCommand: RemoteCommand) {

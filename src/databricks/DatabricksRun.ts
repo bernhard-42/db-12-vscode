@@ -25,6 +25,8 @@ import { createBuildWheelTasks } from '../tasks/BuildWheelTask';
 import { executionContexts } from './ExecutionContext';
 import { DatabricksConfig } from './Config';
 import * as output from './Output';
+import { DatabaseItem } from '../explorers/databases/Database';
+import { Variable } from '../explorers/variables/Variable';
 
 export let resourcesFolder = "";
 
@@ -444,6 +446,13 @@ export class DatabricksRun {
             this.variableExplorer.refresh(filename);
         }
     }
+    pasteFromDataframe(variable: Variable) {
+        if (this.variableExplorer) {
+            let snippet = new vscode.SnippetString(this.variableExplorer.getSnippet(variable));
+            const editor = getEditor();
+            editor?.insertSnippet(snippet);
+        }
+    }
 
     refreshDatabases(filename?: string) {
         if (this.databaseExplorer) {
@@ -451,6 +460,13 @@ export class DatabricksRun {
         }
     }
 
+    pasteFromDatabase(database: DatabaseItem) {
+        if (this.databaseExplorer) {
+            let snippet = new vscode.SnippetString(this.databaseExplorer.getSnippet(database));
+            const editor = getEditor();
+            editor?.insertSnippet(snippet);
+        }
+    }
     refreshLibraries(filename?: string) {
         if (this.libraryExplorer) {
             this.libraryExplorer.refresh(filename);

@@ -22,4 +22,5 @@ export class DatabaseItem extends vscode.TreeItem {
     getParent() {
         return this.parent || "";
     }
+
 }
