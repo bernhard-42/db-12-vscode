@@ -90,6 +90,7 @@ export class RemoteCommand {
                 if (resultType === "error") {
                     const out = response["data"]["results"]["cause"];
                     if (out.indexOf("CommandCancelledException") === -1) {
+                        output.info(out);
                         return Promise.resolve({ "status": "error", "data": out });
                     }
                     return Promise.resolve({ "status": "warning", "data": "Command cancelled" });
