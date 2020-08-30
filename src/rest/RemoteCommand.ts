@@ -86,7 +86,7 @@ export class RemoteCommand {
             let response = await poll(uri, this.token, condition, 100) as Json;
 
             if (response["data"].status === "Finished") {
-                let resultType = (response["data"] as Json)["results"]["resultType"];
+                let resultType = response["data"]["results"]["resultType"];
                 if (resultType === "error") {
                     const out = response["data"]["results"]["cause"];
                     if (out.indexOf("CommandCancelledException") === -1) {
@@ -94,17 +94,18 @@ export class RemoteCommand {
                     }
                     return Promise.resolve({ "status": "warning", "data": "Command cancelled" });
                 } else {
-                    if (response["data"]["results"]["schema"]) {
+                    if (resultType === "table") {
                         return Promise.resolve({
                             "status": "success",
                             "data": response["data"]["results"]["data"],
                             "schema": response["data"]["results"]["schema"],
+                            "type": resultType
                         });
-
                     } else {
                         return Promise.resolve({
                             "status": "success",
-                            "data": response["data"]["results"]["data"]
+                            "data": response["data"]["results"]["data"],
+                            "type": resultType
                         });
                     }
                 }
