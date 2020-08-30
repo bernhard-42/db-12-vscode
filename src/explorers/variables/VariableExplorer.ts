@@ -24,7 +24,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
     }
 
     async getTopLevel(): Promise<Variable[]> {
-        let result = await this.execute(getVariables(), variablesCode());
+        let result = await this.execute(getVariables(), variablesCode(20));
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"], false));
         } else {
@@ -37,7 +37,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
         const dataframe =
             variable.type === "pyspark.sql.dataframe.DataFrame" ||
             variable.type === "pandas.core.frame.Dataframe";
-        let result = await this.execute(getAttributes(pythonVar), variablesCode());
+        let result = await this.execute(getAttributes(pythonVar), variablesCode(20));
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"], dataframe));
         } else {
