@@ -46,7 +46,7 @@ export abstract class BaseExplorer<T> implements vscode.TreeDataProvider<T>  {
         } else {
             this.hasContext = false;
         }
-        this._onDidChangeTreeData.fire();
+        this._onDidChangeTreeData.fire(undefined);
     }
 
     async execute(command: string, code?: string): Promise<Json> {

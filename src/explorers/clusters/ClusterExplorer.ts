@@ -4,6 +4,7 @@ import * as output from '../../databricks/Output';
 import { Json } from '../../rest/utils';
 import { ClusterAttribute } from './ClusterAttribute';
 import { BaseExplorer } from '../BaseExplorer';
+import { isNullOrUndefined } from 'util';
 
 export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     clusterApi = <Clusters>{};
@@ -50,7 +51,7 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     }
 
     refresh(): void {
-        this._onDidChangeTreeData.fire();
+        this._onDidChangeTreeData.fire(undefined);
     }
 }
 
