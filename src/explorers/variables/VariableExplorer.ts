@@ -16,7 +16,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
         return Object.keys((data)).map(key => new Variable(
             key,
             data[key]["type"],
-            data[key]["value"],
+            data[key]["value"].replace("\n", "\\n"),
             data[key]["parent"],
             dataframe,
             (!data[key]["leaf"]) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
@@ -24,7 +24,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
     }
 
     async getTopLevel(): Promise<Variable[]> {
-        let result = await this.execute(getVariables(), variablesCode(20));
+        let result = await this.execute(getVariables(), variablesCode(20, 100));
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"], false));
         } else {
@@ -37,7 +37,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
         const dataframe =
             variable.type === "pyspark.sql.dataframe.DataFrame" ||
             variable.type === "pandas.core.frame.Dataframe";
-        let result = await this.execute(getAttributes(pythonVar), variablesCode(20));
+        let result = await this.execute(getAttributes(pythonVar), variablesCode(20, 100));
         if (result["status"] === "success") {
             return Promise.resolve(this.parse(result["data"], dataframe));
         } else {

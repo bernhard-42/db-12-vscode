@@ -1,4 +1,4 @@
-export function variablesCode(maxlen: number) {
+export function variablesCode(maxlen: number, maxstr: 100) {
     return `
     import inspect
     import itertools
@@ -42,7 +42,11 @@ export function variablesCode(maxlen: number) {
             elif isinstance(var, (pd.DataFrame)):
                 return "(%dx%d elements)" % var.shape
             elif (type(var).__module__ == "builtins" or np.isscalar(var)) and not isinstance(var, (dict)):
-                return str(var)
+                result = str(var)
+                if len(result) > ${maxstr}:
+                    return result[:${maxstr}] + "..."
+                else:
+                    return result
             else:
                 return ""
             
