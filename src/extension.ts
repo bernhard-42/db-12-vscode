@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { DatabricksRun } from './databricks/DatabricksRun';
 import { DatabricksConfig } from './databricks/Config';
 import { DatabricksRunTaskProvider } from './tasks/DatabricksRunTaskProvider';
+import { DatabricksRunPanel } from './viewers/DatabricksRunPanel';
 
 import * as output from './databricks/Output';
 
@@ -11,13 +12,11 @@ let databricksRun: DatabricksRun;
 
 export function activate(context: vscode.ExtensionContext) {
 
-	const execLocation = context.asAbsolutePath("resources");
-
 	let statusBar: vscode.StatusBarItem;
 	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	statusBar.command = 'databricks-run.set-connection-status';
 
-	databricksRun = new DatabricksRun(execLocation, statusBar);
+	databricksRun = new DatabricksRun(context, statusBar);
 
 	/*
 	 *	Commands
@@ -81,6 +80,16 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.set-connection-status', () => databricksRun.updateStatus()
 	));
+
+	/*
+	 *	Register Web view
+	 */
+
+	vscode.window.registerWebviewPanelSerializer(DatabricksRunPanel.viewType, {
+		async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+			DatabricksRunPanel.revive(webviewPanel, context.extensionUri);
+		}
+	});
 
 	/*
 	 *	Event handlers

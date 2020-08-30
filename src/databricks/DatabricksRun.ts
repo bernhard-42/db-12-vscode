@@ -17,6 +17,7 @@ import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/lib
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/clusters/ClusterExplorer';
 import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/databases/DatabaseExplorer';
 import { Library } from '../explorers/libraries/Library';
+import { DatabricksRunPanel } from '../viewers/DatabricksRunPanel';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
 
@@ -44,8 +45,8 @@ export class DatabricksRun {
     private clusterExplorer: ClusterExplorerProvider | undefined;
     private lastFilename = "";
 
-    constructor(resources: string, private statusBar: vscode.StatusBarItem) {
-        resourcesFolder = resources;
+    constructor(private context: vscode.ExtensionContext, private statusBar: vscode.StatusBarItem) {
+        resourcesFolder = context.asAbsolutePath("resources");
         this.workspaceRoot = getWorkspaceRoot() || "";
     }
 
@@ -296,47 +297,49 @@ export class DatabricksRun {
         });
         output.thinBorder();
 
+        let renderTable = (result: Json) => {
+            let columns = result["schema"].map((col: Json) => col.name);
+            const table = new Table({ head: columns });
+            result["data"].forEach((line: string[]) => {
+                // eslint-disable-next-line eqeqeq
+                table.push(line.map(col => (col == null) ? "null" : col));
+            });
+            let tableStr = table.toString();
+            let tableLines = tableStr.split(/\r?\n/);
+            tableLines.forEach(line => output.write(line));
+        };
+
+        let renderHtml = (div: string) => {
+            DatabricksRunPanel.createOrShow(this.context.extensionUri);
+            DatabricksRunPanel.currentPanel?.update(div);
+        };
+
         // Send code as a command
         var result = await context.remoteCommand.execute(code) as Json;
         if (result["status"] === "success") {
             var data = result["data"];
 
-            if (isR) {
+            if (result["type"] === "table") {
+                renderTable(result);
+            } else if (data.startsWith("<div>")) {
+                renderHtml(data);
+            } else if (isR) {
                 // strip R output HTML tags
                 data = data.replace(/<pre[^>]+>/g, "").replace(/<\/pre>/g, "");
                 data.forEach((line: string) => {
                     output.write(line);
                 });
             } else if (isPython) {
-                if (result["schema"]) {
-                    let columns = result["schema"].map((col: Json) => col.name);
-                    const table = new Table({ head: columns });
-                    data.forEach((line: string[]) => {
-                        table.push(line);
-                    });
-                    table.toString().split(/\r?\n/).forEach(line => output.write(line));
-                } else {
-                    data.split(/\r?\n/).forEach((line: string) => {
-                        if (line.search(/^Out\[\d+\]:\s/) === 0) {
-                            // "In" and "Out" numbers are out of sync because of the variable explorer execution
-                            // So patch "Out" number to match "In" number
-                            line = line.replace(/^Out\[\d+\]:\s/, outPrompt);
-                        }
-                        output.write(line);
-                    });
-                }
-            } else if (isSQL) {
-                let columns = result["schema"].map((col: Json) => col.name);
-                const table = new Table({ head: columns });
-                data.forEach((line: string[]) => {
-                    // eslint-disable-next-line eqeqeq
-                    table.push(line.map(col => (col == null) ? "" : col));
+                data.split("\n").forEach((line: string) => {
+                    if (line.search(/^Out\[\d+\]:\s/) === 0) {
+                        // "In" and "Out" numbers are out of sync because of the variable explorer execution
+                        // So patch "Out" number to match "In" number
+                        line = line.replace(/^Out\[\d+\]:\s/, outPrompt);
+                    }
+                    output.write(line);
                 });
-                let tableStr = table.toString();
-                let tableLines = tableStr.split(/\r?\n/);
-                tableLines.forEach(line => output.write(line));
             } else {
-                data.split(/\r?\n/).forEach((line: string) => {
+                data.split("\n").forEach((line: string) => {
                     output.write(line);
                 });
             }
@@ -502,7 +505,10 @@ export class DatabricksRun {
         }
     }
 
+    openHtmlViewer() {
+
+    }
+
     dispose() {
-        // this.unregisterFileWatcher();
     }
 }
