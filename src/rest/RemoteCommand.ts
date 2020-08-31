@@ -1,47 +1,43 @@
 import url from 'url';
-import axios from 'axios';
-import { Json, headers, poll } from './utils';
+import { Json, Rest } from './Rest';
 import * as output from '../databricks/Output';
 
-export class RemoteCommand {
-    profile: string = "";
-    host: string = "";
-    token: string = "";
-    language: string = "";
-    cluster: string = "";
+export class RemoteCommand extends Rest {
     commandId: string = "";
     contextId: string = "";
 
-    async createContext(profile: string, host: string, token: string, language: string, cluster: string): Promise<Json> {
-        this.profile = profile;
-        this.host = host;
-        this.token = token;
-        this.language = language;
-        this.cluster = cluster;
+    constructor(
+        protected host: string, protected token: string,
+        private profile: string, private language: string, private cluster: string
+    ) {
+        super(host, token);
+    }
+
+    async createContext(): Promise<Json> {
 
         try {
-            const uri = url.resolve(host, 'api/1.2/contexts/create');
+            const uri = url.resolve(this.host, 'api/1.2/contexts/create');
             const data = {
-                "language": language,
-                "clusterId": cluster
+                "language": this.language,
+                "clusterId": this.cluster
             };
-            const response = await axios.post(uri, data, headers(token));
+            const response = await this.post(uri, data);
             this.contextId = (response as Json)["data"].id;
             output.info(`Remote Context id: ${this.contextId}`);
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error.response.data.error });
+            return this.failure(error.response.data.error);
         }
 
         // Poll context until it is created
         try {
-            const path = `api/1.2/contexts/status?clusterId=${cluster}&contextId=${this.contextId}`;
+            const path = `api/1.2/contexts/status?clusterId=${this.cluster}&contextId=${this.contextId}`;
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => value === "PENDING";
-            let response = await poll(uri, token, condition, 1000);
+            await this.poll(uri, this.token, condition, 1000);
             var msg = `Execution Context created for profile '${this.profile}' and cluster '${this.cluster}'`;
-            return Promise.resolve({ "status": "success", "data": msg });
+            return this.success(msg);
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error.response.data.error });
+            return this.failure(error.response.data.error);
         }
     }
 
@@ -54,11 +50,11 @@ export class RemoteCommand {
                 "contextId": this.contextId
             };
             output.info("success");
-            await axios.post(uri, data, headers(this.token));
-            return Promise.resolve({ "status": "success", "data": "Execution context stopped" });
+            await this.post(uri, data);
+            return this.success("Execution context stopped");
         } catch (error) {
             output.info("failed");
-            return Promise.resolve({ "status": "error", "data": error.response.data.error });
+            return this.failure(error.response.data.error);
         }
     }
 
@@ -71,10 +67,10 @@ export class RemoteCommand {
                 "contextId": this.contextId,
                 "command": code
             };
-            const response = await axios.post(uri, data, headers(this.token));
+            const response = await this.post(uri, data);
             this.commandId = (response as Json)["data"].id;
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error.response.data.error });
+            return this.failure(error.response.data.error);
         }
 
         // Poll command until it is finished
@@ -83,7 +79,7 @@ export class RemoteCommand {
             const uri = url.resolve(this.host, path);
             const condition = (value: string) => ["Queued", "Running", "Cancelling"].indexOf(value) !== -1;
 
-            let response = await poll(uri, this.token, condition, 100) as Json;
+            let response = await this.poll(uri, this.token, condition, 100) as Json;
 
             if (response["data"].status === "Finished") {
                 let resultType = response["data"]["results"]["resultType"];
@@ -93,30 +89,32 @@ export class RemoteCommand {
                         output.info(out);
                         return Promise.resolve({ "status": "error", "data": out });
                     }
-                    return Promise.resolve({ "status": "warning", "data": "Command cancelled" });
+                    return this.warning("Command cancelled");
                 } else {
                     if (resultType === "table") {
-                        return Promise.resolve({
-                            "status": "success",
-                            "data": response["data"]["results"]["data"],
-                            "schema": response["data"]["results"]["schema"],
-                            "type": resultType
+                        return this.success({
+                            "result": {
+                                "data": response["data"]["results"]["data"],
+                                "schema": response["data"]["results"]["schema"],
+                                "type": resultType
+                            }
                         });
                     } else {
-                        return Promise.resolve({
-                            "status": "success",
-                            "data": response["data"]["results"]["data"],
-                            "type": resultType
+                        return this.success({
+                            "result": {
+                                "data": response["data"]["results"]["data"],
+                                "type": resultType
+                            }
                         });
                     }
                 }
             } else if (response["data"].status === "Cancelled") {
-                return Promise.resolve({ "status": "error", "data": "Command execution cancelled" });
+                return this.failure("Command execution cancelled");
             } else {
-                return Promise.resolve({ "status": "error", "data": "Command execution failed" });
+                return this.failure("Command execution failed");
             }
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error.response.data.error });
+            return this.failure(error.response.data.error);
         }
     }
 
@@ -128,10 +126,10 @@ export class RemoteCommand {
                 "contextId": this.contextId,
                 "commandId": this.commandId
             };
-            await axios.post(uri, data, headers(this.token));
-            return Promise.resolve({ "status": "success", "data": "Command cancelled" });
+            await this.post(uri, data);
+            return this.success("Command cancelled");
         } catch (error) {
-            return Promise.resolve({ "status": "error", "data": error.response.data.error });
+            return this.failure(error.response.data.error);
         }
     }
 
@@ -148,8 +146,7 @@ export class RemoteCommand {
                 command = `display(spark.sql("${sqlCommand}"))`;
                 break;
             default:
-                return Promise.resolve({ "status": "error", "data": `Language ${this.language} is not supported` });
-                break;
+                return this.failure(`Language ${this.language} is not supported`);
         }
         return this.execute(command);
     }

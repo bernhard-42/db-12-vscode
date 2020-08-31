@@ -26,7 +26,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
     async getTopLevel(): Promise<Variable[]> {
         let result = await this.execute(getVariables(), variablesCode(20, 100));
         if (result["status"] === "success") {
-            return Promise.resolve(this.parse(result["data"], false));
+            return Promise.resolve(this.parse(result["data"]["result"]["data"], false));
         } else {
             return Promise.resolve([new Variable("missing")]);
         }
@@ -39,7 +39,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
             variable.type === "pandas.core.frame.Dataframe";
         let result = await this.execute(getAttributes(pythonVar), variablesCode(20, 100));
         if (result["status"] === "success") {
-            return Promise.resolve(this.parse(result["data"], dataframe));
+            return Promise.resolve(this.parse(result["data"]["result"]["data"], dataframe));
         } else {
             return Promise.resolve([new Variable("Missing")]);
         }

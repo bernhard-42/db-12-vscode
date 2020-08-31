@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import { Json } from '../../rest/utils';
-import { Cluster } from 'cluster';
+import { Json } from '../../rest/Rest';
 
 export class ClusterAttribute extends vscode.TreeItem {
     constructor(

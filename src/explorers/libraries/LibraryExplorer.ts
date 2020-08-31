@@ -63,7 +63,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
 
         const code = librariesCode();
         let remoteLibs = await this.remoteCommand.execute(code);
-        this.parseResponse(remoteLibs["data"]);
+        this.parseResponse(remoteLibs["data"]["result"]["data"]);
         return Promise.resolve([
             new Library("Python", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
             new Library("Spark", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),

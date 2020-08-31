@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { executionContexts } from '../databricks/ExecutionContext';
 import { RemoteCommand } from '../rest/RemoteCommand';
-import { Json } from '../rest/utils';
+import { Json } from '../rest/Rest';
 import * as output from '../databricks/Output';
 
 

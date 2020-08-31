@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { Clusters } from '../../rest/Clusters';
 import * as output from '../../databricks/Output';
-import { Json } from '../../rest/utils';
+import { Json } from '../../rest/Rest';
 import { ClusterAttribute } from './ClusterAttribute';
 import { BaseExplorer } from '../BaseExplorer';
 import { isNullOrUndefined } from 'util';

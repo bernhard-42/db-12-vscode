@@ -10,7 +10,7 @@ import Table from 'cli-table';
 
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { Clusters } from '../rest/Clusters';
-import { Json } from '../rest/utils';
+import { Json } from '../rest/Rest';
 
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
@@ -181,16 +181,16 @@ export class DatabricksRun {
         }
         output.info(`Language: ${language}`);
 
-        // Create Databricks Execution Context
-        var remoteCommand = new RemoteCommand();
-
-        executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster, clusterName);
-
         // Register Cluster Explorer
         this.clusterExplorer = createClusterExplorer(cluster, host, token);
 
+        // Create Databricks Execution Context
+        var remoteCommand = new RemoteCommand(host, token, profile, language, cluster);
+
+        executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster, clusterName);
+
         // Create remote execution context
-        var result = await remoteCommand.createContext(profile, host, token, language, cluster) as Json;
+        var result = await remoteCommand.createContext() as Json;
         if (result["status"] === "success") {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
@@ -315,8 +315,9 @@ export class DatabricksRun {
         };
 
         // Send code as a command
-        var result = await context.remoteCommand.execute(code) as Json;
+        let result = await context.remoteCommand.execute(code) as Json;
         if (result["status"] === "success") {
+            result = result["data"]["result"];
             var data = result["data"];
 
             if (result["type"] === "table") {
