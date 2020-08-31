@@ -81,6 +81,14 @@ export function activate(context: vscode.ExtensionContext) {
 		'databricks-run.set-connection-status', () => databricksRun.updateStatus()
 	));
 
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-secrets', () => databricksRun.refreshSecrets()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		"databricks-run.paste-from-secrets", (secret) => databricksRun.pasteFromSecrets(secret)
+	));
+
 	/*
 	 *	Register Web view
 	 */

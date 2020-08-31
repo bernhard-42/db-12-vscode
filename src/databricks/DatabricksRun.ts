@@ -12,8 +12,10 @@ import { Json, Response } from '../rest/Rest';
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/clusters/ClusterExplorer';
+import { createSecretsExplorer, SecretsExplorerProvider } from '../explorers/secrets/SecretsExplorer';
 import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/databases/DatabaseExplorer';
 import { Library } from '../explorers/libraries/Library';
+import { Secret } from '../explorers/secrets/Secret';
 import { DatabricksRunPanel } from '../viewers/DatabricksRunPanel';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot, inquiry } from '../databricks/utils';
@@ -40,6 +42,8 @@ export class DatabricksRun {
     private workspaceRoot: string;
 
     private clusterExplorer: ClusterExplorerProvider | undefined;
+    private secretsExplorer: SecretsExplorerProvider | undefined;
+
     private lastFilename = "";
 
     constructor(private context: vscode.ExtensionContext, private statusBar: vscode.StatusBarItem) {
@@ -163,6 +167,9 @@ export class DatabricksRun {
         // Register Cluster Explorer
         this.clusterExplorer = createClusterExplorer(cluster, host, token);
 
+        // Register Cluster Explorer
+        this.secretsExplorer = createSecretsExplorer(host, token);
+
         // Create Databricks Execution Context
         var remoteCommand = new RemoteCommand(host, token, profile, language, cluster);
 
@@ -236,6 +243,7 @@ export class DatabricksRun {
         }
 
         this.clusterExplorer?.refresh();
+        this.secretsExplorer.refresh();
         this.updateStatus(fileName, true);
 
         output.write("Ready");
@@ -435,11 +443,24 @@ export class DatabricksRun {
         this.manageCluster("stop");
     }
 
+    refreshSecrets() {
+        this.secretsExplorer?.refresh();
+    }
+
     refreshVariables(filename?: string) {
         if (this.variableExplorer) {
             this.variableExplorer.refresh(filename);
         }
     }
+
+    pasteFromSecrets(secret: Secret) {
+        if (this.secretsExplorer) {
+            let snippet = new vscode.SnippetString(this.secretsExplorer.getSnippet(secret));
+            const editor = getEditor();
+            editor?.insertSnippet(snippet);
+        }
+    }
+
     pasteFromDataframe(variable: Variable) {
         if (this.variableExplorer) {
             let snippet = new vscode.SnippetString(this.variableExplorer.getSnippet(variable));

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosAdapter, AxiosRequestConfig } from 'axios';
 import url from 'url';
 import * as output from '../databricks/Output';
 import { Http2ServerResponse } from 'http2';
@@ -67,6 +67,21 @@ export class Rest {
             return Promise.resolve(Response.success(response["data"]));
         } catch (error) {
             return Promise.resolve(Response.failure(error.response.data.error));
+        }
+    }
+
+    async get2(uriPath: string, data: Json): Promise<Response> {
+        try {
+            let config: AxiosRequestConfig = {
+                method: 'get',
+                url: this.resolve(uriPath),
+                data: data
+            };
+            config.headers = this.headers(this.token)["headers"];
+            const response = await axios(config);
+            return Response.success(response["data"]);
+        } catch (error) {
+            return Response.failure(error.response.data.error);
         }
     }
 

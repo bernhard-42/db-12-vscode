@@ -16,8 +16,7 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
+		"commands": [{
 				"command": "databricks-run.initialize",
 				"title": "Databricks Run: Initialize Databricks Connections"
 			},
@@ -116,10 +115,25 @@
 					"light": "resources/light/stop.svg",
 					"dark": "resources/dark/stop.svg"
 				}
+			},
+			{
+				"command": "databricks-run.refresh-secrets",
+				"title": "Refresh Remote Secrets",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.paste-from-secrets",
+				"title": "Paste dbutils secret command",
+				"icon": {
+					"light": "resources/light/open-file.svg",
+					"dark": "resources/dark/open-file.svg"
+				}
 			}
 		],
-		"keybindings": [
-			{
+		"keybindings": [{
 				"command": "databricks-run.sendSelectionOrLine",
 				"key": "ctrl+k shift+enter",
 				"mac": "cmd+k shift+enter",
@@ -148,32 +162,27 @@
 			"title": "Databricks Run",
 			"properties": {}
 		},
-		"taskDefinitions": [
-			{
-				"type": "Databricks Run",
-				"required": [
-					"action"
-				],
-				"properties": {
-					"action": {
-						"type": "string",
-						"description": "The build task. This can be 'upload-wheel' and 'restart'."
-					}
+		"taskDefinitions": [{
+			"type": "Databricks Run",
+			"required": [
+				"action"
+			],
+			"properties": {
+				"action": {
+					"type": "string",
+					"description": "The build task. This can be 'upload-wheel' and 'restart'."
 				}
 			}
-		],
+		}],
 		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "databricksExplorer",
-					"title": "Databricks",
-					"icon": "resources/databricks-run.png"
-				}
-			]
+			"activitybar": [{
+				"id": "databricksExplorer",
+				"title": "Databricks",
+				"icon": "resources/databricks-run.png"
+			}]
 		},
 		"views": {
-			"databricksExplorer": [
-				{
+			"databricksExplorer": [{
 					"id": "databricksVariableExplorer",
 					"name": "Remote Python Variables"
 				},
@@ -186,14 +195,17 @@
 					"name": "Remote Databases"
 				},
 				{
+					"id": "databricksSecretsExplorer",
+					"name": "Remote Secrets"
+				},
+				{
 					"id": "databricksClusterExplorer",
 					"name": "Remote Cluster"
 				}
 			]
 		},
 		"menus": {
-			"view/title": [
-				{
+			"view/title": [{
 					"command": "databricks-run.refresh-libraries",
 					"when": "view == databricksLibraryExplorer",
 					"group": "navigation@1"
@@ -211,6 +223,11 @@
 				{
 					"command": "databricks-run.refresh-databases",
 					"when": "view == databricksDatabaseExplorer",
+					"group": "navigation"
+				},
+				{
+					"command": "databricks-run.refresh-secrets",
+					"when": "view == databricksSecretsExplorer",
 					"group": "navigation"
 				},
 				{
@@ -234,8 +251,7 @@
 					"group": "navigation@1"
 				}
 			],
-			"view/item/context": [
-				{
+			"view/item/context": [{
 					"command": "databricks-run.install-library",
 					"when": "view == databricksLibraryExplorer && viewItem == library",
 					"group": "inline"
@@ -248,6 +264,11 @@
 				{
 					"command": "databricks-run.paste-from-database",
 					"when": "view == databricksDatabaseExplorer",
+					"group": "inline"
+				},
+				{
+					"command": "databricks-run.paste-from-secrets",
+					"when": "view == databricksSecretsExplorer && viewItem == secret",
 					"group": "inline"
 				}
 			]
