@@ -2,15 +2,12 @@ import * as vscode from 'vscode';
 import { window } from 'vscode';
 
 import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import ini from 'ini';
 import username from 'username';
 import Table from 'cli-table';
 
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { Clusters } from '../rest/Clusters';
-import { Json } from '../rest/Rest';
+import { Json, Response } from '../rest/Rest';
 
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
@@ -19,7 +16,7 @@ import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/d
 import { Library } from '../explorers/libraries/Library';
 import { DatabricksRunPanel } from '../viewers/DatabricksRunPanel';
 
-import { getEditor, getCurrentFilename, getWorkspaceRoot } from '../databricks/utils';
+import { getEditor, getCurrentFilename, getWorkspaceRoot, inquiry } from '../databricks/utils';
 
 import { createBuildWheelTasks } from '../tasks/BuildWheelTask';
 
@@ -63,9 +60,6 @@ export class DatabricksRun {
             return;
         }
 
-        this.databricksConfig = new DatabricksConfig();
-        this.databricksConfig.init();
-
         let profile = "";
         let cluster = "";
         let clusterName = "";
@@ -73,44 +67,23 @@ export class DatabricksRun {
         let libFolder = "";
         let remoteFolder = "";
 
-        // Get config
-        const databrickscfg = fs.readFileSync(path.join(os.homedir(), '.databrickscfg'), 'utf8');
-        const dbConfig = ini.parse(databrickscfg);
-        const profiles = Object.keys(dbConfig);
-
-        remoteFolder = this.databricksConfig.getRemoteFolder();
-        if (remoteFolder === undefined) {
-            let name = await username() || "<username>";
-            remoteFolder = await window.showInputBox({
-                prompt: 'Provide a remote working folder',
-                value: `dbfs:/home/${name}`
-            }) || "";
-            if (remoteFolder) {
-                this.databricksConfig.setRemoteFolder(remoteFolder);
-            }
-            output.info(`Using '${remoteFolder}' as remote work folder`);
-        }
-
         // Use workspace settings?
-        let useSettings: string;
-        if (force) {
-            useSettings = "yes";
-        } else {
-            useSettings = await window.showQuickPick(["yes", "no"], {
-                placeHolder: 'To (re)start the extension, use the stored settings?'
-            }) || "";
+        let useSettings = "yes";
+        if (!force) {
+            useSettings = await inquiry(
+                'To (re)start the extension, use the stored settings?',
+                ["yes", "no"]);
         }
+
+        this.databricksConfig = new DatabricksConfig();
+        this.databricksConfig.init();
+        const profiles = this.databricksConfig.getProfiles();
 
         if (useSettings === "yes") {
-            // avoid duplicate file watchers
             profile = this.databricksConfig.getProfile() || "";
-            let clusterInfo = this.databricksConfig.getCluster();
-            if (clusterInfo) {
-                const sep = clusterInfo.indexOf(" ");
-                cluster = clusterInfo.substring(0, sep) || "";
-                clusterName = clusterInfo.substring(sep + 2, clusterInfo.length - 1) || "";
-            }
+            [cluster, clusterName] = this.databricksConfig.getClusterInfo();
             libFolder = this.databricksConfig.getPythonLibFolder() || "";
+            remoteFolder = this.databricksConfig.getRemoteFolder() || "";
         } else if (useSettings !== "no") {
             vscode.window.showErrorMessage(`Cancelled`);
             return;
@@ -121,10 +94,7 @@ export class DatabricksRun {
 
         // Select profile
         if (profile === "") {
-            profile = await window.showQuickPick(
-                profiles,
-                { placeHolder: 'Select Databricks CLI profile' }
-            ) || "";
+            profile = await inquiry('Select Databricks CLI profile', profiles);
             if (profile === "") {
                 vscode.window.showErrorMessage(`Selection of profile cancelled`);
                 return;
@@ -133,16 +103,15 @@ export class DatabricksRun {
             }
         }
 
-        const host = dbConfig[profile]["host"];
-        const token = dbConfig[profile]["token"];
+        const [host, token] = this.databricksConfig.getHostAndToken();
 
         // Select cluster
         if (cluster === "") {
             let clusters = [];
             this.clusterApi = new Clusters(host, token);
             let response = await this.clusterApi.names();
-            if (response["status"] === "success") {
-                clusters = response["data"];
+            if (response.isSuccess()) {
+                clusters = (response.data as [string, string][]);
             } else {
                 const error = response["data"];
                 window.showErrorMessage(`ERROR: ${error}\n`);
@@ -153,10 +122,7 @@ export class DatabricksRun {
             clusters.forEach((row: [string, string]) => {
                 clusterList[`${row[0]} (${row[1]})`] = row;
             });
-            let clusterInfo = await window.showQuickPick(
-                Object.keys(clusterList),
-                { placeHolder: 'Select Databricks cluster' }
-            ) || "";
+            let clusterInfo = await inquiry('Select Databricks cluster', Object.keys(clusterList));
             if (clusterInfo === "") {
                 vscode.window.showErrorMessage(`Selection of cluster cancelled`);
                 return;
@@ -164,6 +130,19 @@ export class DatabricksRun {
                 [cluster, clusterName] = clusterList[clusterInfo];
                 this.databricksConfig.setCluster(clusterInfo);
             }
+        }
+
+
+        if (remoteFolder === "") {
+            let name = await username() || "<username>";
+            remoteFolder = await window.showInputBox({
+                prompt: 'Provide a remote working folder',
+                value: `dbfs:/home/${name}`
+            }) || "";
+            if (remoteFolder) {
+                this.databricksConfig.setRemoteFolder(remoteFolder);
+            }
+            output.info(`Using '${remoteFolder}' as remote work folder`);
         }
 
         // Detect language
@@ -190,22 +169,31 @@ export class DatabricksRun {
         executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster, clusterName);
 
         // Create remote execution context
-        var result = await remoteCommand.createContext() as Json;
-        if (result["status"] === "success") {
+        var result = await remoteCommand.createContext();
+        if (result.isSuccess()) {
             output.info(`Created execution context for cluster '${cluster}' on host '${host}'`);
         } else {
-            if (result["data"].startsWith("ClusterNotReadyException")) {
-                if (await window.showQuickPick(["yes", "no"], { placeHolder: `Cluster not running, start it?` }) === "yes") {
-                    let clusterApi = new Clusters(host, token);
-                    result = await clusterApi.start(cluster);
+            const error = result.toString();
+            if (error.startsWith("ClusterNotReadyException")) {
+                if (error.indexOf("currently Pending") >= 0) {
+                    output.write("Cluster is currently starting");
+                } else {
+                    const answer = await inquiry(`Cluster not running, start it?`, ["yes", "no"]);
+                    if (answer === "yes") {
+                        let clusterApi = new Clusters(host, token);
+                        result = await clusterApi.start(cluster);
+                        if (result.isFailure()) {
+                            output.info(result.toString());
+                        }
+                    }
+                    for (let dummy of [0, 2]) {
+                        setTimeout(() => {
+                            console.log('Test');
+                            this.refreshClusterAttributes();
+                        }, 1000);
+                    }
+                    output.write("Please re-initialize the extension once the cluster is started");
                 }
-                for (let dummy of [0, 2]) {
-                    setTimeout(() => {
-                        console.log('Test');
-                        this.refreshClusterAttributes();
-                    }, 1000);
-                }
-                output.write("Please re-initialize the extension once the cluster is started");
             } else {
                 vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result["data"]}`);
             }
@@ -217,13 +205,10 @@ export class DatabricksRun {
                 // const wsFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fileName))?.uri.path || ".";
                 const folders = fs.readdirSync(this.workspaceRoot, { withFileTypes: true })
                     .filter(dirent => dirent.isDirectory())
-                    .filter(dirent => ![".vscode", ".git"].includes(dirent.name))
+                    .filter(dirent => ![".vscode", ".git", "__pycache__"].includes(dirent.name))
                     .map(dirent => dirent.name);
                 if (folders.length > 0) {
-                    libFolder = await window.showQuickPick(
-                        folders,
-                        { placeHolder: 'Select local library folder' }
-                    ) || "";
+                    libFolder = await inquiry('Select local library folder', folders);
                     if (libFolder === "") {
                         vscode.window.showErrorMessage(`Selection of library folder cancelled`);
                         return;
@@ -315,13 +300,13 @@ export class DatabricksRun {
         };
 
         // Send code as a command
-        let result = await context.remoteCommand.execute(code) as Json;
-        if (result["status"] === "success") {
-            result = result["data"]["result"];
-            var data = result["data"];
+        let result = await context.remoteCommand.execute(code);
+        if (result.isSuccess()) {
+            let result2 = result.toJson()["result"];
+            var data = result2["data"];
 
-            if (result["type"] === "table") {
-                renderTable(result);
+            if (result2["type"] === "table") {
+                renderTable(result2);
             } else if (data.startsWith("<div>")) {
                 renderHtml(data);
             } else if (isR) {
@@ -345,7 +330,7 @@ export class DatabricksRun {
                 });
             }
         } else {
-            output.write("Error: " + result["data"]);
+            output.write("Error: " + result.toString());
         }
         output.thickBorder();
 
@@ -359,11 +344,11 @@ export class DatabricksRun {
             return;
         }
         // Send cancel command
-        var result = await context.remoteCommand.cancel() as Json;
-        if (result["status"] === "success") {
+        var result = await context.remoteCommand.cancel();
+        if (result.isSuccess()) {
             output.write("Command cancelled");
         } else {
-            output.write(result["data"]);
+            output.write(result.toString());
         }
         this.variableExplorer?.refresh(getCurrentFilename());
     };
@@ -387,12 +372,12 @@ export class DatabricksRun {
             return;
         }
 
-        var result = await context.remoteCommand.stop() as Json;
-        if (result["status"] === "success") {
+        var result = await context.remoteCommand.stop();
+        if (result.isSuccess()) {
             vscode.window.showInformationMessage(`Context stopped for ${filename}`);
             executionContexts.clearContext(filename);
         } else {
-            output.write(result["data"]);
+            output.write(result.toString());
         }
 
         this.refreshVariables(filename);
@@ -411,7 +396,7 @@ export class DatabricksRun {
         if (await window.showQuickPick(["yes", "no"], { placeHolder: `${command} cluster?` }) !== "yes") { return; }
 
         let context = executionContexts.getContext();
-        let result: Json;
+        let result: Response;
         if (context?.cluster) {
             let clusterApi = new Clusters(context.host, context.token);
             if (command === "start") {
@@ -423,11 +408,11 @@ export class DatabricksRun {
             } else {
                 return;
             }
-            if (result["status"] === "success") {
+            if (result.isSuccess()) {
                 vscode.window.showInformationMessage(`Triggered cluster ${command}`);
             } else {
                 vscode.window.showErrorMessage(`Couldn't ${command} cluster`);
-                output.info(result["data"]);
+                output.info(result.toString());
             }
             for (let dummy of [0, 2]) {
                 setTimeout(() => {

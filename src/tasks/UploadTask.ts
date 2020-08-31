@@ -31,11 +31,11 @@ export class UploadTask extends BaseTask {
     protected async doBuild(): Promise<void> {
         return new Promise<void>(async (resolve) => {
             this.writeEmitter.fire(`Starting upload of ${this.localFile} ...\r\n`);
-            let [host, token] = this.databricksConfig.getClusterConfig();
+            let [host, token] = this.databricksConfig.getHostAndToken();
 
             const dbfs = new Dbfs(host, token);
             let result = await dbfs.upload(this.localFile, this.remoteFile);
-            if (result["status"] === "success") {
+            if (result.isSuccess()) {
                 this.writeEmitter.fire(`${this.type} uploaded to ${this.remoteFolder}\r\n`);
                 output.write(
                     "To enable the library on the remote cluster, use\n" +

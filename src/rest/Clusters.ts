@@ -1,4 +1,3 @@
-import url from 'url';
 import { Json, Response, Rest } from './Rest';
 
 export class Clusters extends Rest {
@@ -7,7 +6,7 @@ export class Clusters extends Rest {
         let clusters: [string, string][] = [];
         const response = await this.list();
         if (response.isSuccess()) {
-            const clusterConfig: Json[] = (response.data as Json)["clusters"];
+            const clusterConfig: Json[] = response.toJson()["clusters"];
             clusterConfig.forEach(cluster => {
                 clusters.push([cluster["cluster_id"], cluster["cluster_name"]]);
             });
@@ -18,31 +17,26 @@ export class Clusters extends Rest {
     }
 
     async list(): Promise<Response> {
-        const uri = url.resolve(this.host, 'api/2.0/clusters/list');
-        return this.get(uri);
+        return this.get('api/2.0/clusters/list');
     }
 
     async info(clusterId: string): Promise<Response> {
-        const uri = url.resolve(this.host, `api/2.0/clusters/get?cluster_id=${clusterId}`);
         try {
-            return this.get(uri);
+            return this.get(`api/2.0/clusters/get?cluster_id=${clusterId}`);
         } catch (error) {
             return this.failure(error);
         }
     }
 
     async start(clusterId: string): Promise<Response> {
-        const uri = url.resolve(this.host, `api/2.0/clusters/start`);
-        return this.post(uri, { "cluster_id": clusterId });
+        return this.post(`api/2.0/clusters/start`, { "cluster_id": clusterId });
     }
 
     async stop(clusterId: string): Promise<Response> {
-        const uri = url.resolve(this.host, `api/2.0/clusters/delete`);
-        return this.post(uri, { "cluster_id": clusterId });
+        return this.post(`api/2.0/clusters/delete`, { "cluster_id": clusterId });
     }
 
     async restart(clusterId: string): Promise<Response> {
-        const uri = url.resolve(this.host, `api/2.0/clusters/restart`);
-        return this.post(uri, { "cluster_id": clusterId });
+        return this.post(`api/2.0/clusters/restart`, { "cluster_id": clusterId });
     }
 }

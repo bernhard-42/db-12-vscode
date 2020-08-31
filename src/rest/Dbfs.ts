@@ -6,40 +6,37 @@ export class Dbfs extends Rest {
 
     async upload(source: string, target: string): Promise<Response> {
         // Create
-        let uri = url.resolve(this.host, `api/2.0/dbfs/create`);
         let size = 500 * 1024;
-
         let result: Response;
         let handle: number;
-        result = await this.post(uri, { "path": target, "overwrite": true });
+
+        // Open 
+        result = await this.post(`api/2.0/dbfs/create`, { "path": target, "overwrite": true });
         if (result.isSuccess()) {
-            handle = (result.data as Json)["handle"];
+            handle = result.toJson()["handle"];
         } else {
-            return this.failure(result["data"]);
+            return Promise.reject(this.failure(result["data"]));
         }
 
         // Add blocks
-        uri = url.resolve(this.host, `api/2.0/dbfs/add-block`);
-
         let content = "";
         try {
             content = fs.readFileSync(source).toString('base64');
         } catch (error) {
-            return this.failure(error);
+            return Promise.reject(this.failure(error));
         }
 
         const numChunks = Math.ceil(content.length / size);
         for (let i = 0, offset = 0; i < numChunks; ++i, offset += size) {
             let chunk = content.substr(offset, size);
-            result = await this.post(uri, { "handle": handle, "data": chunk });
+            result = await this.post(`api/2.0/dbfs/add-block`, { "handle": handle, "data": chunk });
             if (result.isFailure()) {
                 return this.failure(result.data);
             }
         }
 
         // Close
-        uri = url.resolve(this.host, `api/2.0/dbfs/close`);
-        result = await this.post(uri, { "handle": handle });
+        result = await this.post(`api/2.0/dbfs/close`, { "handle": handle });
         if (result.isFailure()) {
             return this.failure(result.data);
         }
@@ -50,7 +47,7 @@ export class Dbfs extends Rest {
         let uri = url.resolve(this.host, `api/2.0/dbfs/get-status`);
         let result = await this.post(uri, { "path": path });
         if (result.isFailure()) {
-            return this.failure(result.data);
+            return Promise.resolve(this.failure(result.data));
         }
         return this.success(result.data);
     }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { RemoteCommand, } from '../../rest/RemoteCommand';
-import { Json } from '../../rest/Rest';
+import { Response, Json } from '../../rest/Rest';
 import { DatabaseItem } from './Database';
 import { BaseExplorer } from '../BaseExplorer';
 
@@ -23,8 +23,8 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
 
     async getTopLevel(): Promise<DatabaseItem[]> {
         let result = await this.remoteCommand.getDatabases();
-        if (result["status"] === "success") {
-            return Promise.resolve(this.parse(result["data"]["result"]["data"], "database", ""));
+        if (result.isSuccess()) {
+            return Promise.resolve(this.parse(result.toJson()["result"]["data"], "database", ""));
         } else {
             return Promise.resolve([new DatabaseItem("missing")]);
         }
@@ -34,7 +34,7 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
         let command: string;
         let key: string;
         let type: string;
-        let result: Json;
+        let result: Response;
         if (databaseItem.type === "database") {
             type = "table";
             result = await this.remoteCommand.getTables(databaseItem.name);
@@ -42,8 +42,8 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
             type = "column";
             result = await this.remoteCommand.getSchema(databaseItem.getParent(), databaseItem.name);
         }
-        if (result["status"] === "success") {
-            const objs = this.parse(result["data"]["result"]["data"], type, databaseItem.getParent());
+        if (result.isSuccess()) {
+            const objs = this.parse(result.toJson()["result"]["data"], type, databaseItem.getParent());
             return Promise.resolve(objs);
         } else {
             return Promise.resolve([new DatabaseItem("Missing")]);

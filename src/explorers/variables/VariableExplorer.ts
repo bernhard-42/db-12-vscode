@@ -3,6 +3,7 @@ import { RemoteCommand } from '../../rest/RemoteCommand';
 import { variablesCode, getVariables, getAttributes } from './VariableTemplate';
 import { Variable } from './Variable';
 import { BaseExplorer } from '../BaseExplorer';
+import { Json } from '../../rest/Rest';
 
 export class VariableExplorerProvider extends BaseExplorer<Variable> {
     language = "";
@@ -25,8 +26,8 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
 
     async getTopLevel(): Promise<Variable[]> {
         let result = await this.execute(getVariables(), variablesCode(20, 100));
-        if (result["status"] === "success") {
-            return Promise.resolve(this.parse(result["data"]["result"]["data"], false));
+        if (result.isSuccess()) {
+            return Promise.resolve(this.parse(result.toJson()["result"]["data"], false));
         } else {
             return Promise.resolve([new Variable("missing")]);
         }
@@ -38,8 +39,8 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
             variable.type === "pyspark.sql.dataframe.DataFrame" ||
             variable.type === "pandas.core.frame.Dataframe";
         let result = await this.execute(getAttributes(pythonVar), variablesCode(20, 100));
-        if (result["status"] === "success") {
-            return Promise.resolve(this.parse(result["data"]["result"]["data"], dataframe));
+        if (result.isSuccess()) {
+            return Promise.resolve(this.parse(result.toJson()["result"]["data"], dataframe));
         } else {
             return Promise.resolve([new Variable("Missing")]);
         }

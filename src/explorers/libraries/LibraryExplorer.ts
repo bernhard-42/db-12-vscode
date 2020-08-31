@@ -10,6 +10,7 @@ import { Library } from './Library';
 import { librariesCode } from './LibraryTemplate';
 import { baseLibraries } from './baselibs';
 import { BaseExplorer } from '../BaseExplorer';
+import { Json, Response } from '../../rest/Rest';
 
 export class LibraryExplorerProvider extends BaseExplorer<Library> {
     remoteLibraries = new Map<string, Library>();
@@ -63,13 +64,17 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
 
         const code = librariesCode();
         let remoteLibs = await this.remoteCommand.execute(code);
-        this.parseResponse(remoteLibs["data"]["result"]["data"]);
-        return Promise.resolve([
-            new Library("Python", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library("Spark", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library("DE and ML Libraries", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
-            new Library("Base Libraries", true, "", "", vscode.TreeItemCollapsibleState.Collapsed)
-        ]);
+        if (remoteLibs.isSuccess()) {
+            this.parseResponse(remoteLibs.toJson()["result"]["data"]);
+            return Promise.resolve([
+                new Library("Python", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
+                new Library("Spark", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
+                new Library("DE and ML Libraries", true, "", "", vscode.TreeItemCollapsibleState.Collapsed),
+                new Library("Base Libraries", true, "", "", vscode.TreeItemCollapsibleState.Collapsed)
+            ]);
+        } else {
+            return Promise.resolve([new Library("Cannot retrieve libraries")]);
+        }
     }
 
     async getNextLevel(category: Library): Promise<Library[]> {

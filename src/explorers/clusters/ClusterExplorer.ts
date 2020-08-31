@@ -4,7 +4,7 @@ import * as output from '../../databricks/Output';
 import { Json } from '../../rest/Rest';
 import { ClusterAttribute } from './ClusterAttribute';
 import { BaseExplorer } from '../BaseExplorer';
-import { isNullOrUndefined } from 'util';
+import { Response } from '../../rest/Rest';
 
 export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     clusterApi = <Clusters>{};
@@ -17,15 +17,15 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     }
 
     async getTopLevel(): Promise<ClusterAttribute[]> {
-        let result: Json = await this.execute();
-        if (result["status"] === "success") {
-            this.clusterInfo = result["data"];
-            return [
+        let result = await this.execute();
+        if (result.isSuccess()) {
+            this.clusterInfo = result.toJson();
+            return Promise.resolve([
                 new ClusterAttribute(
                     `${this.clusterInfo["cluster_name"]} (${this.clusterInfo["state"]})`,
                     this.clusterInfo,
                     vscode.TreeItemCollapsibleState.Collapsed)
-            ];
+            ]);
         } else {
             return Promise.resolve([new ClusterAttribute("Retrieving cluster config failed")]);
         }
@@ -46,8 +46,8 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
         return Promise.resolve(attributes);
     }
 
-    async execute(): Promise<Json> {
-        return this.clusterApi.info(this.clusterId);
+    async execute(): Promise<Response> {
+        return Promise.resolve(this.clusterApi.info(this.clusterId));
     }
 
     refresh(): void {

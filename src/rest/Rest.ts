@@ -1,4 +1,5 @@
 import axios from 'axios';
+import url from 'url';
 import * as output from '../databricks/Output';
 import { Http2ServerResponse } from 'http2';
 
@@ -9,27 +10,38 @@ export interface Json {
 export class Response {
     constructor(public status: string, public data: Json | string) { };
 
-    static success(data: Json | string) {
+    static success(data: Json | string): Response {
         return new Response("success", data);
     }
 
-    static failure(data: Json | string) {
+    static failure(data: Json | string): Response {
         return new Response("error", data);
     }
 
-    static warning(data: Json | string) {
+    static warning(data: Json | string): Response {
         return new Response("warning", data);
     }
 
-    isSuccess() {
+    isSuccess(): boolean {
         return this.status === "success";
     }
-    isFailure() {
+
+    isFailure(): boolean {
         return this.status === "error";
     }
-    isWarning() {
+
+    isWarning(): boolean {
         return this.status === "warning";
     }
+
+    toJson(): Json {
+        return this.data as Json;
+    }
+
+    toString(): string {
+        return this.data as string;
+    }
+
 }
 
 export class Rest {
@@ -40,26 +52,30 @@ export class Rest {
         return {
             headers: {
                 "Authorization": `Bearer ${token}`,
-                // "User-Agent": `VSCodeDatabricksRun/0.9.0`
+                // "User-Agent": `VSCodeDatabricksRun/0.9.0-${os.platform()}`
             }
         };
     };
 
-    async get(uri: string): Promise<Response> {
+    private resolve(uriPath: string) {
+        return url.resolve(this.host, uriPath);
+    }
+
+    async get(uriPath: string): Promise<Response> {
         try {
-            const response = await axios.get(uri, this.headers(this.token));
+            const response = await axios.get(this.resolve(uriPath), this.headers(this.token));
             return Promise.resolve(Response.success(response["data"]));
         } catch (error) {
-            return Promise.resolve(Response.failure(error));
+            return Promise.resolve(Response.failure(error.response.data.error));
         }
     }
 
-    async post(uri: string, data: Json): Promise<Response> {
+    async post(uriPath: string, data: Json): Promise<Response> {
         try {
-            const response = await axios.post(uri, data, this.headers(this.token));
-            return Promise.resolve(Response.success(response["data"]));
+            const response = await axios.post(this.resolve(uriPath), data, this.headers(this.token));
+            return Response.success(response["data"]);
         } catch (error) {
-            return Promise.resolve(Response.failure(error));
+            return Response.failure(error.response.data.error);
         }
     }
 
@@ -76,15 +92,15 @@ export class Rest {
     }
 
     async poll(
-        uri: string,
+        uriPath: string,
         token: string,
         condition: (value: string) => boolean,
         ms: number) {
 
-        const fn = () => axios.get(uri, this.headers(token));
+        const fn = () => axios.get(this.resolve(uriPath), this.headers(token));
         let response = await fn();
         let progress = false;
-        while (condition(response["data"].status)) {
+        while (condition(response["data"]["status"].toLowerCase())) {
             output.write("»", false);
             progress = true;
             await wait(ms);

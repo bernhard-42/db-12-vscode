@@ -70,29 +70,42 @@ export class DatabricksConfig {
     getRemoteFolder() {
         return this.getConfig("remote-work-folder");
     }
+
     getPythonLibFolder() {
         return this.getConfig("python-lib-folder");
     }
+
     getProfile() {
         return this.getConfig("profile");
     }
-    getCluster() {
-        return this.getConfig("cluster");
+
+    getClusterInfo() {
+        let [cluster, clusterName] = ["", ""];
+        const clusterInfo = this.config["cluster"];
+        if (clusterInfo) {
+            const sep = clusterInfo.indexOf(" ");
+            cluster = clusterInfo.substring(0, sep) || "";
+            clusterName = clusterInfo.substring(sep + 2, clusterInfo.length - 1) || "";
+        }
+        return [cluster, clusterName];
     }
     setRemoteFolder(value: string) {
         this.setConfig("remote-work-folder", value);
     }
+
     setPythonLibFolder(value: string) {
         this.setConfig("python-lib-folder", value);
     }
+
     setProfile(value: string) {
         this.setConfig("profile", value);
     }
+
     setCluster(value: string) {
         this.setConfig("cluster", value);
     }
 
-    getClusterConfig() {
+    getHostAndToken() {
         let profile = this.getProfile();
         const databrickscfg = fs.readFileSync(path.join(os.homedir(), '.databrickscfg'), 'utf8');
         const dbConfig = ini.parse(databrickscfg);
@@ -100,6 +113,13 @@ export class DatabricksConfig {
         const token = dbConfig[profile]["token"];
         return [host, token];
     }
+
+    getProfiles() {
+        const databrickscfg = fs.readFileSync(path.join(os.homedir(), '.databrickscfg'), 'utf8');
+        const dbConfig = ini.parse(databrickscfg);
+        return Object.keys(dbConfig);
+    }
+
 }
 
 

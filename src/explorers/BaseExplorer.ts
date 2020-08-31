@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { executionContexts } from '../databricks/ExecutionContext';
 import { RemoteCommand } from '../rest/RemoteCommand';
-import { Json } from '../rest/Rest';
+import { Response, Json } from '../rest/Rest';
 import * as output from '../databricks/Output';
 
 
@@ -49,19 +49,19 @@ export abstract class BaseExplorer<T> implements vscode.TreeDataProvider<T>  {
         this._onDidChangeTreeData.fire(undefined);
     }
 
-    async execute(command: string, code?: string): Promise<Json> {
+    async execute(command: string, code?: string): Promise<Response> {
         let result = await this.remoteCommand.execute(command);
-        if (result["status"] === "success") {
-            return result;
+        if (result.isSuccess()) {
+            return Promise.resolve(result);
         }
         if (code) {
-            result = await this.remoteCommand.execute(code) as Json;
-            if (result["status"] === "success") {
+            result = await this.remoteCommand.execute(code);
+            if (result.isSuccess()) {
                 output.info("Successfully registered Variable Explorer");
                 return this.execute(command);
             }
         }
         vscode.window.showErrorMessage("Failed to retrieve remote variables");
-        return { "error": "Failed to retrieve remote variables" };
+        return Response.failure("Failed to retrieve remote variables");
     }
 }
