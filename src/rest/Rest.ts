@@ -66,7 +66,7 @@ export class Rest {
             const response = await axios.get(this.resolve(uriPath), this.headers(this.token));
             return Promise.resolve(Response.success(response["data"]));
         } catch (error) {
-            return Promise.resolve(Response.failure(error.response.data.error));
+            return Promise.resolve(Response.failure(`${error.response.status}: ${error.response.statusText}`));
         }
     }
 
