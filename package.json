@@ -131,6 +131,22 @@
 					"light": "resources/light/open-file.svg",
 					"dark": "resources/dark/open-file.svg"
 				}
+			},
+			{
+				"command": "databricks-run.refresh-contexts",
+				"title": "Refresh Contexts",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.select-context",
+				"title": "Open file for context Contexts",
+				"icon": {
+					"light": "resources/light/open-file.svg",
+					"dark": "resources/dark/open-file.svg"
+				}
 			}
 		],
 		"keybindings": [{
@@ -194,16 +210,20 @@
 		},
 		"views": {
 			"databricksExplorer": [{
+					"id": "databricksContextExplorer",
+					"name": "Contexts"
+				},
+				{
 					"id": "databricksVariableExplorer",
 					"name": "Python Variables"
 				},
 				{
-					"id": "databricksLibraryExplorer",
-					"name": "Python Libraries"
-				},
-				{
 					"id": "databricksDatabaseExplorer",
 					"name": "Databases"
+				},
+				{
+					"id": "databricksLibraryExplorer",
+					"name": "Python Libraries"
 				},
 				{
 					"id": "databricksSecretsExplorer",
@@ -260,6 +280,11 @@
 					"command": "databricks-run.restart-cluster",
 					"when": "view == databricksClusterExplorer",
 					"group": "navigation@1"
+				},
+				{
+					"command": "databricks-run.refresh-contexts",
+					"when": "view == databricksContextExplorer",
+					"group": "navigation"
 				}
 			],
 			"view/item/context": [{
@@ -280,6 +305,11 @@
 				{
 					"command": "databricks-run.paste-from-secrets",
 					"when": "view == databricksSecretsExplorer && viewItem == secret",
+					"group": "inline"
+				},
+				{
+					"command": "databricks-run.select-context",
+					"when": "view == databricksContextExplorer && viewItem == context",
 					"group": "inline"
 				}
 			]

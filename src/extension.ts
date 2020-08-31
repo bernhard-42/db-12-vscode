@@ -89,6 +89,14 @@ export function activate(context: vscode.ExtensionContext) {
 		"databricks-run.paste-from-secrets", (secret) => databricksRun.pasteFromSecrets(secret)
 	));
 
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-contexts', () => databricksRun.refreshContexts()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		"databricks-run.select-context", (context) => databricksRun.openFile(context)
+	));
+
 	/*
 	 *	Register Web view
 	 */

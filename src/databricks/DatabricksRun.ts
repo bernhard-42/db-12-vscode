@@ -14,6 +14,8 @@ import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/lib
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/clusters/ClusterExplorer';
 import { createSecretsExplorer, SecretsExplorerProvider } from '../explorers/secrets/SecretsExplorer';
 import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/databases/DatabaseExplorer';
+import { createContextExplorer, ContextExplorerProvider } from '../explorers/contexts/ContextExplorer';
+
 import { Library } from '../explorers/libraries/Library';
 import { Secret } from '../explorers/secrets/Secret';
 import { DatabricksRunPanel } from '../viewers/DatabricksRunPanel';
@@ -27,6 +29,7 @@ import { DatabricksConfig } from './Config';
 import * as output from './Output';
 import { DatabaseItem } from '../explorers/databases/Database';
 import { Variable } from '../explorers/variables/Variable';
+import { Context } from 'mocha';
 
 export let resourcesFolder = "";
 
@@ -36,14 +39,12 @@ export class DatabricksRun {
     private variableExplorer: VariableExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
     private databaseExplorer: DatabaseExplorerProvider | undefined;
-
-    private clusterApi: Clusters | undefined;
-
-    private workspaceRoot: string;
-
     private clusterExplorer: ClusterExplorerProvider | undefined;
     private secretsExplorer: SecretsExplorerProvider | undefined;
+    private contextEplorer: ContextExplorerProvider | undefined;
 
+    private clusterApi: Clusters | undefined;
+    private workspaceRoot: string;
     private lastFilename = "";
 
     constructor(private context: vscode.ExtensionContext, private statusBar: vscode.StatusBarItem) {
@@ -242,6 +243,9 @@ export class DatabricksRun {
             this.databaseExplorer?.refresh();
         }
 
+        this.contextEplorer = createContextExplorer();
+        this.contextEplorer?.refresh();
+
         this.clusterExplorer?.refresh();
         this.secretsExplorer.refresh();
         this.updateStatus(fileName, true);
@@ -391,6 +395,7 @@ export class DatabricksRun {
         this.refreshVariables(filename);
         this.refreshDatabases();
         this.refreshLibraries();
+        this.refreshContexts();
         this.updateStatus(filename, true);
     };
 
@@ -488,6 +493,12 @@ export class DatabricksRun {
         }
     }
 
+    refreshContexts() {
+        if (this.contextEplorer) {
+            this.contextEplorer.refresh();
+        }
+    }
+
     installLibrary(library: Library) {
         this.libraryExplorer?.install(library);
     }
@@ -512,8 +523,10 @@ export class DatabricksRun {
         }
     }
 
-    openHtmlViewer() {
-
+    openFile(context: Context) {
+        vscode.workspace.openTextDocument(context.value).then(doc => {
+            vscode.window.showTextDocument(doc);
+        });
     }
 
     dispose() {
