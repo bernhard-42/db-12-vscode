@@ -120,6 +120,15 @@ export class DatabricksConfig {
         return Object.keys(dbConfig);
     }
 
+    getMaxArrayLen() {
+        let config = vscode.workspace.getConfiguration();
+        return config.get("DatabricksRun.maxArrayElements") as number;
+    }
+
+    getMaxStringLen() {
+        let config = vscode.workspace.getConfiguration();
+        return config.get("DatabricksRun.maxStringLength") as number;
+    }
 }
 
 

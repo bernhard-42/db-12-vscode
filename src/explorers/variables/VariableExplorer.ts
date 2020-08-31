@@ -4,12 +4,18 @@ import { variablesCode, getVariables, getAttributes } from './VariableTemplate';
 import { Variable } from './Variable';
 import { BaseExplorer } from '../BaseExplorer';
 import * as output from '../../databricks/Output';
+import { DatabricksConfig } from '../../databricks/Config';
 
 export class VariableExplorerProvider extends BaseExplorer<Variable> {
     language = "";
+    maxArrayLen: number;
+    maxStringLen: number;
 
     constructor() {
         super(["python"], (msg: string): Variable => new Variable(msg));
+        let config = new DatabricksConfig();
+        this.maxArrayLen = config.getMaxArrayLen();
+        this.maxStringLen = config.getMaxStringLen();
     }
 
     parse(jsonData: string, dataframe: boolean) {
@@ -25,7 +31,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
     }
 
     async getTopLevel(): Promise<Variable[]> {
-        let result = await this.execute(getVariables(), variablesCode(20, 100));
+        let result = await this.execute(getVariables(), variablesCode(this.maxArrayLen, this.maxStringLen));
         if (result.isSuccess()) {
             return Promise.resolve(this.parse(result.toJson()["result"]["data"], false));
         } else {
@@ -39,7 +45,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
         const dataframe =
             variable.type === "pyspark.sql.dataframe.DataFrame" ||
             variable.type === "pandas.core.frame.Dataframe";
-        let result = await this.execute(getAttributes(pythonVar), variablesCode(20, 100));
+        let result = await this.execute(getAttributes(pythonVar), variablesCode(this.maxArrayLen, this.maxStringLen));
         if (result.isSuccess()) {
             return Promise.resolve(this.parse(result.toJson()["result"]["data"], dataframe));
         } else {

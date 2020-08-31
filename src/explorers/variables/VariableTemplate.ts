@@ -1,4 +1,4 @@
-export function variablesCode(maxlen: number, maxstr: 100) {
+export function variablesCode(maxlen: number, maxstr: number) {
     return `
     import inspect
     import itertools
@@ -11,7 +11,7 @@ export function variablesCode(maxlen: number, maxstr: 100) {
     
     
     class __DB_Var_Explorer__:
-        maxlen = 10
+        maxlen = ${maxlen}
     
         @staticmethod
         def get_type(t):

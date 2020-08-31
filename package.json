@@ -160,7 +160,18 @@
 		],
 		"configuration": {
 			"title": "Databricks Run",
-			"properties": {}
+			"properties": {
+				"DatabricksRun.maxArrayElements": {
+					"type": "integer",
+					"default": 10,
+					"description": "Maximum number of list elements shown in variable explorer"
+				},
+				"DatabricksRun.maxStringLength": {
+					"type": "integer",
+					"default": 100,
+					"description": "Maximum length of stings shown in variable explorer"
+				}
+			}
 		},
 		"taskDefinitions": [{
 			"type": "Databricks Run",
@@ -184,23 +195,23 @@
 		"views": {
 			"databricksExplorer": [{
 					"id": "databricksVariableExplorer",
-					"name": "Remote Python Variables"
+					"name": "Python Variables"
 				},
 				{
 					"id": "databricksLibraryExplorer",
-					"name": "Remote Python Libraries"
+					"name": "Python Libraries"
 				},
 				{
 					"id": "databricksDatabaseExplorer",
-					"name": "Remote Databases"
+					"name": "Databases"
 				},
 				{
 					"id": "databricksSecretsExplorer",
-					"name": "Remote Secrets"
+					"name": "Secrets"
 				},
 				{
 					"id": "databricksClusterExplorer",
-					"name": "Remote Cluster"
+					"name": "Cluster"
 				}
 			]
 		},
