@@ -55,7 +55,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
             let pythonConfig = vscode.workspace.getConfiguration("python");
             python = pythonConfig.get("pythonPath");
         }
-        output.info(`Local python interpreter: ${python}`);
+        // output.info(`Local python interpreter: ${python}`);
         let locaLibs: string = pipList(python as string);
         this.parseLocal(locaLibs);
 
@@ -73,6 +73,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
                 new Library("Base Libraries", true, "", "", vscode.TreeItemCollapsibleState.Collapsed)
             ]);
         } else {
+            output.error(remoteLibs.toString());
             return Promise.resolve([new Library("Cannot retrieve libraries")]);
         }
     }

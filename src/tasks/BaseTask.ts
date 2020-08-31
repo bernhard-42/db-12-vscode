@@ -5,7 +5,7 @@ import fs from 'fs';
 import { DatabricksConfig } from '../databricks/Config';
 import { getWorkspaceRoot } from '../databricks/utils';
 
-export class BaseTask implements vscode.Pseudoterminal {
+export abstract class BaseTask implements vscode.Pseudoterminal {
     databricksConfig: DatabricksConfig;
     workspaceRoot: string | undefined;
     buildFolder = "";
@@ -52,7 +52,5 @@ export class BaseTask implements vscode.Pseudoterminal {
         return false;
     }
 
-    protected async doBuild(): Promise<void> {
-        return undefined;
-    }
+    protected abstract async doBuild(): Promise<void>
 }

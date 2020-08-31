@@ -5,7 +5,7 @@ export function pipList(python: string): string {
     try {
         return execSync(`${python} -m pip list --format json`).toString();
     } catch (error) {
-        output.info(error["stderr"].toString());
+        output.error(error["stderr"].toString());
         return "";
     };
 }
@@ -18,7 +18,7 @@ export function pipInstall(python: string, library: string, version?: string): s
             return execSync(`${python} -m pip install --upgrade ${library}`).toString();
         }
     } catch (error) {
-        output.info(error["stderr"].toString());
+        output.error(error["stderr"].toString());
         return "";
     };
 }
@@ -27,7 +27,7 @@ export function pythonVersion(python: string): string {
     try {
         return execSync(`${python} --version`).toString();
     } catch (error) {
-        output.info(error["stderr"].toString());
+        output.error(error["stderr"].toString());
         return "";
     };
 }

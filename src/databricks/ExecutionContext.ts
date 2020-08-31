@@ -24,9 +24,9 @@ export class ExecutionContexts {
         let fname = filename || getCurrentFilename();
         if (fname) {
             let context = this.executionContexts.get(fname);
-            if (context) {
-                output.info(`Retrieved context for file ${fname}`);
-            }
+            // if (context) {
+            //     output.debug(`Retrieved context for file ${fname}`);
+            // }
             return context;
         }
         return;
@@ -51,7 +51,7 @@ export class ExecutionContexts {
     clearContext(filename?: string) {
         let fname = filename || getCurrentFilename();
         if (fname) {
-            output.info(`Clearing context for file ${fname}`);
+            output.debug(`Clearing context for file ${fname}`);
             this.executionContexts.delete(fname);
         }
         return Array.from(this.executionContexts.keys()).length;

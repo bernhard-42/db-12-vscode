@@ -12,7 +12,7 @@ export class Clusters extends Rest {
             });
             return this.success(clusters);
         } else {
-            return this.failure(response["data"]);
+            return this.failure(response.toString());
         }
     }
 

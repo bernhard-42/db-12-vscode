@@ -47,7 +47,7 @@ export class RemoteCommand extends Rest {
     }
 
     async stop(): Promise<Response> {
-        output.info(`Stopping remote context with id: ${this.contextId}: `);
+        output.debug(`Stopping remote context with id: ${this.contextId}: `);
         try {
             const data = {
                 "clusterId": this.cluster,
@@ -61,6 +61,9 @@ export class RemoteCommand extends Rest {
     }
 
     async execute(code: string): Promise<Response> {
+        if (this.contextId === "") {
+            return Promise.resolve(Response.failure("No context"));
+        }
         try {
             const data = {
                 "language": this.language,
@@ -69,6 +72,9 @@ export class RemoteCommand extends Rest {
                 "command": code
             };
             const response = await this.post('api/1.2/commands/execute', data);
+            if (response.isFailure()) {
+                return this.failure(response.toString());
+            }
             this.commandId = response.toJson()["id"];
         } catch (error) {
             return this.failure(error.response.data.error);
@@ -86,7 +92,10 @@ export class RemoteCommand extends Rest {
                 if (resultType === "error") {
                     const out = response["data"]["results"]["cause"];
                     if (out.indexOf("CommandCancelledException") === -1) {
-                        output.info(out);
+                        // suppress error message, since this will happen by default sometimes
+                        if (out.indexOf("NameError: name '__DB_Var_Explorer__' is not defined") === -1) {
+                            output.error(out);
+                        }
                         return this.failure(out);
                     }
                     return this.warning("Command cancelled");

@@ -3,7 +3,7 @@ import { RemoteCommand } from '../../rest/RemoteCommand';
 import { variablesCode, getVariables, getAttributes } from './VariableTemplate';
 import { Variable } from './Variable';
 import { BaseExplorer } from '../BaseExplorer';
-import { Json } from '../../rest/Rest';
+import * as output from '../../databricks/Output';
 
 export class VariableExplorerProvider extends BaseExplorer<Variable> {
     language = "";
@@ -29,6 +29,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
         if (result.isSuccess()) {
             return Promise.resolve(this.parse(result.toJson()["result"]["data"], false));
         } else {
+            output.error(result.toString());
             return Promise.resolve([new Variable("missing")]);
         }
     }

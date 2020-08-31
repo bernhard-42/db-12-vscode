@@ -42,7 +42,7 @@ export class UploadTask extends BaseTask {
                     `    %pip install ${this.remoteFile.replace("dbfs:", "/dbfs")}'\n`
                 );
             } else {
-                this.writeEmitter.fire(`${result["data"]}\r\n`);
+                this.writeEmitter.fire(`${result.toString()}\r\n`);
             }
             this.closeEmitter.fire();
             resolve();

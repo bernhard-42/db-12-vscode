@@ -103,8 +103,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(editor => {
-			if (editor) {
-				output.info(`window.onDidChangeActiveTextEditor: ${editor.document.fileName}`);
+			if (editor && editor.document.fileName.startsWith("/")) {
+				output.debug(`window.onDidChangeActiveTextEditor: ${editor.document.fileName}`);
 				databricksRun.refreshVariables(editor.document.fileName);
 				databricksRun.refreshDatabases(editor.document.fileName);
 				databricksRun.refreshLibraries(editor.document.fileName);
@@ -113,8 +113,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.workspace.onDidCloseTextDocument(doc => {
-			output.info(`workspace.onDidCloseTextDocument ${doc.fileName}`);
-			databricksRun.stop(doc.fileName);
+			if (doc.fileName.startsWith("/")) {
+				output.debug(`workspace.onDidCloseTextDocument ${doc.fileName}`);
+				databricksRun.stop(doc.fileName);
+			}
 		})
 	);
 

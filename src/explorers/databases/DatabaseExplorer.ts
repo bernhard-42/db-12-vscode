@@ -3,6 +3,7 @@ import { RemoteCommand, } from '../../rest/RemoteCommand';
 import { Response, Json } from '../../rest/Rest';
 import { DatabaseItem } from './Database';
 import { BaseExplorer } from '../BaseExplorer';
+import * as output from '../../databricks/Output';
 
 export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
     temp: Json = { true: "temporary", false: "persistent" };
@@ -26,6 +27,7 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
         if (result.isSuccess()) {
             return Promise.resolve(this.parse(result.toJson()["result"]["data"], "database", ""));
         } else {
+            output.error(result.toString());
             return Promise.resolve([new DatabaseItem("missing")]);
         }
     }
@@ -46,6 +48,7 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
             const objs = this.parse(result.toJson()["result"]["data"], type, databaseItem.getParent());
             return Promise.resolve(objs);
         } else {
+            output.error(result.toString());
             return Promise.resolve([new DatabaseItem("Missing")]);
         }
     }

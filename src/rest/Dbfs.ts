@@ -15,7 +15,7 @@ export class Dbfs extends Rest {
         if (result.isSuccess()) {
             handle = result.toJson()["handle"];
         } else {
-            return Promise.reject(this.failure(result["data"]));
+            return Promise.reject(this.failure(result.toString()));
         }
 
         // Add blocks

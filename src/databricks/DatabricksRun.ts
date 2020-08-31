@@ -111,10 +111,10 @@ export class DatabricksRun {
             this.clusterApi = new Clusters(host, token);
             let response = await this.clusterApi.names();
             if (response.isSuccess()) {
-                clusters = (response.data as [string, string][]);
+                clusters = (response.toJson() as [string, string][]);
             } else {
-                const error = response["data"];
-                window.showErrorMessage(`ERROR: ${error}\n`);
+                const error = response.toString();
+                window.showErrorMessage(`${error}\n`);
                 return;
             }
 
@@ -176,14 +176,14 @@ export class DatabricksRun {
             const error = result.toString();
             if (error.startsWith("ClusterNotReadyException")) {
                 if (error.indexOf("currently Pending") >= 0) {
-                    output.write("Cluster is currently starting");
+                    vscode.window.showErrorMessage("Cluster is currently starting");
                 } else {
                     const answer = await inquiry(`Cluster not running, start it?`, ["yes", "no"]);
                     if (answer === "yes") {
                         let clusterApi = new Clusters(host, token);
                         result = await clusterApi.start(cluster);
                         if (result.isFailure()) {
-                            output.info(result.toString());
+                            output.error(result.toString());
                         }
                     }
                     for (let dummy of [0, 2]) {
@@ -195,7 +195,7 @@ export class DatabricksRun {
                     output.write("Please re-initialize the extension once the cluster is started");
                 }
             } else {
-                vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result["data"]}`);
+                vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result.toString()}`);
             }
             return;
         }
@@ -330,7 +330,7 @@ export class DatabricksRun {
                 });
             }
         } else {
-            output.write("Error: " + result.toString());
+            output.write(result.toString());
         }
         output.thickBorder();
 
@@ -368,7 +368,7 @@ export class DatabricksRun {
 
         let context = executionContexts.getContext(filename);
         if (context === undefined) {
-            output.info(`No Databricks context available`);
+            output.error(`No Databricks context available`);
             return;
         }
 
@@ -412,7 +412,7 @@ export class DatabricksRun {
                 vscode.window.showInformationMessage(`Triggered cluster ${command}`);
             } else {
                 vscode.window.showErrorMessage(`Couldn't ${command} cluster`);
-                output.info(result.toString());
+                output.error(result.toString());
             }
             for (let dummy of [0, 2]) {
                 setTimeout(() => {
