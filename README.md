@@ -1,8 +1,5 @@
 # Databricks Run
 
-This feature allows to run Python, SQL, Scala and R code on Databricks clusters
-![Overview](./media/databricks-run-v0.1.0.gif)
-
 ## Features
 
 - Use Databriocks [Context/Command API](https://docs.databricks.com/dev-tools/api/1.2/index.html#execution-context) to send single lines or selected code block to a remote Databricks cluster
@@ -29,3 +26,9 @@ Users appreciate release notes as you update your extension.
 ### 0.3.0
 
 - Removed language as a setting
+
+### 0.9.0
+
+- More explorers (databses, clusters, libraries)
+- Configuration is now outside of .vscode
+- Complete task build systems
