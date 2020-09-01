@@ -31,3 +31,41 @@ export async function inquiry(placeholder: string, options: string[]) {
     }) || "";
     return answer;
 }
+
+
+class PythonPath {
+    public static async getPythonPath(document?: vscode.TextDocument): Promise<string> {
+        try {
+            const extension = vscode.extensions.getExtension("ms-python.python");
+            if (!extension) {
+                return "python";
+            }
+            const usingNewInterpreterStorage = extension.packageJSON?.featureFlags?.usingNewInterpreterStorage;
+            if (usingNewInterpreterStorage) {
+                if (!extension.isActive) {
+                    await extension.activate();
+                }
+                const pythonPath = extension.exports.settings.getExecutionDetails().execCommand;
+                output.write(pythonPath);
+                return pythonPath;
+            } else {
+                return this.getConfiguration("python", document).get<string>("pythonPath") || "";
+            }
+        } catch (error) {
+            return "python";
+        }
+    }
+
+    public static getConfiguration(section?: string, document?: vscode.TextDocument): vscode.WorkspaceConfiguration {
+        if (document) {
+            return vscode.workspace.getConfiguration(section, document.uri);
+        } else {
+            return vscode.workspace.getConfiguration(section);
+        }
+    }
+}
+
+export function getPythonPath() {
+    let editor = getEditor();
+    return PythonPath.getPythonPath(editor?.document);
+}

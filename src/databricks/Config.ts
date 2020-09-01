@@ -1,13 +1,11 @@
 import * as vscode from 'vscode';
-import { ConfigurationTarget } from 'vscode';
 
 import fs from 'fs';
 import os from 'os';
 import ini from 'ini';
 import path from 'path';
 
-import * as output from './Output';
-import { getWorkspaceRoot, getCurrentFilename } from './utils';
+import { getEditor, getWorkspaceRoot, getCurrentFilename } from './utils';
 
 interface ConfigObj {
     [key: string]: any;
@@ -148,5 +146,8 @@ export class DatabricksConfig {
         return this.getVscodeConfig("DatabricksRun.remoteUser") as string;
     }
 }
+
+
+
 
 

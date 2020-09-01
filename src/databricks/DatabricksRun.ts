@@ -9,7 +9,7 @@ import Table from 'cli-table';
 
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { Clusters } from '../rest/Clusters';
-import { Json, Response } from '../rest/Rest';
+import { Json } from '../rest/Rest';
 
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';

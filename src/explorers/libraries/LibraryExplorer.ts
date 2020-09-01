@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { RemoteCommand } from '../../rest/RemoteCommand';
-import { pipList, pythonVersion, pipInstall } from '../../system/shell';
+import { pipList, pythonVersion } from '../../system/shell';
 import { TerminalExecute } from '../../system/terminal';
 import { EOL } from 'os';
+import { getPythonPath } from '../../databricks/utils';
 
 import * as output from '../../databricks/Output';
 
@@ -10,7 +11,6 @@ import { Library } from './Library';
 import { librariesCode } from './LibraryTemplate';
 import { baseLibraries } from './baselibs';
 import { BaseExplorer } from '../BaseExplorer';
-import { Json, Response } from '../../rest/Rest';
 
 export class LibraryExplorerProvider extends BaseExplorer<Library> {
     remoteLibraries = new Map<string, Library>();
@@ -47,13 +47,12 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
 
     async getTopLevel(): Promise<Library[]> {
         this.localLibraries = new Map<string, string>();
-        // TODO: python.pythonPath is deprecated!
-        let pythonConfig = vscode.workspace.getConfiguration("python");
-        let python = pythonConfig.get("pythonPath");
+        let python = await getPythonPath();
         if (python === "python") {
             await vscode.commands.executeCommand("python.setInterpreter");
             let pythonConfig = vscode.workspace.getConfiguration("python");
-            python = pythonConfig.get("pythonPath");
+            // python = pythonConfig.get("pythonPath");
+            python = await getPythonPath();
         }
         // output.info(`Local python interpreter: ${python}`);
         let locaLibs: string = pipList(python as string);
@@ -103,7 +102,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
     async install(library?: Library) {
 
         let pythonConfig = vscode.workspace.getConfiguration("python");
-        let python = pythonConfig.get("pythonPath");
+        let python = getPythonPath();
         if (python && library) {
             if ((await vscode.window.showQuickPick(["yes", "no"], {
                 placeHolder: `Install library ${library.name} in the local environment with pip?`
