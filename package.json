@@ -207,12 +207,11 @@
 					"name": "Python Variables"
 				},
 				{
-					"id": "databricksDatabaseExplorer",
-					"name": "Databases"
-				},
-				{
 					"id": "databricksLibraryExplorer",
 					"name": "Python Libraries"
+				}, {
+					"id": "databricksDatabaseExplorer",
+					"name": "Databases"
 				},
 				{
 					"id": "databricksClusterExplorer",

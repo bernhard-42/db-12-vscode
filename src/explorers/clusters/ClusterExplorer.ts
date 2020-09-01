@@ -18,13 +18,7 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     }
 
     async getTopLevel(): Promise<ClusterAttribute[]> {
-        let clusters = Array.from(executionContexts.executionContexts.keys()).map(entry =>
-            [
-                executionContexts.executionContexts.get(entry)?.cluster || "",
-                executionContexts.executionContexts.get(entry)?.host || "",
-                executionContexts.executionContexts.get(entry)?.token || ""
-            ]
-        );
+        let clusters = executionContexts.getClusters();
         let entries: ClusterAttribute[] = [];
         let covered: string[] = [];
         for (let [cluster, host, token] of clusters) {
@@ -88,7 +82,6 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
             }
             for (let dummy of [0, 2]) {
                 setTimeout(() => {
-                    console.log('Test');
                     this.refresh();
                 }, 1000);
             }

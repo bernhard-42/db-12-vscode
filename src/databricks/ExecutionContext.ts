@@ -23,11 +23,7 @@ export class ExecutionContexts {
     getContext(filename?: string) {
         let fname = filename || getCurrentFilename();
         if (fname) {
-            let context = this.executionContexts.get(fname);
-            // if (context) {
-            //     output.debug(`Retrieved context for file ${fname}`);
-            // }
-            return context;
+            return this.executionContexts.get(fname);
         }
         return;
     }
@@ -56,6 +52,28 @@ export class ExecutionContexts {
         }
         return Array.from(this.executionContexts.keys()).length;
     }
+
+    getClusters() {
+        let clusters = Array.from(this.executionContexts.keys()).map(entry =>
+            [
+                this.executionContexts.get(entry)?.cluster || "",
+                this.executionContexts.get(entry)?.host || "",
+                this.executionContexts.get(entry)?.token || ""
+            ]
+        );
+        return clusters;
+    }
+
+    getFilenamesForCluster(clusterId: string) {
+        let filenames: string[] = [];
+        for (let [key, value] of this.executionContexts) {
+            if (value.cluster === clusterId) {
+                filenames.push(key);
+            }
+        }
+        return filenames;
+    }
 }
 
 export const executionContexts = new ExecutionContexts();
+

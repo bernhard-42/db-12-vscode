@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { window } from 'vscode';
 
 import fs from 'fs';
-import path from 'path';
 
 import username from 'username';
 import Table from 'cli-table';
@@ -19,7 +18,6 @@ import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/d
 import { createContextExplorer, ContextExplorerProvider } from '../explorers/contexts/ContextExplorer';
 
 import { Library } from '../explorers/libraries/Library';
-import { Secret } from '../explorers/secrets/Secret';
 import { ClusterAttribute } from '../explorers/clusters/ClusterAttribute';
 
 import { DatabricksRunPanel } from '../viewers/DatabricksRunPanel';
@@ -201,12 +199,7 @@ export class DatabricksRun {
                             output.error(result.toString());
                         }
                     }
-                    for (let i of [0, 2]) {
-                        setTimeout(() => {
-                            this.refreshClusters();
-                        }, (i + 1) * 1000);
-                    }
-                    output.write("Please re-initialize the extension once the cluster is started");
+                    output.write("Once the cluster is started, please re-initialize the context.");
                 }
             } else {
                 vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result.toString()}`);
@@ -416,11 +409,20 @@ export class DatabricksRun {
     async restartCluster(cluster: ClusterAttribute) {
         if (await inquiry(`Restart cluster?`, ["yes", "no"]) !== "yes") { return; }
         this.clusterExplorer?.manageCluster(cluster, "restart");
+        let filenames = executionContexts.getFilenamesForCluster(cluster.getclusterId());
+        output.write("Once the cluster is started, please re-initialize the context for");
+        for (let filename of filenames) {
+            output.write(`- ${filename}`);
+        }
     }
 
     async stopCluster(cluster: ClusterAttribute) {
-        if (await inquiry(`Stop cluster?`, ["yes", "no"]) !== "yes") { return; }
+        if (await inquiry(`Stop cluster ? `, ["yes", "no"]) !== "yes") { return; }
         this.clusterExplorer?.manageCluster(cluster, "stop");
+        let filenames = executionContexts.getFilenamesForCluster(cluster.getclusterId());
+        for (let filename of filenames) {
+            this.stop(filename);
+        }
     }
 
     // refreshSecrets() {

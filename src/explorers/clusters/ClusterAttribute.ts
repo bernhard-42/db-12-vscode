@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Json } from '../../rest/Rest';
+import { timeStamp } from 'console';
 
 export class ClusterAttribute extends vscode.TreeItem {
     constructor(
@@ -31,5 +32,9 @@ export class ClusterAttribute extends vscode.TreeItem {
 
     get contextValue() {
         return this.type;
+    }
+
+    getclusterId() {
+        return (this.value) ? this.value["cluster_id"] : "";
     }
 }
