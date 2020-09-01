@@ -6,7 +6,7 @@
 	"version": "0.9.0",
 	"repository": "https://github.com/bernhard-42/databricks-run",
 	"engines": {
-		"vscode": "^1.44.0"
+		"vscode": "^1.48.2"
 	},
 	"categories": [
 		"Other"
@@ -16,7 +16,8 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [{
+		"commands": [
+			{
 				"command": "databricks-run.initialize",
 				"title": "Databricks Run: Initialize Databricks Connections"
 			},
@@ -133,7 +134,8 @@
 				}
 			}
 		],
-		"keybindings": [{
+		"keybindings": [
+			{
 				"command": "databricks-run.sendSelectionOrLine",
 				"key": "ctrl+k shift+enter",
 				"mac": "cmd+k shift+enter",
@@ -178,27 +180,32 @@
 				}
 			}
 		},
-		"taskDefinitions": [{
-			"type": "Databricks Run",
-			"required": [
-				"action"
-			],
-			"properties": {
-				"action": {
-					"type": "string",
-					"description": "The build task. This can be 'upload-wheel' and 'restart'."
+		"taskDefinitions": [
+			{
+				"type": "Databricks Run",
+				"required": [
+					"action"
+				],
+				"properties": {
+					"action": {
+						"type": "string",
+						"description": "The build task. This can be 'upload-wheel' and 'restart'."
+					}
 				}
 			}
-		}],
+		],
 		"viewsContainers": {
-			"activitybar": [{
-				"id": "databricksExplorer",
-				"title": "Databricks",
-				"icon": "resources/databricks-run.png"
-			}]
+			"activitybar": [
+				{
+					"id": "databricksExplorer",
+					"title": "Databricks",
+					"icon": "resources/databricks-run.png"
+				}
+			]
 		},
 		"views": {
-			"databricksExplorer": [{
+			"databricksExplorer": [
+				{
 					"id": "databricksContextExplorer",
 					"name": "Contexts"
 				},
@@ -209,7 +216,8 @@
 				{
 					"id": "databricksLibraryExplorer",
 					"name": "Python Libraries"
-				}, {
+				},
+				{
 					"id": "databricksDatabaseExplorer",
 					"name": "Databases"
 				},
@@ -220,7 +228,8 @@
 			]
 		},
 		"menus": {
-			"view/title": [{
+			"view/title": [
+				{
 					"command": "databricks-run.refresh-libraries",
 					"when": "view == databricksLibraryExplorer",
 					"group": "navigation@1"
@@ -251,7 +260,8 @@
 					"group": "navigation"
 				}
 			],
-			"view/item/context": [{
+			"view/item/context": [
+				{
 					"command": "databricks-run.install-library",
 					"when": "view == databricksLibraryExplorer && viewItem == library",
 					"group": "inline"
@@ -302,6 +312,7 @@
 		"@types/ini": "^1.3.30",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.13.15",
+		"@types/vscode": "^1.48.0",
 		"@typescript-eslint/eslint-plugin": "^2.34.0",
 		"@typescript-eslint/parser": "^2.34.0",
 		"eslint": "^6.8.0",
