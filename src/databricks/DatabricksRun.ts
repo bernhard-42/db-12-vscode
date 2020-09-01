@@ -321,7 +321,7 @@ export class DatabricksRun {
 
             if (result2["type"] === "table") {
                 renderTable(result2);
-            } else if (data.startsWith("<div>")) {
+            } else if (data.startsWith("<div>") || data.startsWith("<html>")) {
                 renderHtml(data);
             } else if (isR) {
                 // strip R output HTML tags

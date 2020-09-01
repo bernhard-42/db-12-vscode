@@ -26,15 +26,19 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
             ]
         );
         let entries: ClusterAttribute[] = [];
-        for (let [cluster, host, token] of Array.from(new Set(clusters))) {
-            let result = await this.execute(cluster);
-            let clusterInfo = result.toJson();
-            if (result.isSuccess()) {
-                let entry = new ClusterAttribute(
-                    `${clusterInfo["cluster_name"]} (${clusterInfo["state"]})`,
-                    clusterInfo, "cluster", host, token,
-                    vscode.TreeItemCollapsibleState.Collapsed);
-                entries.push(entry);
+        let covered: string[] = [];
+        for (let [cluster, host, token] of clusters) {
+            if (!covered.includes(cluster)) {
+                covered.push(cluster);
+                let result = await this.execute(cluster);
+                let clusterInfo = result.toJson();
+                if (result.isSuccess()) {
+                    let entry = new ClusterAttribute(
+                        `${clusterInfo["cluster_name"]} (${clusterInfo["state"]})`,
+                        clusterInfo, "cluster", host, token,
+                        vscode.TreeItemCollapsibleState.Collapsed);
+                    entries.push(entry);
+                }
             }
         };
         return Promise.resolve(entries);
