@@ -14,7 +14,7 @@ import { Json } from '../rest/Rest';
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
 import { createClusterExplorer, ClusterExplorerProvider } from '../explorers/clusters/ClusterExplorer';
-import { createSecretsExplorer, SecretsExplorerProvider } from '../explorers/secrets/SecretsExplorer';
+// import { createSecretsExplorer, SecretsExplorerProvider } from '../explorers/secrets/SecretsExplorer';
 import { createDatabaseExplorer, DatabaseExplorerProvider } from '../explorers/databases/DatabaseExplorer';
 import { createContextExplorer, ContextExplorerProvider } from '../explorers/contexts/ContextExplorer';
 
@@ -45,7 +45,7 @@ export class DatabricksRun {
     private libraryExplorer: LibraryExplorerProvider | undefined;
     private databaseExplorer: DatabaseExplorerProvider | undefined;
     private clusterExplorer: ClusterExplorerProvider | undefined;
-    private secretsExplorer: SecretsExplorerProvider | undefined;
+    // private secretsExplorer: SecretsExplorerProvider | undefined;
     private contextEplorer: ContextExplorerProvider | undefined;
 
     private clusterApi: Clusters | undefined;
@@ -176,7 +176,7 @@ export class DatabricksRun {
         this.clusterExplorer = createClusterExplorer(cluster, host, token);
 
         // Register Cluster Explorer
-        this.secretsExplorer = createSecretsExplorer(host, token);
+        // this.secretsExplorer = createSecretsExplorer(host, token);
 
         // Create Databricks Execution Context
         var remoteCommand = new RemoteCommand(host, token, profile, language, cluster);
@@ -201,11 +201,10 @@ export class DatabricksRun {
                             output.error(result.toString());
                         }
                     }
-                    for (let dummy of [0, 2]) {
+                    for (let i of [0, 2]) {
                         setTimeout(() => {
-                            console.log('Test');
                             this.refreshClusters();
-                        }, 1000);
+                        }, (i + 1) * 1000);
                     }
                     output.write("Please re-initialize the extension once the cluster is started");
                 }
@@ -250,7 +249,7 @@ export class DatabricksRun {
         this.contextEplorer?.refresh();
 
         this.clusterExplorer?.refresh();
-        this.secretsExplorer.refresh();
+        // this.secretsExplorer.refresh();
         this.updateStatus(fileName, true);
 
         output.write("Ready");
@@ -424,21 +423,21 @@ export class DatabricksRun {
         this.clusterExplorer?.manageCluster(cluster, "stop");
     }
 
-    refreshSecrets() {
-        this.secretsExplorer?.refresh();
-    }
+    // refreshSecrets() {
+    //     this.secretsExplorer?.refresh();
+    // }
+
+    // pasteFromSecrets(secret: Secret) {
+    //     if (this.secretsExplorer) {
+    //         let snippet = new vscode.SnippetString(this.secretsExplorer.getSnippet(secret));
+    //         const editor = getEditor();
+    //         editor?.insertSnippet(snippet);
+    //     }
+    // }
 
     refreshVariables(filename?: string) {
         if (this.variableExplorer) {
             this.variableExplorer.refresh(filename);
-        }
-    }
-
-    pasteFromSecrets(secret: Secret) {
-        if (this.secretsExplorer) {
-            let snippet = new vscode.SnippetString(this.secretsExplorer.getSnippet(secret));
-            const editor = getEditor();
-            editor?.insertSnippet(snippet);
         }
     }
 

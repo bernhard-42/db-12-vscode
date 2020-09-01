@@ -117,22 +117,6 @@
 				}
 			},
 			{
-				"command": "databricks-run.refresh-secrets",
-				"title": "Refresh Remote Secrets",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
-			},
-			{
-				"command": "databricks-run.paste-from-secrets",
-				"title": "Paste dbutils secret command",
-				"icon": {
-					"light": "resources/light/open-file.svg",
-					"dark": "resources/dark/open-file.svg"
-				}
-			},
-			{
 				"command": "databricks-run.refresh-contexts",
 				"title": "Refresh Contexts",
 				"icon": {
@@ -231,10 +215,6 @@
 					"name": "Python Libraries"
 				},
 				{
-					"id": "databricksSecretsExplorer",
-					"name": "Secrets"
-				},
-				{
 					"id": "databricksClusterExplorer",
 					"name": "Cluster"
 				}
@@ -262,11 +242,6 @@
 					"group": "navigation"
 				},
 				{
-					"command": "databricks-run.refresh-secrets",
-					"when": "view == databricksSecretsExplorer",
-					"group": "navigation"
-				},
-				{
 					"command": "databricks-run.refresh-cluster-attributes",
 					"when": "view == databricksClusterExplorer",
 					"group": "navigation@3"
@@ -290,11 +265,6 @@
 				{
 					"command": "databricks-run.paste-from-database",
 					"when": "view == databricksDatabaseExplorer",
-					"group": "inline"
-				},
-				{
-					"command": "databricks-run.paste-from-secrets",
-					"when": "view == databricksSecretsExplorer && viewItem == secret",
 					"group": "inline"
 				},
 				{
