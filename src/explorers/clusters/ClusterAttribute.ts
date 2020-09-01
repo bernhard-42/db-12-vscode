@@ -5,6 +5,9 @@ export class ClusterAttribute extends vscode.TreeItem {
     constructor(
         public readonly name: string,
         public readonly value?: Json,
+        public readonly type?: string,
+        public readonly host?: string,
+        public readonly token?: string,
         public readonly collapsibleState?: vscode.TreeItemCollapsibleState
     ) {
         super(name, collapsibleState || vscode.TreeItemCollapsibleState.None);
@@ -24,5 +27,9 @@ export class ClusterAttribute extends vscode.TreeItem {
 
     getValue(): Json {
         return this.value || {};
+    }
+
+    get contextValue() {
+        return this.type;
     }
 }

@@ -19,16 +19,20 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
 
     async getTopLevel(): Promise<ClusterAttribute[]> {
         let clusters = Array.from(executionContexts.executionContexts.keys()).map(entry =>
-            executionContexts.executionContexts.get(entry)?.cluster || ""
+            [
+                executionContexts.executionContexts.get(entry)?.cluster || "",
+                executionContexts.executionContexts.get(entry)?.host || "",
+                executionContexts.executionContexts.get(entry)?.token || ""
+            ]
         );
         let entries: ClusterAttribute[] = [];
-        for (let cluster of Array.from(new Set(clusters))) {
+        for (let [cluster, host, token] of Array.from(new Set(clusters))) {
             let result = await this.execute(cluster);
             let clusterInfo = result.toJson();
             if (result.isSuccess()) {
                 let entry = new ClusterAttribute(
                     `${clusterInfo["cluster_name"]} (${clusterInfo["state"]})`,
-                    clusterInfo,
+                    clusterInfo, "cluster", host, token,
                     vscode.TreeItemCollapsibleState.Collapsed);
                 entries.push(entry);
             }
@@ -42,8 +46,7 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
             const obj = parent.getValue()[key];
             attributes.push(
                 new ClusterAttribute(
-                    key,
-                    obj,
+                    key, obj, "config", "", "",
                     (obj === Object(obj)) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
                 )
             );
@@ -57,6 +60,35 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
 
     refresh(): void {
         this._onDidChangeTreeData.fire(undefined);
+    }
+
+    async manageCluster(cluster: ClusterAttribute, command: string) {
+        let clusterId = (cluster.value as Json)["cluster_id"];
+        if (cluster.host && cluster.token && clusterId) {
+            let result: Response;
+            let clusterApi = new Clusters(cluster.host, cluster.token);
+            if (command === "start") {
+                result = await clusterApi.start(clusterId);
+            } else if (command === "restart") {
+                result = await clusterApi.restart(clusterId);
+            } else if (command === "stop") {
+                result = await clusterApi.stop(clusterId);
+            } else {
+                return;
+            }
+            if (result.isSuccess()) {
+                vscode.window.showInformationMessage(`Triggered cluster ${command}`);
+            } else {
+                vscode.window.showErrorMessage(`Couldn't ${command} cluster`);
+                output.error(result.toString());
+            }
+            for (let dummy of [0, 2]) {
+                setTimeout(() => {
+                    console.log('Test');
+                    this.refresh();
+                }, 1000);
+            }
+        }
     }
 }
 

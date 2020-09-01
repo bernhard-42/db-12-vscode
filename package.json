@@ -272,21 +272,6 @@
 					"group": "navigation@3"
 				},
 				{
-					"command": "databricks-run.start-cluster",
-					"when": "view == databricksClusterExplorer",
-					"group": "navigation@0"
-				},
-				{
-					"command": "databricks-run.stop-cluster",
-					"when": "view == databricksClusterExplorer",
-					"group": "navigation@2"
-				},
-				{
-					"command": "databricks-run.restart-cluster",
-					"when": "view == databricksClusterExplorer",
-					"group": "navigation@1"
-				},
-				{
 					"command": "databricks-run.refresh-contexts",
 					"when": "view == databricksContextExplorer",
 					"group": "navigation"
@@ -316,6 +301,21 @@
 					"command": "databricks-run.select-context",
 					"when": "view == databricksContextExplorer && viewItem == context",
 					"group": "inline"
+				},
+				{
+					"command": "databricks-run.start-cluster",
+					"when": "view == databricksClusterExplorer",
+					"group": "inline@0"
+				},
+				{
+					"command": "databricks-run.stop-cluster",
+					"when": "view == databricksClusterExplorer",
+					"group": "inline@2"
+				},
+				{
+					"command": "databricks-run.restart-cluster",
+					"when": "view == databricksClusterExplorer",
+					"group": "inline@1"
 				}
 			]
 		}

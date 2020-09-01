@@ -20,6 +20,8 @@ import { createContextExplorer, ContextExplorerProvider } from '../explorers/con
 
 import { Library } from '../explorers/libraries/Library';
 import { Secret } from '../explorers/secrets/Secret';
+import { ClusterAttribute } from '../explorers/clusters/ClusterAttribute';
+
 import { DatabricksRunPanel } from '../viewers/DatabricksRunPanel';
 
 import { getEditor, getCurrentFilename, getWorkspaceRoot, inquiry } from '../databricks/utils';
@@ -407,47 +409,19 @@ export class DatabricksRun {
         }
     }
 
-    private async manageCluster(command: string) {
-        if (await window.showQuickPick(["yes", "no"], { placeHolder: `${command} cluster?` }) !== "yes") { return; }
-
-        let context = executionContexts.getContext();
-        let result: Response;
-        if (context?.cluster) {
-            let clusterApi = new Clusters(context.host, context.token);
-            if (command === "start") {
-                result = await clusterApi.start(context.cluster);
-            } else if (command === "restart") {
-                result = await clusterApi.restart(context.cluster);
-            } else if (command === "stop") {
-                result = await clusterApi.stop(context.cluster);
-            } else {
-                return;
-            }
-            if (result.isSuccess()) {
-                vscode.window.showInformationMessage(`Triggered cluster ${command}`);
-            } else {
-                vscode.window.showErrorMessage(`Couldn't ${command} cluster`);
-                output.error(result.toString());
-            }
-            for (let dummy of [0, 2]) {
-                setTimeout(() => {
-                    console.log('Test');
-                    this.refreshClusters();
-                }, 1000);
-            }
-        }
+    async startCluster(cluster: ClusterAttribute) {
+        if (await inquiry(`Start cluster?`, ["yes", "no"]) !== "yes") { return; }
+        this.clusterExplorer?.manageCluster(cluster, "start");
     }
 
-    async startCluster() {
-        this.manageCluster("start");
+    async restartCluster(cluster: ClusterAttribute) {
+        if (await inquiry(`Restart cluster?`, ["yes", "no"]) !== "yes") { return; }
+        this.clusterExplorer?.manageCluster(cluster, "restart");
     }
 
-    async restartCluster() {
-        this.manageCluster("restart");
-    }
-
-    async stopCluster() {
-        this.manageCluster("stop");
+    async stopCluster(cluster: ClusterAttribute) {
+        if (await inquiry(`Stop cluster?`, ["yes", "no"]) !== "yes") { return; }
+        this.clusterExplorer?.manageCluster(cluster, "stop");
     }
 
     refreshSecrets() {
