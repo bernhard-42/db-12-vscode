@@ -186,6 +186,11 @@
 					"type": "integer",
 					"default": 100,
 					"description": "Maximum length of stings shown in variable explorer"
+				},
+				"DatabricksRun.remoteUser": {
+					"type": "string",
+					"default": "",
+					"description": "Remote Databricks username"
 				}
 			}
 		},

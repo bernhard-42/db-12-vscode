@@ -25,11 +25,13 @@ import { getEditor, getCurrentFilename, getWorkspaceRoot, inquiry } from '../dat
 import { createBuildWheelTasks } from '../tasks/BuildWheelTask';
 
 import { executionContexts } from './ExecutionContext';
-import { DatabricksConfig } from './Config';
+import { DatabricksConfig, NOLIB } from './Config';
 import * as output from './Output';
 import { DatabaseItem } from '../explorers/databases/Database';
 import { Variable } from '../explorers/variables/Variable';
 import { Context } from 'mocha';
+import { config } from 'process';
+import { Z_NO_COMPRESSION } from 'zlib';
 
 export let resourcesFolder = "";
 
@@ -137,9 +139,11 @@ export class DatabricksRun {
             }
         }
 
-
         if (remoteFolder === "") {
-            let name = await username() || "<username>";
+            let name = this.databricksConfig.getUsername();
+            if (name === "") {
+                name = await username() || "<username>";
+            }
             remoteFolder = await window.showInputBox({
                 prompt: 'Provide a remote working folder',
                 value: `dbfs:/home/${name}`
@@ -210,17 +214,13 @@ export class DatabricksRun {
 
         if (language === "python") {
             if (libFolder === "") {
-                // const wsFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(fileName))?.uri.path || ".";
-                const folders = fs.readdirSync(this.workspaceRoot, { withFileTypes: true })
+                let folders = fs.readdirSync(this.workspaceRoot, { withFileTypes: true })
                     .filter(dirent => dirent.isDirectory())
                     .filter(dirent => ![".vscode", ".git", "__pycache__"].includes(dirent.name))
                     .map(dirent => dirent.name);
                 if (folders.length > 0) {
+                    folders = [NOLIB].concat(folders);
                     libFolder = await inquiry('Select local library folder', folders);
-                    if (libFolder === "") {
-                        vscode.window.showErrorMessage(`Selection of library folder cancelled`);
-                        return;
-                    }
                 }
                 this.databricksConfig.setPythonLibFolder(libFolder);
             }

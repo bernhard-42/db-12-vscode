@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import path from 'path';
 import fs from 'fs';
 
-import { DatabricksConfig } from '../databricks/Config';
+import { DatabricksConfig, NOLIB } from '../databricks/Config';
 import { getWorkspaceRoot } from '../databricks/utils';
 
 export abstract class BaseTask implements vscode.Pseudoterminal {
@@ -11,6 +11,7 @@ export abstract class BaseTask implements vscode.Pseudoterminal {
     buildFolder = "";
     distFolder = "";
     libFolder = "";
+    remoteFolder = "";
     host = "";
     token = "";
     ready = false;
@@ -28,7 +29,8 @@ export abstract class BaseTask implements vscode.Pseudoterminal {
             this.buildFolder = path.join(this.workspaceRoot, "build");
             this.distFolder = path.join(this.workspaceRoot, "dist");
             this.libFolder = this.databricksConfig.getPythonLibFolder();
-            this.ready = (this.libFolder !== "");
+            this.remoteFolder = this.databricksConfig.getRemoteFolder();
+            this.ready = (this.remoteFolder !== "") && (this.libFolder !== "") && (this.libFolder !== NOLIB);
         } else {
             this.ready = false;
         }
@@ -52,5 +54,5 @@ export abstract class BaseTask implements vscode.Pseudoterminal {
         return false;
     }
 
-    protected abstract async doBuild(): Promise<void>
+    protected abstract async doBuild(): Promise<void>;
 }

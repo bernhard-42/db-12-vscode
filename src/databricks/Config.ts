@@ -13,6 +13,8 @@ interface ConfigObj {
     [key: string]: any;
 }
 
+export const NOLIB = "- none -";
+
 export class DatabricksConfig {
     workspaceFolder: string | undefined;
     config = <ConfigObj>{};
@@ -59,7 +61,7 @@ export class DatabricksConfig {
     }
 
     private getConfig(key: string) {
-        return this.config[key];
+        return this.config[key] || "";
     }
 
     private setConfig(key: string, value: any) {
@@ -120,14 +122,21 @@ export class DatabricksConfig {
         return Object.keys(dbConfig);
     }
 
-    getMaxArrayLen() {
+    getVscodeConfig(key: string) {
         let config = vscode.workspace.getConfiguration();
-        return config.get("DatabricksRun.maxArrayElements") as number;
+        return config.get(key);
+    }
+
+    getMaxArrayLen() {
+        return this.getVscodeConfig("DatabricksRun.maxArrayElements") as number;
     }
 
     getMaxStringLen() {
-        let config = vscode.workspace.getConfiguration();
-        return config.get("DatabricksRun.maxStringLength") as number;
+        return this.getVscodeConfig("DatabricksRun.maxStringLength") as number;
+    }
+
+    getUsername() {
+        return this.getVscodeConfig("DatabricksRun.remoteUser") as string;
     }
 }
 

@@ -6,3 +6,5 @@ examples/
 scratch
 TODO
 __pycache__
+
+.databricks-run.json
