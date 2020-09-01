@@ -7,7 +7,7 @@ import ini from 'ini';
 import path from 'path';
 
 import * as output from './Output';
-import { getWorkspaceRoot } from './utils';
+import { getWorkspaceRoot, getCurrentFilename } from './utils';
 
 interface ConfigObj {
     [key: string]: any;
@@ -20,9 +20,12 @@ export class DatabricksConfig {
     config = <ConfigObj>{};
     gitignore = ".gitignore";
     configFile = ".databricks-run.json";
+    relPath = "";
 
     constructor() {
         this.workspaceFolder = getWorkspaceRoot();
+        let filename = getCurrentFilename() || "";
+        this.relPath = filename.replace(this.workspaceFolder || "", "");
     }
 
     init() {
@@ -61,11 +64,17 @@ export class DatabricksConfig {
     }
 
     private getConfig(key: string) {
-        return this.config[key] || "";
+        if (!this.config[this.relPath]) {
+            return "";
+        }
+        return this.config[this.relPath][key] || "";
     }
 
     private setConfig(key: string, value: any) {
-        this.config[key] = value;
+        if (!this.config[this.relPath]) {
+            this.config[this.relPath] = {};
+        }
+        this.config[this.relPath][key] = value;
         this.save();
     }
 
@@ -83,7 +92,7 @@ export class DatabricksConfig {
 
     getClusterInfo() {
         let [cluster, clusterName] = ["", ""];
-        const clusterInfo = this.config["cluster"];
+        const clusterInfo = this.getConfig("cluster");
         if (clusterInfo) {
             const sep = clusterInfo.indexOf(" ");
             cluster = clusterInfo.substring(0, sep) || "";

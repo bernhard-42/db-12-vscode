@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { window } from 'vscode';
 
 import fs from 'fs';
+import path from 'path';
+
 import username from 'username';
 import Table from 'cli-table';
 
@@ -30,8 +32,7 @@ import * as output from './Output';
 import { DatabaseItem } from '../explorers/databases/Database';
 import { Variable } from '../explorers/variables/Variable';
 import { Context } from 'mocha';
-import { config } from 'process';
-import { Z_NO_COMPRESSION } from 'zlib';
+
 
 export let resourcesFolder = "";
 
@@ -201,7 +202,7 @@ export class DatabricksRun {
                     for (let dummy of [0, 2]) {
                         setTimeout(() => {
                             console.log('Test');
-                            this.refreshClusterAttributes();
+                            this.refreshClusters();
                         }, 1000);
                     }
                     output.write("Please re-initialize the extension once the cluster is started");
@@ -396,10 +397,11 @@ export class DatabricksRun {
         this.refreshDatabases();
         this.refreshLibraries();
         this.refreshContexts();
+        this.refreshClusters();
         this.updateStatus(filename, true);
     };
 
-    refreshClusterAttributes() {
+    refreshClusters() {
         if (this.clusterExplorer) {
             this.clusterExplorer.refresh();
         }
@@ -430,7 +432,7 @@ export class DatabricksRun {
             for (let dummy of [0, 2]) {
                 setTimeout(() => {
                     console.log('Test');
-                    this.refreshClusterAttributes();
+                    this.refreshClusters();
                 }, 1000);
             }
         }

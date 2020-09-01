@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
-		'databricks-run.refresh-cluster-attributes', () => databricksRun.refreshClusterAttributes()
+		'databricks-run.refresh-cluster-attributes', () => databricksRun.refreshClusters()
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(

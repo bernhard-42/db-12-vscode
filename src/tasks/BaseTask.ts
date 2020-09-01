@@ -22,6 +22,7 @@ export abstract class BaseTask implements vscode.Pseudoterminal {
     onDidClose?: vscode.Event<void> = this.closeEmitter.event;
 
     constructor() {
+
         this.workspaceRoot = getWorkspaceRoot();
         this.databricksConfig = new DatabricksConfig();
         this.databricksConfig.init();

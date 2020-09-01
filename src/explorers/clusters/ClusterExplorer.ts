@@ -5,6 +5,7 @@ import { Json } from '../../rest/Rest';
 import { ClusterAttribute } from './ClusterAttribute';
 import { BaseExplorer } from '../BaseExplorer';
 import { Response } from '../../rest/Rest';
+import { executionContexts } from '../../databricks/ExecutionContext';
 
 export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     clusterApi = <Clusters>{};
@@ -17,18 +18,22 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
     }
 
     async getTopLevel(): Promise<ClusterAttribute[]> {
-        let result = await this.execute();
-        if (result.isSuccess()) {
-            this.clusterInfo = result.toJson();
-            return Promise.resolve([
-                new ClusterAttribute(
-                    `${this.clusterInfo["cluster_name"]} (${this.clusterInfo["state"]})`,
-                    this.clusterInfo,
-                    vscode.TreeItemCollapsibleState.Collapsed)
-            ]);
-        } else {
-            return Promise.resolve([new ClusterAttribute("Retrieving cluster config failed")]);
-        }
+        let clusters = Array.from(executionContexts.executionContexts.keys()).map(entry =>
+            executionContexts.executionContexts.get(entry)?.cluster || ""
+        );
+        let entries: ClusterAttribute[] = [];
+        for (let cluster of Array.from(new Set(clusters))) {
+            let result = await this.execute(cluster);
+            let clusterInfo = result.toJson();
+            if (result.isSuccess()) {
+                let entry = new ClusterAttribute(
+                    `${clusterInfo["cluster_name"]} (${clusterInfo["state"]})`,
+                    clusterInfo,
+                    vscode.TreeItemCollapsibleState.Collapsed);
+                entries.push(entry);
+            }
+        };
+        return Promise.resolve(entries);
     }
 
     async getNextLevel(parent: ClusterAttribute): Promise<ClusterAttribute[]> {
@@ -46,8 +51,8 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
         return Promise.resolve(attributes);
     }
 
-    async execute(): Promise<Response> {
-        return Promise.resolve(this.clusterApi.info(this.clusterId));
+    async execute(clusterId: string): Promise<Response> {
+        return Promise.resolve(this.clusterApi.info(clusterId));
     }
 
     refresh(): void {
