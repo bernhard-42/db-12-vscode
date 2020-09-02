@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { Json } from '../../rest/Rest';
-import { timeStamp } from 'console';
 
 export class ClusterAttribute extends vscode.TreeItem {
     constructor(

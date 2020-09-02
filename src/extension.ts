@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 
 import { DatabricksRun } from './databricks/DatabricksRun';
-import { DatabricksConfig } from './databricks/Config';
 import { DatabricksRunTaskProvider } from './tasks/DatabricksRunTaskProvider';
 import { DatabricksRunPanel } from './viewers/DatabricksRunPanel';
 

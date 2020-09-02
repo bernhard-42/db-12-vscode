@@ -1,6 +1,6 @@
 import fs from 'fs';
 import url from 'url';
-import { Json, Response, Rest } from './Rest';
+import { Response, Rest } from './Rest';
 
 export class Dbfs extends Rest {
 

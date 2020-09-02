@@ -5,7 +5,7 @@ import os from 'os';
 import ini from 'ini';
 import path from 'path';
 
-import { getEditor, getWorkspaceRoot, getCurrentFilename } from './utils';
+import { getWorkspaceRoot, getCurrentFilename } from './utils';
 
 interface ConfigObj {
     [key: string]: any;

@@ -1,7 +1,6 @@
-import axios, { AxiosAdapter, AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import url from 'url';
 import * as output from '../databricks/Output';
-import { Http2ServerResponse } from 'http2';
 
 export interface Json {
     [key: string]: any;
