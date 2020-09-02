@@ -89,13 +89,8 @@ export class DatabricksConfig {
     }
 
     getClusterInfo() {
-        let [cluster, clusterName] = ["", ""];
-        const clusterInfo = this.getConfig("cluster");
-        if (clusterInfo) {
-            const sep = clusterInfo.indexOf(" ");
-            cluster = clusterInfo.substring(0, sep) || "";
-            clusterName = clusterInfo.substring(sep + 2, clusterInfo.length - 1) || "";
-        }
+        const cluster = this.getConfig("cluster-id") || "";
+        const clusterName = this.getConfig("cluster-name") || "";
         return [cluster, clusterName];
     }
     setRemoteFolder(value: string) {
@@ -110,8 +105,9 @@ export class DatabricksConfig {
         this.setConfig("profile", value);
     }
 
-    setCluster(value: string) {
-        this.setConfig("cluster", value);
+    setCluster(clusterId: string, clusterName: string) {
+        this.setConfig("cluster-id", clusterId);
+        this.setConfig("cluster-name", clusterName);
     }
 
     getHostAndToken() {

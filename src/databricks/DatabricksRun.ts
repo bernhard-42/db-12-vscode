@@ -71,6 +71,7 @@ export class DatabricksRun {
         let profile = "";
         let cluster = "";
         let clusterName = "";
+        let clusterState = "";
         let language = "";
         let libFolder = "";
         let remoteFolder = "";
@@ -119,24 +120,24 @@ export class DatabricksRun {
             this.clusterApi = new Clusters(host, token);
             let response = await this.clusterApi.names();
             if (response.isSuccess()) {
-                clusters = (response.toJson() as [string, string][]);
+                clusters = (response.toJson() as [string, string, string][]);
             } else {
                 const error = response.toString();
                 window.showErrorMessage(`${error}\n`);
                 return;
             }
 
-            let clusterList: { [key: string]: [string, string] } = {};
-            clusters.forEach((row: [string, string]) => {
-                clusterList[`${row[0]} (${row[1]})`] = row;
+            let clusterList: { [key: string]: [string, string, string] } = {};
+            clusters.forEach((row: [string, string, string]) => {
+                clusterList[`${row[0]} (${row[1]}: ${row[2]})`] = row;
             });
             let clusterInfo = await inquiry('Select Databricks cluster', Object.keys(clusterList));
             if (clusterInfo === "") {
                 vscode.window.showErrorMessage(`Selection of cluster cancelled`);
                 return;
             } else {
-                [cluster, clusterName] = clusterList[clusterInfo];
-                this.databricksConfig.setCluster(clusterInfo);
+                [cluster, clusterName, clusterState] = clusterList[clusterInfo];
+                this.databricksConfig.setCluster(cluster, clusterName);
             }
         }
 
@@ -402,17 +403,19 @@ export class DatabricksRun {
         }
     }
 
-    async startCluster(cluster: ClusterAttribute) {
-        if (await inquiry(`Start cluster?`, ["yes", "no"]) !== "yes") { return; }
-        this.clusterExplorer?.manageCluster(cluster, "start");
-    }
-
     private cleanupForCluster(cluster: string) {
         let filenames = executionContexts.getFilenamesForCluster(cluster);
         for (let filename of filenames) {
             this.stop(filename);
         }
     }
+
+    async startCluster(cluster: ClusterAttribute) {
+        if (await inquiry(`Start cluster?`, ["yes", "no"]) !== "yes") { return; }
+        this.clusterExplorer?.manageCluster(cluster, "start");
+        this.cleanupForCluster(cluster.getclusterId());
+    }
+
     async restartCluster(cluster: ClusterAttribute) {
         if (await inquiry(`Restart cluster?`, ["yes", "no"]) !== "yes") { return; }
         this.clusterExplorer?.manageCluster(cluster, "restart");

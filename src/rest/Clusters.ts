@@ -3,12 +3,12 @@ import { Json, Response, Rest } from './Rest';
 export class Clusters extends Rest {
 
     async names(): Promise<Response> {
-        let clusters: [string, string][] = [];
+        let clusters: [string, string, string][] = [];
         const response = await this.list();
         if (response.isSuccess()) {
             const clusterConfig: Json[] = response.toJson()["clusters"];
             clusterConfig.forEach(cluster => {
-                clusters.push([cluster["cluster_id"], cluster["cluster_name"]]);
+                clusters.push([cluster["cluster_id"], cluster["cluster_name"], cluster["state"]]);
             });
             return this.success(clusters);
         } else {
