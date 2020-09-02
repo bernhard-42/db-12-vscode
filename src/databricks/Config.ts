@@ -38,7 +38,7 @@ export class DatabricksConfig {
             }
             if (fs.existsSync(fqGitignore)) {
                 if (!fs.readFileSync(fqGitignore).toString().split(/\r?\n/).includes(this.configFile)) {
-                    fs.appendFileSync(fqGitignore, os.EOL + this.configFile);
+                    fs.appendFileSync(fqGitignore, os.EOL + this.configFile + os.EOL);
                 }
             } else {
                 fs.writeFileSync(fqGitignore, this.configFile + os.EOL);
