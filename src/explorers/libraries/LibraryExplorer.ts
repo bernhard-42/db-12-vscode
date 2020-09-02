@@ -50,8 +50,6 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
         let python = await getPythonPath();
         if (python === "python") {
             await vscode.commands.executeCommand("python.setInterpreter");
-            let pythonConfig = vscode.workspace.getConfiguration("python");
-            // python = pythonConfig.get("pythonPath");
             python = await getPythonPath();
         }
         // output.info(`Local python interpreter: ${python}`);
