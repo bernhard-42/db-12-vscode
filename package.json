@@ -18,7 +18,7 @@
 	"contributes": {
 		"commands": [{
 				"command": "databricks-run.initialize",
-				"title": "Databricks Run: Initialize Databricks Connections"
+				"title": "Databricks Run: Initialize a Databricks Connection"
 			},
 			{
 				"command": "databricks-run.sendSelectionOrLine",
@@ -27,6 +27,10 @@
 			{
 				"command": "databricks-run.cancel",
 				"title": "Databricks Run: Cancel the currently running command"
+			},
+			{
+				"command": "databricks-run.stop",
+				"title": "Databricks Run: Stop the Databricks Connection"
 			},
 			{
 				"command": "databricks-run.refresh-libraries",
