@@ -12,7 +12,7 @@ export class ContextExplorerProvider extends BaseExplorer<Context> {
     }
 
     async getTopLevel(): Promise<Context[]> {
-        const entries = Array.from(executionContexts.executionContexts.keys());
+        const entries = executionContexts.getFilenames();
         return Promise.resolve(entries.map(entry =>
             new Context(
                 path.basename(entry),
@@ -24,7 +24,7 @@ export class ContextExplorerProvider extends BaseExplorer<Context> {
 
     async getNextLevel(context: Context): Promise<Context[]> {
         if (context.value) {
-            let details = executionContexts.executionContexts.get(context.value);
+            let details = executionContexts.getContext(context.value);
             return Promise.resolve([
                 new Context("language", details?.language, vscode.TreeItemCollapsibleState.None),
                 new Context("host", details?.host, vscode.TreeItemCollapsibleState.None),

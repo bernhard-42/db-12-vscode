@@ -13,7 +13,7 @@ interface IExecutionContext {
     executionId: number;
 }
 
-export class ExecutionContexts {
+class ExecutionContexts {
     executionContexts: Map<string, IExecutionContext>;
 
     constructor() {
@@ -62,6 +62,11 @@ export class ExecutionContexts {
             ]
         );
         return clusters;
+    }
+
+    getFilenames() {
+        return Array.from(this.executionContexts.keys());
+
     }
 
     getFilenamesForCluster(clusterId: string) {
