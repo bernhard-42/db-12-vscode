@@ -7,4 +7,4 @@ scratch
 TODO
 __pycache__
 
-.databricks-run.json
+.DS_Store

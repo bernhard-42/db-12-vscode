@@ -46,7 +46,6 @@ class PythonPath {
                     await extension.activate();
                 }
                 const pythonPath = extension.exports.settings.getExecutionDetails().execCommand;
-                output.write(pythonPath);
                 return pythonPath;
             } else {
                 return this.getConfiguration("python", document).get<string>("pythonPath") || "";

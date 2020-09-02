@@ -98,9 +98,7 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
     }
 
     async install(library?: Library) {
-
-        let pythonConfig = vscode.workspace.getConfiguration("python");
-        let python = getPythonPath();
+        let python = await getPythonPath();
         if (python && library) {
             if ((await vscode.window.showQuickPick(["yes", "no"], {
                 placeHolder: `Install library ${library.name} in the local environment with pip?`

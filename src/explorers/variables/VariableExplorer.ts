@@ -42,9 +42,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
 
     async getNextLevel(variable: Variable): Promise<Variable[]> {
         var pythonVar = (variable.parent === "") ? variable.name : `${variable.parent}.${variable.name}`;
-        const dataframe =
-            variable.type === "pyspark.sql.dataframe.DataFrame" ||
-            variable.type === "pandas.core.frame.Dataframe";
+        const dataframe = ["pyspark.sql.dataframe.DataFrame", "pandas.core.frame.DataFrame"].includes(variable.type || "");
         let result = await this.execute(getAttributes(pythonVar), variablesCode(this.maxArrayLen, this.maxStringLen));
         if (result.isSuccess()) {
             return Promise.resolve(this.parse(result.toJson()["result"]["data"], dataframe));

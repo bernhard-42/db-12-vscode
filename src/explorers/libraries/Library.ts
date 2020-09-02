@@ -24,8 +24,8 @@ export class Library extends vscode.TreeItem {
             }
         }
         super.iconPath = {
-            light: path.join(resourcesFolder, 'light', icon),
-            dark: path.join(resourcesFolder, 'dark', icon),
+            light: path.join(resourcesFolder, icon),
+            dark: path.join(resourcesFolder, icon),
         };
     }
 

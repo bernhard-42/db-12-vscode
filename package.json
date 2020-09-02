@@ -40,16 +40,16 @@
 				"command": "databricks-run.install-library",
 				"title": "Install libraries locally",
 				"icon": {
-					"light": "resources/light/configure.svg",
-					"dark": "resources/dark/configure.svg"
+					"light": "resources/install.png",
+					"dark": "resources/install.png"
 				}
 			},
 			{
 				"command": "databricks-run.create-env-file",
 				"title": "Create Environment File",
 				"icon": {
-					"light": "resources/light/open-file.svg",
-					"dark": "resources/dark/open-file.svg"
+					"light": "resources/open.png",
+					"dark": "resources/open.png"
 				}
 			},
 			{
@@ -64,8 +64,8 @@
 				"command": "databricks-run.paste-from-dataframe",
 				"title": "Paste colum of dataframe",
 				"icon": {
-					"light": "resources/light/open-file.svg",
-					"dark": "resources/dark/open-file.svg"
+					"light": "resources/light/paste.png",
+					"dark": "resources/dark/paste.png"
 				}
 			},
 			{
@@ -88,32 +88,32 @@
 				"command": "databricks-run.paste-from-database",
 				"title": "Paste database/table/colum name of database",
 				"icon": {
-					"light": "resources/light/open-file.svg",
-					"dark": "resources/dark/open-file.svg"
+					"light": "resources/light/paste.png",
+					"dark": "resources/dark/paste.png"
 				}
 			},
 			{
 				"command": "databricks-run.start-cluster",
 				"title": "Start Remote Cluster",
 				"icon": {
-					"light": "resources/light/resume.svg",
-					"dark": "resources/dark/resume.svg"
+					"light": "resources/start.png",
+					"dark": "resources/start.png"
 				}
 			},
 			{
 				"command": "databricks-run.restart-cluster",
 				"title": "Restart Remote Cluster",
 				"icon": {
-					"light": "resources/light/restart.svg",
-					"dark": "resources/dark/restart.svg"
+					"light": "resources/restart.png",
+					"dark": "resources/restart.png"
 				}
 			},
 			{
 				"command": "databricks-run.stop-cluster",
 				"title": "Stop Remote Cluster",
 				"icon": {
-					"light": "resources/light/stop.svg",
-					"dark": "resources/dark/stop.svg"
+					"light": "resources/stop.png",
+					"dark": "resources/stop.png"
 				}
 			},
 			{
@@ -128,8 +128,8 @@
 				"command": "databricks-run.select-context",
 				"title": "Open file for context Contexts",
 				"icon": {
-					"light": "resources/light/open-file.svg",
-					"dark": "resources/dark/open-file.svg"
+					"light": "resources/open.png",
+					"dark": "resources/open.png"
 				}
 			}
 		],
