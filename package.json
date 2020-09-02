@@ -16,8 +16,7 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
+		"commands": [{
 				"command": "databricks-run.initialize",
 				"title": "Databricks Run: Initialize Databricks Connections"
 			},
@@ -134,8 +133,7 @@
 				}
 			}
 		],
-		"keybindings": [
-			{
+		"keybindings": [{
 				"command": "databricks-run.sendSelectionOrLine",
 				"key": "ctrl+k shift+enter",
 				"mac": "cmd+k shift+enter",
@@ -180,32 +178,27 @@
 				}
 			}
 		},
-		"taskDefinitions": [
-			{
-				"type": "Databricks Run",
-				"required": [
-					"action"
-				],
-				"properties": {
-					"action": {
-						"type": "string",
-						"description": "The build task. This can be 'upload-wheel' and 'restart'."
-					}
+		"taskDefinitions": [{
+			"type": "Databricks Run",
+			"required": [
+				"action"
+			],
+			"properties": {
+				"action": {
+					"type": "string",
+					"description": "The build task. This can be 'upload-wheel' and 'restart'."
 				}
 			}
-		],
+		}],
 		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "databricksExplorer",
-					"title": "Databricks",
-					"icon": "resources/databricks-run.png"
-				}
-			]
+			"activitybar": [{
+				"id": "databricksExplorer",
+				"title": "Databricks",
+				"icon": "resources/databricks-run.png"
+			}]
 		},
 		"views": {
-			"databricksExplorer": [
-				{
+			"databricksExplorer": [{
 					"id": "databricksContextExplorer",
 					"name": "Contexts"
 				},
@@ -228,8 +221,7 @@
 			]
 		},
 		"menus": {
-			"view/title": [
-				{
+			"view/title": [{
 					"command": "databricks-run.refresh-libraries",
 					"when": "view == databricksLibraryExplorer",
 					"group": "navigation@1"
@@ -260,8 +252,7 @@
 					"group": "navigation"
 				}
 			],
-			"view/item/context": [
-				{
+			"view/item/context": [{
 					"command": "databricks-run.install-library",
 					"when": "view == databricksLibraryExplorer && viewItem == library",
 					"group": "inline"
@@ -283,17 +274,17 @@
 				},
 				{
 					"command": "databricks-run.start-cluster",
-					"when": "view == databricksClusterExplorer",
+					"when": "view == databricksClusterExplorer && viewItem == cluster",
 					"group": "inline@0"
 				},
 				{
 					"command": "databricks-run.stop-cluster",
-					"when": "view == databricksClusterExplorer",
+					"when": "view == databricksClusterExplorer && viewItem == cluster",
 					"group": "inline@2"
 				},
 				{
 					"command": "databricks-run.restart-cluster",
-					"when": "view == databricksClusterExplorer",
+					"when": "view == databricksClusterExplorer && viewItem == cluster",
 					"group": "inline@1"
 				}
 			]

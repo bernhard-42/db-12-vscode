@@ -6,6 +6,7 @@ interface IExecutionContext {
     language: string;
     remoteCommand: RemoteCommand;
     commandId: string;
+    profile: string,
     host: string;
     token: string;
     cluster: string;
@@ -28,13 +29,14 @@ class ExecutionContexts {
         return;
     }
 
-    setContext(fileName: string, language: string, remoteCommand: RemoteCommand, host: string, token: string, cluster: string, clusterName: string) {
+    setContext(fileName: string, language: string, remoteCommand: RemoteCommand, profile: string, host: string, token: string, cluster: string, clusterName: string) {
         const editor = getEditor();
         if (editor) {
             this.executionContexts.set(fileName, {
                 language: language,
                 remoteCommand: remoteCommand,
                 commandId: "",
+                profile: profile,
                 host: host,
                 token: token,
                 cluster: cluster,
@@ -56,9 +58,9 @@ class ExecutionContexts {
     getClusters() {
         let clusters = Array.from(this.executionContexts.keys()).map(entry =>
             [
-                this.executionContexts.get(entry)?.cluster || "",
-                this.executionContexts.get(entry)?.host || "",
-                this.executionContexts.get(entry)?.token || ""
+                this.getContext(entry)?.cluster || "",
+                this.getContext(entry)?.host || "",
+                this.getContext(entry)?.token || ""
             ]
         );
         return clusters;
@@ -66,7 +68,6 @@ class ExecutionContexts {
 
     getFilenames() {
         return Array.from(this.executionContexts.keys());
-
     }
 
     getFilenamesForCluster(clusterId: string) {
@@ -77,6 +78,16 @@ class ExecutionContexts {
             }
         }
         return filenames;
+    }
+
+    getProfiles() {
+        let profiles: string[] = [];
+        for (let [key, value] of this.executionContexts) {
+            if (!profiles.includes(value.profile)) {
+                profiles.push(key);
+            }
+        }
+        return profiles;
     }
 }
 

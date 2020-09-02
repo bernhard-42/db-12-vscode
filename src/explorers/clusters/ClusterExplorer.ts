@@ -5,55 +5,68 @@ import { Json } from '../../rest/Rest';
 import { ClusterAttribute } from './ClusterAttribute';
 import { BaseExplorer } from '../BaseExplorer';
 import { Response } from '../../rest/Rest';
-import { executionContexts } from '../../databricks/ExecutionContext';
+
+interface Profile {
+    clusters: string[],
+    api: Clusters
+}
+
+let profileList = new Map<string, Profile>();
 
 export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
-    clusterApi = <Clusters>{};
-    clusterInfo = <Json>{};
 
-    constructor(private clusterId: string, host: string, token: string) {
+    constructor() {
         super(["python", "sql", "scala", "r"], (msg: string): ClusterAttribute => new ClusterAttribute(msg));
-        this.clusterApi = new Clusters(host, token);
         this.hasContext = true;
     }
 
     async getTopLevel(): Promise<ClusterAttribute[]> {
-        let clusters = executionContexts.getClusters();
+        let profiles = profileList.keys();
         let entries: ClusterAttribute[] = [];
-        let covered: string[] = [];
-        for (let [cluster, host, token] of clusters) {
-            if (!covered.includes(cluster)) {
-                covered.push(cluster);
-                let result = await this.execute(cluster);
-                let clusterInfo = result.toJson();
-                if (result.isSuccess()) {
-                    let entry = new ClusterAttribute(
-                        `${clusterInfo["cluster_name"]} (${clusterInfo["state"]})`,
-                        clusterInfo, "cluster", host, token,
-                        vscode.TreeItemCollapsibleState.Collapsed);
-                    entries.push(entry);
-                }
-            }
+        for (let profile of profiles) {
+            let entry = new ClusterAttribute(
+                profile,
+                {},
+                "profile",
+                vscode.TreeItemCollapsibleState.Collapsed);
+            entries.push(entry);
         };
         return Promise.resolve(entries);
     }
 
     async getNextLevel(parent: ClusterAttribute): Promise<ClusterAttribute[]> {
-        let attributes: ClusterAttribute[] = [];
-        for (let key of Object.keys(parent.getValue())) {
-            const obj = parent.getValue()[key];
-            attributes.push(
-                new ClusterAttribute(
-                    key, obj, "config", "", "",
-                    (obj === Object(obj)) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
-                )
-            );
+        if (parent.type === "profile") {
+            let clusters = profileList.get(parent.name)?.clusters;
+            let api = profileList.get(parent.name)?.api;
+            let entries: ClusterAttribute[] = [];
+            if (clusters && api) {
+                for (let cluster of clusters) {
+                    let result = await api.info(cluster);
+                    if (result.isSuccess()) {
+                        let clusterInfo = result.toJson();
+                        let entry = new ClusterAttribute(
+                            clusterInfo["cluster_name"],
+                            clusterInfo,
+                            "cluster",
+                            vscode.TreeItemCollapsibleState.Collapsed);
+                        entries.push(entry);
+                    }
+                };
+            }
+            return Promise.resolve(entries);
+        } else {
+            let attributes: ClusterAttribute[] = [];
+            for (let key of Object.keys(parent.getValue())) {
+                const obj = parent.getValue()[key];
+                attributes.push(
+                    new ClusterAttribute(
+                        key, obj, "config",
+                        (obj === Object(obj)) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
+                    )
+                );
+            }
+            return Promise.resolve(attributes);
         }
-        return Promise.resolve(attributes);
-    }
-
-    async execute(clusterId: string): Promise<Response> {
-        return Promise.resolve(this.clusterApi.info(clusterId));
     }
 
     refresh(): void {
@@ -62,15 +75,16 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
 
     async manageCluster(cluster: ClusterAttribute, command: string) {
         let clusterId = (cluster.value as Json)["cluster_id"];
-        if (cluster.host && cluster.token && clusterId) {
+        let profile = this.getProfileForCluster(clusterId);
+        if (profile && clusterId) {
             let result: Response;
-            let clusterApi = new Clusters(cluster.host, cluster.token);
+            let api = profile.api;
             if (command === "start") {
-                result = await clusterApi.start(clusterId);
+                result = await api.start(clusterId);
             } else if (command === "restart") {
-                result = await clusterApi.restart(clusterId);
+                result = await api.restart(clusterId);
             } else if (command === "stop") {
-                result = await clusterApi.stop(clusterId);
+                result = await api.stop(clusterId);
             } else {
                 return;
             }
@@ -87,11 +101,32 @@ export class ClusterExplorerProvider extends BaseExplorer<ClusterAttribute> {
             }
         }
     }
+
+    getProfileForCluster(cluster: string) {
+        for (let [profile, value] of profileList) {
+            if (value.clusters.includes(cluster)) {
+                return value;
+            }
+            return;
+        }
+    }
+
+    push(profile: string, cluster: string, host: string, token: string) {
+        if (!profileList.has(profile)) {
+            profileList.set(profile, { clusters: [cluster], api: new Clusters(host, token) });
+        } else {
+            const entry = profileList.get(profile);
+            if (entry && !entry.clusters.includes(cluster)) {
+                entry.clusters.push(cluster);
+                profileList.set(profile, entry);
+            }
+        }
+    }
 }
 
 
-export function createClusterExplorer(clusterId: string, host: string, token: string) {
-    const environmentExplorer = new ClusterExplorerProvider(clusterId, host, token);
+export function createClusterExplorer() {
+    const environmentExplorer = new ClusterExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksClusterExplorer', environmentExplorer);
     vscode.window.createTreeView('databricksClusterExplorer', { treeDataProvider: environmentExplorer });
 

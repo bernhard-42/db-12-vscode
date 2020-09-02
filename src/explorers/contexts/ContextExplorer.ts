@@ -27,6 +27,7 @@ export class ContextExplorerProvider extends BaseExplorer<Context> {
             let details = executionContexts.getContext(context.value);
             return Promise.resolve([
                 new Context("language", details?.language, vscode.TreeItemCollapsibleState.None),
+                new Context("profile", details?.profile, vscode.TreeItemCollapsibleState.None),
                 new Context("host", details?.host, vscode.TreeItemCollapsibleState.None),
                 new Context("cluster", details?.cluster, vscode.TreeItemCollapsibleState.None),
                 new Context("clusterName", details?.clusterName, vscode.TreeItemCollapsibleState.None),

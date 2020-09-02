@@ -171,7 +171,8 @@ export class DatabricksRun {
         output.info(`Language: ${language}`);
 
         // Register Cluster Explorer
-        this.clusterExplorer = createClusterExplorer(cluster, host, token);
+        this.clusterExplorer = createClusterExplorer();
+        this.clusterExplorer.push(profile, cluster, host, token);
 
         // Register Cluster Explorer
         // this.secretsExplorer = createSecretsExplorer(host, token);
@@ -179,7 +180,7 @@ export class DatabricksRun {
         // Create Databricks Execution Context
         var remoteCommand = new RemoteCommand(host, token, profile, language, cluster);
 
-        executionContexts.setContext(fileName, language, remoteCommand, host, token, cluster, clusterName);
+        executionContexts.setContext(fileName, language, remoteCommand, profile, host, token, cluster, clusterName);
 
         // Create remote execution context
         var result = await remoteCommand.createContext();
@@ -406,23 +407,22 @@ export class DatabricksRun {
         this.clusterExplorer?.manageCluster(cluster, "start");
     }
 
+    private cleanupForCluster(cluster: string) {
+        let filenames = executionContexts.getFilenamesForCluster(cluster);
+        for (let filename of filenames) {
+            this.stop(filename);
+        }
+    }
     async restartCluster(cluster: ClusterAttribute) {
         if (await inquiry(`Restart cluster?`, ["yes", "no"]) !== "yes") { return; }
         this.clusterExplorer?.manageCluster(cluster, "restart");
-        let filenames = executionContexts.getFilenamesForCluster(cluster.getclusterId());
-        output.write("Once the cluster is started, please re-initialize the context for");
-        for (let filename of filenames) {
-            output.write(`- ${filename}`);
-        }
+        this.cleanupForCluster(cluster.getclusterId());
     }
 
     async stopCluster(cluster: ClusterAttribute) {
         if (await inquiry(`Stop cluster ? `, ["yes", "no"]) !== "yes") { return; }
         this.clusterExplorer?.manageCluster(cluster, "stop");
-        let filenames = executionContexts.getFilenamesForCluster(cluster.getclusterId());
-        for (let filename of filenames) {
-            this.stop(filename);
-        }
+        this.cleanupForCluster(cluster.getclusterId());
     }
 
     // refreshSecrets() {

@@ -7,22 +7,28 @@ export class ClusterAttribute extends vscode.TreeItem {
         public readonly name: string,
         public readonly value?: Json,
         public readonly type?: string,
-        public readonly host?: string,
-        public readonly token?: string,
         public readonly collapsibleState?: vscode.TreeItemCollapsibleState
     ) {
         super(name, collapsibleState || vscode.TreeItemCollapsibleState.None);
     }
 
     get tooltip(): string {
-        return `${JSON.stringify(this.value)}`;
+        return `cluster_id: ${(this.value || {})["cluster_id"]}
+cluster_name: ${ (this.value || {})["cluster_name"]}
+spark_version: ${ (this.value || {})["spark_version"]}
+node_type_id: ${ (this.value || {})["node_type_id"]}
+num_workers: ${ (this.value || {})["num_workers"]}
+cluster_cores: ${ (this.value || {})["cluster_cores"]}
+cluster_memory_mb: ${ (this.value || {})["cluster_memory_mb"]}`;
     }
 
     get description(): string {
-        if (this.value === Object(this.value)) {
-            return `${JSON.stringify(this.value).substring(0, 50)} ...`;
+        if (this.type === "cluster") {
+            return (this.value) ? this.value["state"] : "";
+        } else if (this.value === Object(this.value)) {
+            return "";
         } else {
-            return `${this.value}`;
+            return `${this.value} `;
         }
     }
 
