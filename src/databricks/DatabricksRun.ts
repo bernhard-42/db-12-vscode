@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { window } from 'vscode';
 
 import fs from 'fs';
+import path from 'path';
 
 import username from 'username';
 import Table from 'cli-table';
@@ -32,6 +33,7 @@ import * as output from './Output';
 import { DatabaseItem } from '../explorers/databases/Database';
 import { Variable } from '../explorers/variables/Variable';
 import { Context } from 'mocha';
+import { pathToFileURL } from 'url';
 
 
 export let resourcesFolder = "";
@@ -364,7 +366,7 @@ export class DatabricksRun {
 
     async stop(filename?: string) {
         if (filename) {
-            if (!filename?.startsWith("/")) {
+            if (!path.isAbsolute(filename)) {
                 // ignore artificial files like extension-#10
                 return;
             }

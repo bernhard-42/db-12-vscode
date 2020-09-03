@@ -16,7 +16,8 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [{
+		"commands": [
+			{
 				"command": "databricks-run.initialize",
 				"title": "Databricks Run: Initialize a Databricks Connection"
 			},
@@ -137,7 +138,8 @@
 				}
 			}
 		],
-		"keybindings": [{
+		"keybindings": [
+			{
 				"command": "databricks-run.sendSelectionOrLine",
 				"key": "ctrl+k shift+enter",
 				"mac": "cmd+k shift+enter",
@@ -182,27 +184,32 @@
 				}
 			}
 		},
-		"taskDefinitions": [{
-			"type": "Databricks Run",
-			"required": [
-				"action"
-			],
-			"properties": {
-				"action": {
-					"type": "string",
-					"description": "The build task. This can be 'upload-wheel' and 'restart'."
+		"taskDefinitions": [
+			{
+				"type": "Databricks Run",
+				"required": [
+					"action"
+				],
+				"properties": {
+					"action": {
+						"type": "string",
+						"description": "The build task. This can be 'upload-wheel' and 'restart'."
+					}
 				}
 			}
-		}],
+		],
 		"viewsContainers": {
-			"activitybar": [{
-				"id": "databricksExplorer",
-				"title": "Databricks",
-				"icon": "resources/databricks-run.png"
-			}]
+			"activitybar": [
+				{
+					"id": "databricksExplorer",
+					"title": "Databricks",
+					"icon": "resources/databricks-run.png"
+				}
+			]
 		},
 		"views": {
-			"databricksExplorer": [{
+			"databricksExplorer": [
+				{
 					"id": "databricksContextExplorer",
 					"name": "Contexts"
 				},
@@ -225,7 +232,8 @@
 			]
 		},
 		"menus": {
-			"view/title": [{
+			"view/title": [
+				{
 					"command": "databricks-run.refresh-libraries",
 					"when": "view == databricksLibraryExplorer",
 					"group": "navigation@1"
@@ -256,7 +264,8 @@
 					"group": "navigation"
 				}
 			],
-			"view/item/context": [{
+			"view/item/context": [
+				{
 					"command": "databricks-run.install-library",
 					"when": "view == databricksLibraryExplorer && viewItem == library",
 					"group": "inline"
@@ -327,6 +336,7 @@
 		"cli-table": "^0.3.1",
 		"decomment": "^0.9.3",
 		"ini": "^1.3.5",
+		"tsc": "^1.20150623.0",
 		"username": "^5.1.0",
 		"uuid": "^8.3.0"
 	}

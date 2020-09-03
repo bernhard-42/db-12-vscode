@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import path from 'path';
 
 import { DatabricksRun } from './databricks/DatabricksRun';
 import { DatabricksRunTaskProvider } from './tasks/DatabricksRunTaskProvider';
@@ -110,7 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(editor => {
-			if (editor && editor.document.fileName.startsWith("/")) {
+			if (editor && path.isAbsolute(editor.document.fileName)) {
 				output.debug(`window.onDidChangeActiveTextEditor: ${editor.document.fileName}`);
 				databricksRun.refreshVariables(editor.document.fileName);
 				databricksRun.refreshDatabases(editor.document.fileName);
@@ -120,7 +121,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.workspace.onDidCloseTextDocument(doc => {
-			if (doc.fileName.startsWith("/")) {
+			if (path.isAbsolute(doc.fileName)) {
 				output.debug(`workspace.onDidCloseTextDocument ${doc.fileName}`);
 				databricksRun.stop(doc.fileName);
 			}

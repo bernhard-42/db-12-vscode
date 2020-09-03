@@ -3,7 +3,7 @@ import { executionContexts } from '../databricks/ExecutionContext';
 import { RemoteCommand } from '../rest/RemoteCommand';
 import { Response, Json } from '../rest/Rest';
 import * as output from '../databricks/Output';
-
+import path from 'path';
 
 export abstract class BaseExplorer<T> implements vscode.TreeDataProvider<T>  {
     hasContext = false;
@@ -36,7 +36,7 @@ export abstract class BaseExplorer<T> implements vscode.TreeDataProvider<T>  {
     readonly onDidChangeTreeData: vscode.Event<T | undefined> = this._onDidChangeTreeData.event;
 
     refresh(filename?: string): void {
-        if (filename && !filename?.startsWith("/")) {
+        if (filename && !path.isAbsolute(filename)) {
             return;
         }
         let context = executionContexts.getContext(filename);

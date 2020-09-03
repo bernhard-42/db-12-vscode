@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import path from 'path';
 
 const output = vscode.window.createOutputChannel("Databricks Run");
 const log = vscode.window.createOutputChannel("Databricks Run Log");
@@ -15,8 +16,7 @@ function getPrefix(logLevel?: string) {
     const editor = vscode.window.activeTextEditor;
     const fileName = editor?.document.fileName;
     if (fileName) {
-        const parts = fileName.split("/");
-        prefix = `${parts[parts.length - 1]}`;
+        prefix = path.basename(fileName);
     }
     return `[${timestamp}${level}${prefix}] `;
 }

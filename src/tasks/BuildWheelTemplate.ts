@@ -19,7 +19,7 @@ export function buildWheelTask() {
             {
                 "label": "Databricks Run: Create and upload wheel",
                 "type": "shell",
-                "command": "echo Create and upload wheel done",
+                "command": "echo 'Create and upload wheel done'",
                 "presentation": {
                     "reveal": "always",
                     "panel": "shared",

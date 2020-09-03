@@ -20,7 +20,7 @@ export function getCurrentFilename() {
 export function getWorkspaceRoot() {
     let filename = getCurrentFilename();
     if (filename) {
-        return vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filename))?.uri.path;
+        return vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filename))?.uri.fsPath;
     }
     return;
 }

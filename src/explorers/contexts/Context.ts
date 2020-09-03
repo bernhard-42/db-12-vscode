@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import path from 'path';
 
 export class Context extends vscode.TreeItem {
     constructor(
@@ -18,6 +19,6 @@ export class Context extends vscode.TreeItem {
     }
 
     get contextValue() {
-        return (this.value?.startsWith("/")) ? "context" : "detail";
+        return (this.value && path.isAbsolute(this.value)) ? "context" : "detail";
     }
 }
