@@ -51,6 +51,14 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-secrets', () => databricksRun.refreshSecrets()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		"databricks-run.paste-from-secrets", (secret) => databricksRun.pasteFromSecret(secret)
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.refresh-libraries', () => databricksRun.refreshLibraries()
 	));
 

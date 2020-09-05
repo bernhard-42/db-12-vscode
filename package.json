@@ -16,8 +16,7 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
+		"commands": [{
 				"command": "databricks-run.initialize",
 				"title": "Databricks Run: Initialize a Databricks Connection"
 			},
@@ -74,27 +73,27 @@
 				}
 			},
 			{
+				"command": "databricks-run.refresh-secrets",
+				"title": "Refresh Remote Secrets",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.paste-from-secrets",
+				"title": "Paste dbutils command for secret",
+				"icon": {
+					"light": "resources/light/paste.png",
+					"dark": "resources/dark/paste.png"
+				}
+			},
+			{
 				"command": "databricks-run.refresh-cluster-attributes",
 				"title": "Refresh Remote Cluster Attributes",
 				"icon": {
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
-				}
-			},
-			{
-				"command": "databricks-run.refresh-databases",
-				"title": "Refresh Remote Databases",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
-			},
-			{
-				"command": "databricks-run.paste-from-database",
-				"title": "Paste database/table/colum name of database",
-				"icon": {
-					"light": "resources/light/paste.png",
-					"dark": "resources/dark/paste.png"
 				}
 			},
 			{
@@ -122,6 +121,22 @@
 				}
 			},
 			{
+				"command": "databricks-run.refresh-databases",
+				"title": "Refresh Remote Databases",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.paste-from-database",
+				"title": "Paste database/table/colum name of database",
+				"icon": {
+					"light": "resources/light/paste.png",
+					"dark": "resources/dark/paste.png"
+				}
+			},
+			{
 				"command": "databricks-run.refresh-contexts",
 				"title": "Refresh Contexts",
 				"icon": {
@@ -138,8 +153,7 @@
 				}
 			}
 		],
-		"keybindings": [
-			{
+		"keybindings": [{
 				"command": "databricks-run.sendSelectionOrLine",
 				"key": "ctrl+k shift+enter",
 				"mac": "cmd+k shift+enter",
@@ -184,32 +198,27 @@
 				}
 			}
 		},
-		"taskDefinitions": [
-			{
-				"type": "Databricks Run",
-				"required": [
-					"action"
-				],
-				"properties": {
-					"action": {
-						"type": "string",
-						"description": "The build task. This can be 'upload-wheel' and 'restart'."
-					}
+		"taskDefinitions": [{
+			"type": "Databricks Run",
+			"required": [
+				"action"
+			],
+			"properties": {
+				"action": {
+					"type": "string",
+					"description": "The build task. This can be 'upload-wheel' and 'restart'."
 				}
 			}
-		],
+		}],
 		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "databricksExplorer",
-					"title": "Databricks",
-					"icon": "resources/databricks-run.png"
-				}
-			]
+			"activitybar": [{
+				"id": "databricksExplorer",
+				"title": "Databricks",
+				"icon": "resources/databricks-run.png"
+			}]
 		},
 		"views": {
-			"databricksExplorer": [
-				{
+			"databricksExplorer": [{
 					"id": "databricksContextExplorer",
 					"name": "Contexts"
 				},
@@ -226,14 +235,17 @@
 					"name": "Databases"
 				},
 				{
+					"id": "databricksSecretsExplorer",
+					"name": "Secrets"
+				},
+				{
 					"id": "databricksClusterExplorer",
 					"name": "Cluster"
 				}
 			]
 		},
 		"menus": {
-			"view/title": [
-				{
+			"view/title": [{
 					"command": "databricks-run.refresh-libraries",
 					"when": "view == databricksLibraryExplorer",
 					"group": "navigation@1"
@@ -254,6 +266,11 @@
 					"group": "navigation"
 				},
 				{
+					"command": "databricks-run.refresh-secrets",
+					"when": "view == databricksSecretsExplorer",
+					"group": "navigation"
+				},
+				{
 					"command": "databricks-run.refresh-cluster-attributes",
 					"when": "view == databricksClusterExplorer",
 					"group": "navigation@3"
@@ -264,8 +281,7 @@
 					"group": "navigation"
 				}
 			],
-			"view/item/context": [
-				{
+			"view/item/context": [{
 					"command": "databricks-run.install-library",
 					"when": "view == databricksLibraryExplorer && viewItem == library",
 					"group": "inline"
@@ -283,6 +299,11 @@
 				{
 					"command": "databricks-run.select-context",
 					"when": "view == databricksContextExplorer && viewItem == context",
+					"group": "inline"
+				},
+				{
+					"command": "databricks-run.paste-from-secrets",
+					"when": "view == databricksSecretsExplorer && viewItem == secret",
 					"group": "inline"
 				},
 				{
