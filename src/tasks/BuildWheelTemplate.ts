@@ -34,7 +34,8 @@ export function buildWheelTask() {
                 "dependsOn": [
                     "Databricks Run: Create wheel",
                     "Databricks Run: Upload wheel",
-                    "Databricks Run: Restart"
+                    "Databricks Run: Restart",
+                    "Databricks Run: Remote Install"
                 ]
             }
         ]

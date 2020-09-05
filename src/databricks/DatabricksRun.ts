@@ -57,7 +57,7 @@ export class DatabricksRun {
         this.workspaceRoot = getWorkspaceRoot() || "";
     }
 
-    async initialize(force?: boolean) {
+    async initialize(resolve?: (value?: void) => void) {
         const editor = getEditor();
         if (editor === undefined) {
             vscode.window.showErrorMessage(`No VS Code editor open`);
@@ -80,7 +80,7 @@ export class DatabricksRun {
 
         // Use workspace settings?
         let useSettings = "yes";
-        if (!force) {
+        if (resolve === undefined) {
             useSettings = await inquiry(
                 'To (re)start the extension, use the stored settings?',
                 ["yes", "no"]);
@@ -251,6 +251,10 @@ export class DatabricksRun {
 
         output.write("Ready");
         output.thickBorder();
+
+        if (resolve) {
+            resolve();
+        }
     };
 
     async sendSelectionOrLine() {

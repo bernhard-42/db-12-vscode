@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { RestartTask } from './RestartTask';
 import { UploadTask } from './UploadTask';
+import { RemoteInstallTask } from './RemoteInstallTask';
 
 export class DatabricksRunTaskProvider implements vscode.TaskProvider {
     static type = "Databricks Run";
@@ -61,6 +62,17 @@ export class DatabricksRunTaskProvider implements vscode.TaskProvider {
                 new vscode.CustomExecution(
                     async (): Promise<vscode.Pseudoterminal> => {
                         return new RestartTask();
+                    }
+                )
+            ),
+            new vscode.Task(
+                { type: DatabricksRunTaskProvider.type, action: "install" },
+                vscode.TaskScope.Workspace,
+                "Remote Install",
+                DatabricksRunTaskProvider.type,
+                new vscode.CustomExecution(
+                    async (): Promise<vscode.Pseudoterminal> => {
+                        return new RemoteInstallTask();
                     }
                 )
             )

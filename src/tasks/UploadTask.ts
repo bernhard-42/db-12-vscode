@@ -4,7 +4,6 @@ import fs from 'fs';
 
 import { Dbfs } from '../rest/Dbfs';
 import { BaseTask } from './BaseTask';
-import * as output from '../databricks/Output';
 
 export class UploadTask extends BaseTask {
     localFile = "";
@@ -34,15 +33,11 @@ export class UploadTask extends BaseTask {
                 let result = await dbfs.upload(this.localFile, this.remoteFile);
                 if (result.isSuccess()) {
                     this.writeEmitter.fire(`${this.type} uploaded to ${this.remoteFolder}\r\n`);
-                    output.write(
-                        "To enable the library on the remote cluster, use\n" +
-                        `    %pip install ${this.remoteFile.replace("dbfs:", "/dbfs")}\n`
-                    );
                 } else {
                     this.writeEmitter.fire(`${result.toString()}\r\n`);
                 }
             } else {
-                this.writeEmitter.fire("No library or remote folder given. Exiting\r\n");
+                this.writeEmitter.fire('Error: Run Task "Databricks Run: Upload wheel" when a source file with active remote context is open in VS Code\r\n');
             }
             this.closeEmitter.fire();
             resolve();
