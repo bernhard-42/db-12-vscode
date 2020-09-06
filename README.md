@@ -17,7 +17,7 @@ Use Databricks [Context/Command API](https://docs.databricks.com/dev-tools/api/1
 
 ## How to start
 
-- Download and install the extension [./build/databricks-run-0.9.0.vsix](build/databricks-run-0.9.0.vsix) in VS Code.
+- Download and install the extension [./build/databricks-run-0.9.1.vsix](build/databricks-run-0.9.1.vsix) in VS Code.
 
 - For authentication it uses `~/databrickscfg`. Either you have Databricks CLI already installed or you create an ini file of form
 
