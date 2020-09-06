@@ -15,9 +15,8 @@ import { BaseExplorer } from '../BaseExplorer';
 export class LibraryExplorerProvider extends BaseExplorer<Library> {
     remoteLibraries = new Map<string, Library>();
     localLibraries = new Map<string, string>();
-    hasContext = false;
 
-    constructor(remoteCommand: RemoteCommand) {
+    constructor() {
         super(["python"], (msg: string): Library => new Library(msg));
     }
 
@@ -164,8 +163,8 @@ export class LibraryExplorerProvider extends BaseExplorer<Library> {
     }
 }
 
-export function createLibraryExplorer(remoteCommand: RemoteCommand) {
-    const libraryExplorer = new LibraryExplorerProvider(remoteCommand);
+export function createLibraryExplorer() {
+    const libraryExplorer = new LibraryExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksLibraryExplorer', libraryExplorer);
     vscode.window.createTreeView('databricksLibraryExplorer', { treeDataProvider: libraryExplorer });
 

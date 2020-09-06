@@ -56,7 +56,7 @@ export class VariableExplorerProvider extends BaseExplorer<Variable> {
     }
 }
 
-export function createVariableExplorer(language: string, remoteCommand: RemoteCommand) {
+export function createVariableExplorer() {
     const variableExplorer = new VariableExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksVariableExplorer', variableExplorer);
     vscode.window.createTreeView('databricksVariableExplorer', { treeDataProvider: variableExplorer });

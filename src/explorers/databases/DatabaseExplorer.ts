@@ -58,7 +58,7 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
     }
 }
 
-export function createDatabaseExplorer(remoteCommand: RemoteCommand) {
+export function createDatabaseExplorer() {
     const databaseExplorer = new DatabaseExplorerProvider();
     vscode.window.registerTreeDataProvider('databricksDatabaseExplorer', databaseExplorer);
     vscode.window.createTreeView('databricksDatabaseExplorer', { treeDataProvider: databaseExplorer });

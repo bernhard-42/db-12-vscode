@@ -247,17 +247,17 @@ export class DatabricksRun {
             createBuildWheelTasks();
 
             // Register Variable explorer
-            this.variableExplorer = createVariableExplorer(language, remoteCommand);
+            this.variableExplorer = createVariableExplorer();
             this.variableExplorer?.refresh();
 
             // Register Library explorer
-            this.libraryExplorer = createLibraryExplorer(remoteCommand);
+            this.libraryExplorer = createLibraryExplorer();
             this.libraryExplorer?.refresh();
         }
 
         if (language !== "r") {
             // Register Database explorer
-            this.databaseExplorer = createDatabaseExplorer(remoteCommand);
+            this.databaseExplorer = createDatabaseExplorer();
             this.databaseExplorer?.refresh();
         }
 
@@ -270,6 +270,11 @@ export class DatabricksRun {
 
         output.write("Ready");
         output.thickBorder();
+
+        // TODO: For some reason, library Explorer needs a second refresh after init
+        setTimeout(() => {
+            this.libraryExplorer?.refresh();
+        }, 1000);
 
         if (resolve) {
             resolve();
