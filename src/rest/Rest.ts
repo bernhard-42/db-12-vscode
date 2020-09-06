@@ -65,7 +65,7 @@ export class Rest {
             const response = await axios.get(this.resolve(uriPath), this.headers(this.token));
             return Promise.resolve(Response.success(response["data"]));
         } catch (error) {
-            return Promise.resolve(Response.failure(`${error.response.status}: ${error.response.statusText}`));
+            return Promise.resolve(Response.failure(`${error.response.status}: ${error.response.statusText} (${error.response.data})`));
         }
     }
 
@@ -78,9 +78,9 @@ export class Rest {
             };
             config.headers = this.headers(this.token)["headers"];
             const response = await axios(config);
-            return Response.success(response["data"]);
+            return Promise.resolve(Response.success(response["data"]));
         } catch (error) {
-            return Response.failure(error.response.data.error);
+            return Promise.resolve(Response.failure(error.response.data.error));
         }
     }
 

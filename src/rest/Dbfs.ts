@@ -45,9 +45,18 @@ export class Dbfs extends Rest {
 
     async exists(path: string): Promise<Response> {
         let uri = url.resolve(this.host, `api/2.0/dbfs/get-status`);
+        let result = await this.get2(uri, { "path": path });
+        if (result.isFailure()) {
+            return this.failure(result.data);
+        }
+        return this.success(result.data);
+    }
+
+    async mkdir(path: string): Promise<Response> {
+        let uri = url.resolve(this.host, `api/2.0/dbfs/mkdirs`);
         let result = await this.post(uri, { "path": path });
         if (result.isFailure()) {
-            return Promise.resolve(this.failure(result.data));
+            return this.failure(result.data);
         }
         return this.success(result.data);
     }

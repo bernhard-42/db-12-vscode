@@ -35,6 +35,8 @@ import { getEditor, getCurrentFilename, getWorkspaceRoot, inquiry } from '../dat
 
 import { createBuildWheelTasks } from '../tasks/BuildWheelTask';
 
+import { Dbfs } from '../rest/Dbfs';
+
 import { executionContexts } from './ExecutionContext';
 import { DatabricksConfig, NOLIB } from './Config';
 import * as output from './Output';
@@ -161,6 +163,17 @@ export class DatabricksRun {
             output.info(`Using '${remoteFolder}' as remote work folder`);
         }
 
+        const dbfs = new Dbfs(host, token);
+        result = await dbfs.exists(remoteFolder);
+        if (result.isFailure()) {
+            let result = await dbfs.mkdir(remoteFolder);
+            if (result.isSuccess()) {
+                vscode.window.showInformationMessage(`Created remote folder ${remoteFolder}`);
+            } else {
+                vscode.window.showErrorMessage(`Failed to create remote folder ${remoteFolder}`);
+            }
+
+        }
         // Detect language
         if (editor.document.fileName.endsWith(".py")) {
             language = "python";
