@@ -61,6 +61,14 @@ export class DatabricksConfig {
         }
     }
 
+    delete() {
+        if (!this.config[this.relPath]) {
+            return "";
+        }
+        this.config[this.relPath] = {};
+        this.save();
+    }
+
     private getConfig(key: string) {
         if (!this.config[this.relPath]) {
             return "";

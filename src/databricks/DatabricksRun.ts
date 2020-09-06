@@ -100,7 +100,9 @@ export class DatabricksRun {
             [cluster, clusterName] = this.databricksConfig.getClusterInfo();
             libFolder = this.databricksConfig.getPythonLibFolder() || "";
             remoteFolder = this.databricksConfig.getRemoteFolder() || "";
-        } else if (useSettings !== "no") {
+        } else if (useSettings === "no") {
+            this.databricksConfig.delete();
+        } else {
             vscode.window.showErrorMessage(`Cancelled`);
             return;
         }
