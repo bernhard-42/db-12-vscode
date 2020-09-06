@@ -17,17 +17,19 @@ Use Databricks [Context/Command API](https://docs.databricks.com/dev-tools/api/1
 
 ## How to start
 
-For authentication it uses `~/databrickscfg`. Either you have Databricks CLI already installed or you create an ini file of form
+- Download and install the extension [./build/databricks-run-0.9.0.vsix](build/databricks-run-0.9.0.vsix) in VS Code.
 
-```bash
-[dev]
-host = https://dev.cloud.databricks.com
-token = dapi
+- For authentication it uses `~/databrickscfg`. Either you have Databricks CLI already installed or you create an ini file of form
 
-[prod]
-host = https://prod.cloud.databricks.com
-token = dapi
-```
+    ```bash
+    [dev]
+    host = https://dev.cloud.databricks.com
+    token = dapi
+
+    [prod]
+    host = https://prod.cloud.databricks.com
+    token = dapi
+    ```
 
 Databricks Run for VS Code comes with four commands (cmd-shift-P or ctrl-shift-P):
 
@@ -51,8 +53,6 @@ Start with *cmd-k shift-I* and switch to the Databricks Run view!
 None
 
 ## Release Notes
-
-Users appreciate release notes as you update your extension.
 
 ### 0.1.0
 
