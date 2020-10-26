@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import url from 'url';
 import * as output from '../databricks/Output';
+import { Watch } from '../databricks/DatabricksRun';
 
 export interface Json {
     [key: string]: any;
@@ -37,8 +38,19 @@ export class Response {
         return this.data as Json;
     }
 
-    toString(): string {
-        return this.data as string;
+    toString(type?: string): string {
+        if (type === "base64") {
+            const data = this.data as Json;
+            let result = <Buffer>{};
+            try {
+                result = Buffer.from(data.data, "base64");
+            } catch (error) {
+                output.write(error);
+            }
+            return result.toString();
+        } else {
+            return this.data as string;
+        }
     }
 
 }
@@ -109,25 +121,45 @@ export class Rest {
         uriPath: string,
         token: string,
         condition: (value: string) => boolean,
-        ms: number) {
+        ms: number,
+        watch?: Watch) {
 
         const fn = () => axios.get(this.resolve(uriPath), this.headers(token));
         let response = await fn();
         let progress = false;
+        let offset = 0;
+        if (watch) {
+            output.write("watch start");
+        }
         while (condition(response["data"]["status"].toLowerCase())) {
-            output.write("»", false);
-            progress = true;
+            if (watch) {
+                if (watch.api) {
+                    let result = await watch.api.download(watch.path);
+
+                    if (result.isSuccess()) {
+                        let msg = result.toString();
+                        output.write(msg.substr(offset), false);
+                        offset = msg.length;
+                    }
+                }
+            } else {
+                output.write("»", false);
+                progress = true;
+            }
             await wait(ms);
             response = await fn();
         }
         if (progress) {
             output.write("\n", false);
         }
+        if (watch) {
+            output.write("watch end");
+        }
         return response;
     }
 }
 
-function wait(ms = 100) {
+function wait(ms = 200) {
     return new Promise(resolve => {
         setTimeout(resolve, ms);
     });

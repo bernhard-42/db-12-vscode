@@ -1,6 +1,6 @@
-import url from 'url';
 import { Response, Json, Rest } from './Rest';
 import * as output from '../databricks/Output';
+import { Watch } from '../databricks/DatabricksRun';
 
 export class RemoteCommand extends Rest {
     commandId: string = "";
@@ -60,7 +60,7 @@ export class RemoteCommand extends Rest {
         }
     }
 
-    async execute(code: string): Promise<Response> {
+    async execute(code: string, watch?: Watch): Promise<Response> {
         if (this.contextId === "") {
             return Promise.resolve(Response.failure("No context"));
         }
@@ -85,7 +85,7 @@ export class RemoteCommand extends Rest {
             const uriPath = `api/1.2/commands/status?clusterId=${this.cluster}&contextId=${this.contextId}&commandId=${this.commandId}`;
             const condition = (value: string) => ["queued", "running", "cancelling"].indexOf(value) !== -1;
 
-            let response = await this.poll(uriPath, this.token, condition, 100) as Json;
+            let response = await this.poll(uriPath, this.token, condition, 100, watch) as Json;
 
             if (response["data"].status === "Finished") {
                 let resultType = response["data"]["results"]["resultType"];

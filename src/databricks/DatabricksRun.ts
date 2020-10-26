@@ -39,10 +39,16 @@ import { Dbfs } from '../rest/Dbfs';
 
 import { executionContexts } from './ExecutionContext';
 import { DatabricksConfig, NOLIB } from './Config';
+import { watchCode } from './WatchTemplate';
+
 import * as output from './Output';
 
-
 export let resourcesFolder = "";
+
+export interface Watch {
+    api: Dbfs | undefined,
+    path: string
+}
 
 export class DatabricksRun {
     private databricksConfig = <DatabricksConfig>{};
@@ -54,8 +60,11 @@ export class DatabricksRun {
     private contextEplorer: ContextExplorerProvider | undefined;
 
     private clusterApi: Clusters | undefined;
+    private dbfs: Dbfs | undefined;
     private workspaceRoot: string;
+    private remoteFolder = "";
     private lastFilename = "";
+    private outfile = "";
 
     constructor(private context: vscode.ExtensionContext, private statusBar: vscode.StatusBarItem) {
         resourcesFolder = context.asAbsolutePath("resources");
@@ -164,11 +173,12 @@ export class DatabricksRun {
             }
             output.info(`Using '${remoteFolder}' as remote work folder`);
         }
+        this.remoteFolder = remoteFolder;
 
-        const dbfs = new Dbfs(host, token);
-        result = await dbfs.exists(remoteFolder);
+        this.dbfs = new Dbfs(host, token);
+        result = await this.dbfs.exists(remoteFolder);
         if (result.isFailure()) {
-            let result = await dbfs.mkdir(remoteFolder);
+            let result = await this.dbfs.mkdir(remoteFolder);
             if (result.isSuccess()) {
                 vscode.window.showInformationMessage(`Created remote folder ${remoteFolder}`);
             } else {
@@ -241,6 +251,12 @@ export class DatabricksRun {
                     libFolder = await inquiry('Select local library folder', folders);
                 }
                 this.databricksConfig.setPythonLibFolder(libFolder);
+            }
+
+
+            if (fileName) {
+                this.outfile = [this.remoteFolder.replace("dbfs:", ""), `.${path.basename(fileName).replace("/", ".")}.out`].join("/");
+                await remoteCommand.execute(watchCode("/dbfs" + this.outfile));
             }
 
             // Add Build wheel task
@@ -338,8 +354,19 @@ export class DatabricksRun {
             DatabricksRunPanel.currentPanel?.update(div);
         };
 
+        let watch = undefined;
+        if (isPython && code.includes("#%watch")) {
+            code = code.replace(/#%watch/g, "print = __DB_Watch__.watch()");
+            code = code + "\nprint = __DB_Watch__.unwatch()";
+            watch = { api: this.dbfs, path: this.outfile };
+        }
+
+        if (isPython && code.includes("#%unwatch")) {
+            code = code.replace(/#%unwatch/g, "print = __DB_Watch__.unwatch()");
+        }
+
         // Send code as a command
-        let result = await context.remoteCommand.execute(code);
+        let result = await context.remoteCommand.execute(code, watch);
         if (result.isSuccess()) {
             let result2 = result.toJson()["result"];
             var data = result2["data"];
