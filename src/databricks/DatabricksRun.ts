@@ -131,6 +131,7 @@ export class DatabricksRun {
         }
 
         const [host, token] = this.databricksConfig.getHostAndToken();
+        output.create();
 
         // Select cluster
         if (cluster === "") {
@@ -284,7 +285,7 @@ export class DatabricksRun {
         this.secretsExplorer.refresh();
         this.updateStatus(fileName, true);
 
-        output.write("Ready");
+        output.writeln("Ready");
         output.thickBorder();
 
         // TODO: For some reason, library Explorer needs a second refresh after init
@@ -330,10 +331,10 @@ export class DatabricksRun {
         if (isPython) {
             inPrompt = `In[${context.executionId}]:`;
             outPrompt = `Out[${context.executionId}]: `;
-            output.write(inPrompt);
+            output.writeln(inPrompt);
         }
         code.split(/\r?\n/).forEach((line) => {
-            output.write(line);
+            output.writeln(line);
         });
         output.thinBorder();
 
@@ -346,7 +347,7 @@ export class DatabricksRun {
             });
             let tableStr = table.toString();
             let tableLines = tableStr.split(/\r?\n/);
-            tableLines.forEach(line => output.write(line));
+            tableLines.forEach(line => output.writeln(line));
         };
 
         let renderHtml = (div: string) => {
@@ -356,13 +357,13 @@ export class DatabricksRun {
 
         let watch = undefined;
         if (isPython && code.includes("#%watch")) {
-            code = code.replace(/#%watch/g, "print = __DB_Watch__.watch()");
-            code = code + "\nprint = __DB_Watch__.unwatch()";
+            code = code.replace(/#%watch/g, "__DB_Watch__.watch()");
+            code = code + "\n__DB_Watch__.unwatch()";
             watch = { api: this.dbfs, path: this.outfile };
         }
 
         if (isPython && code.includes("#%unwatch")) {
-            code = code.replace(/#%unwatch/g, "print = __DB_Watch__.unwatch()");
+            code = code.replace(/#%unwatch/g, "__DB_Watch__.unwatch()");
         }
 
         // Send code as a command
@@ -379,7 +380,7 @@ export class DatabricksRun {
                 // strip R output HTML tags
                 data = data.replace(/<pre[^>]+>/g, "").replace(/<\/pre>/g, "");
                 data.forEach((line: string) => {
-                    output.write(line);
+                    output.writeln(line);
                 });
             } else if (isPython) {
                 data.split("\n").forEach((line: string) => {
@@ -388,15 +389,24 @@ export class DatabricksRun {
                         // So patch "Out" number to match "In" number
                         line = line.replace(/^Out\[\d+\]:\s/, outPrompt);
                     }
-                    output.write(line);
+                    output.writeln(line);
                 });
             } else {
                 data.split("\n").forEach((line: string) => {
-                    output.write(line);
+                    output.writeln(line);
                 });
             }
         } else {
-            output.write(result.toString());
+            result.toString().split("\n").forEach((line: string) => {
+                output.writeln(line);
+            });
+        }
+        if (code.indexOf("%pip") >= 0) {
+            let fileName = getCurrentFilename();
+            if (fileName) {
+                this.outfile = [this.remoteFolder.replace("dbfs:", ""), `.${path.basename(fileName).replace("/", ".")}.out`].join("/");
+                await context.remoteCommand.execute(watchCode("/dbfs" + this.outfile));
+            }
         }
         output.thickBorder();
 

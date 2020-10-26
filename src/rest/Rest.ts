@@ -129,31 +129,37 @@ export class Rest {
         let progress = false;
         let offset = 0;
         if (watch) {
-            output.write("watch start");
+            output.writeln("<< WATCH >>", false);
         }
         while (condition(response["data"]["status"].toLowerCase())) {
             if (watch) {
                 if (watch.api) {
+                    // TODO load from offset
                     let result = await watch.api.download(watch.path);
 
                     if (result.isSuccess()) {
                         let msg = result.toString();
-                        output.write(msg.substr(offset), false);
+                        output.write(msg.substr(offset));
                         offset = msg.length;
                     }
                 }
             } else {
-                output.write("»", false);
-                progress = true;
+                if (progress) {
+                    output.write("»");
+                } else {
+                    output.write("»", true);
+                    progress = true;
+                }
             }
             await wait(ms);
             response = await fn();
         }
         if (progress) {
-            output.write("\n", false);
+            output.writeln("", false);
         }
         if (watch) {
-            output.write("watch end");
+            output.writeln("", false);
+            output.writeln("<< WATCH END >>", false);
         }
         return response;
     }

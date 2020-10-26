@@ -1,7 +1,35 @@
 import * as vscode from 'vscode';
 import path from 'path';
 
-const output = vscode.window.createOutputChannel("Databricks Run");
+class OutputTerminal {
+    writeEmitter = new vscode.EventEmitter<string>();
+    terminal: vscode.Terminal;
+
+    constructor(msg: string) {
+        let pty = {
+            onDidWrite: this.writeEmitter.event,
+            open: () => this.writeEmitter.fire(msg + '\r\n\r\n'),
+            close: () => { /* noop*/ },
+        };
+        this.terminal = vscode.window.createTerminal({ name: "Databricks Run Output", pty });
+        this.show(true);
+    }
+
+    write(line: string) {
+        this.writeEmitter.fire(line);
+    }
+
+    show(flag: boolean) {
+        if (flag) {
+            this.terminal.show();
+        } else {
+            this.terminal.hide();
+        }
+    }
+}
+
+let output: OutputTerminal | undefined = undefined;
+
 const log = vscode.window.createOutputChannel("Databricks Run Log");
 
 function getPrefix(logLevel?: string) {
@@ -21,24 +49,31 @@ function getPrefix(logLevel?: string) {
     return `[${timestamp}${level}${prefix}] `;
 }
 
-export function write(msg: string, nl?: boolean) {
-    // eslint-disable-next-line eqeqeq
-    let newLine = (nl == null) ? true : nl;
-
-    const prefix = getPrefix();
-    if (newLine) {
-        output.appendLine(prefix + msg);
-    } else {
-        output.append(msg);
-    }
+export function create() {
+    output = new OutputTerminal("Welcome to the Databricks Run integration for Visual Studio Code");
     output.show(true);
 }
 
+export function write(msg: string, withPrefix: boolean = false) {
+    if (output) {
+        if (withPrefix) {
+            const prefix = getPrefix();
+            output.write(prefix + msg);
+        } else {
+            output.write(msg);
+        }
+    }
+}
+
+export function writeln(msg: string, withPrefix: boolean = true) {
+    write(msg + "\r\n", withPrefix);
+}
+
 export function thinBorder() {
-    write("⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅\n", false);
+    writeln("⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅");
 }
 export function thickBorder() {
-    write("================================================\n", false);
+    writeln("================================================");
 }
 
 export function info(msg: string) {

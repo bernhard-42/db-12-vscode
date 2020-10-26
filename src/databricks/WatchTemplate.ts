@@ -2,46 +2,65 @@ export function watchCode(outfile: string) {
     return `
 import os
 import shutil
+import sys
+from hashlib import md5
 
 class __DB_Watch__:
-    _print_builtin = print
-    _outfile = None
-    _tempfile = None
+    redirect = None
+    outfile = None
+    tmpfile = None
+
+    class Redirect:
+        def __init__(self):
+            self.stdout = sys.stdout
+            self.stderr = sys.stderr
+            sys.stdout = self
+            sys.stderr = self
+
+        def close(self):
+            if self.stdout is not None:
+                sys.stdout = self.stdout
+                self.stdout = None
+            if self.stderr is not None:
+                sys.stderr = self.stderr
+                self.stderr = None
+            
+        def write(self, data):
+            with open(__DB_Watch__.tmpfile, "a") as out:
+                out.write(data)
+                out.flush()
+            shutil.copy(__DB_Watch__.tmpfile, __DB_Watch__.outfile)
+            os.sync()
+        
+        def flush(self):
+            self.stdout.flush()
 
     @staticmethod
     def init(outfile):
-        __DB_Watch__._outfile = outfile
-        __DB_Watch__._tempfile = f"/tmp/{os.path.basename(outfile)}"
+        m = md5()
+        m.update(outfile.encode("utf-8"))
+        __DB_Watch__.outfile = outfile
+        __DB_Watch__.tmpfile = "/tmp/" + m.hexdigest()
         __DB_Watch__.clear()
-    
-    @staticmethod
-    def print_file(*args, **kwargs):
-        with open(__DB_Watch__._tempfile, "a") as out:
-            __DB_Watch__._print_builtin(*args, **dict(kwargs, **{"file": out, "flush": True}))
-        shutil.copy(__DB_Watch__._tempfile, __DB_Watch__._outfile)
-        os.sync()
-    
-    @staticmethod
-    def watch():
-        if __DB_Watch__._outfile is None:
-            return __DB_Watch__._print_builtin
-        else:
-            __DB_Watch__.clear()
-            return __DB_Watch__.print_file
-
+            
     @staticmethod
     def clear():
         try:
-            os.unlink(__DB_Watch__._tempfile)
-            os.unlink(__DB_Watch__._outfile)
+            os.unlink(__DB_Watch__.tmpfile)
+            os.unlink(__DB_Watch__.outfile)
         except:
             pass
         os.sync()
 
     @staticmethod
-    def unwatch():
-        return __DB_Watch__._print_builtin
+    def watch():
+        __DB_Watch__.redirect = __DB_Watch__.Redirect()
 
-__DB_Watch__.init("${outfile}")    
+    @staticmethod
+    def unwatch():
+        __DB_Watch__.redirect.close()
+        __DB_Watch__.clear()
+
+__DB_Watch__.init("${outfile}") 
 `;
 }
