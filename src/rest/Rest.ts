@@ -129,17 +129,17 @@ export class Rest {
         let progress = false;
         let offset = 0;
         if (watch) {
-            output.writeln("<< WATCH >>", false);
+            output.writeln("<< WATCH START >>", false);
         }
         while (condition(response["data"]["status"].toLowerCase())) {
             if (watch) {
                 if (watch.api) {
                     // TODO load from offset
-                    let result = await watch.api.download(watch.path);
+                    let result = await watch.api.download(watch.path, offset);
 
                     if (result.isSuccess()) {
                         let msg = result.toString();
-                        output.write(msg.substr(offset));
+                        output.write(msg);
                         offset = msg.length;
                     }
                 }
@@ -159,7 +159,7 @@ export class Rest {
         }
         if (watch) {
             output.writeln("", false);
-            output.writeln("<< WATCH END >>", false);
+            output.writeln("<< END >>", false);
         }
         return response;
     }

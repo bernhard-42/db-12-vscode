@@ -9,7 +9,9 @@ class __DB_Watch__:
     redirect = None
     outfile = None
     tmpfile = None
-
+    stdout = sys.stdout
+    stderr = sys.stderr
+    
     class Redirect:
         def __init__(self):
             self.stdout = sys.stdout
@@ -18,14 +20,18 @@ class __DB_Watch__:
             sys.stderr = self
 
         def close(self):
-            if self.stdout is not None:
-                sys.stdout = self.stdout
-                self.stdout = None
-            if self.stderr is not None:
-                sys.stderr = self.stderr
-                self.stderr = None
+            sys.stdout = __DB_Watch__.stdout
+            sys.stderr = __DB_Watch__.stderr
+            self.stdout = None
+            self.stderr = None
             
         def write(self, data):
+            #
+            # This is really heavyweight:
+            # We have to write and flush to local disk, then copy over to dbfs and then flush again
+            # Otherwise the latest message will not be on dbfs
+            # Use only when really necessary!!!
+            #
             with open(__DB_Watch__.tmpfile, "a") as out:
                 out.write(data)
                 out.flush()
@@ -44,6 +50,11 @@ class __DB_Watch__:
         __DB_Watch__.clear()
             
     @staticmethod
+    def reset():
+        sys.stdout = __DB_Watch__.stdout
+        sys.stderr = __DB_Watch__.stderr
+    
+    @staticmethod
     def clear():
         try:
             os.unlink(__DB_Watch__.tmpfile)
@@ -58,7 +69,7 @@ class __DB_Watch__:
 
     @staticmethod
     def unwatch():
-        __DB_Watch__.redirect.close()
+        __DB_Watch__.reset()
         __DB_Watch__.clear()
 
 __DB_Watch__.init("${outfile}") 

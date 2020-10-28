@@ -61,9 +61,9 @@ export class Dbfs extends Rest {
         return this.success(result.data);
     }
 
-    async download(file: string): Promise<Response> {
+    async download(file: string, offset: number): Promise<Response> {
         let uri = url.resolve(this.host, `api/2.0/dbfs/read`);
-        let result = await this.get2(uri, { path: file, offset: 0, length: 1000 * 1024 });
+        let result = await this.get2(uri, { path: file, offset: offset, length: 1000 * 1024 });
         if (result.isFailure()) {
             return this.failure(result.toString());
         }
