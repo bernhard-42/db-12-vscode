@@ -57,11 +57,10 @@ export abstract class BaseExplorer<T> implements vscode.TreeDataProvider<T>  {
         if (code) {
             result = await this.remoteCommand.execute(code);
             if (result.isSuccess()) {
-                output.info("Successfully registered Variable Explorer");
                 return this.execute(command);
             }
         }
-        vscode.window.showErrorMessage("Failed to retrieve remote variables");
-        return Response.failure("Failed to retrieve remote variables");
+        vscode.window.showErrorMessage("Failed to retrieve remote objects");
+        return Response.failure("Failed to retrieve remote objects");
     }
 }

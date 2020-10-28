@@ -73,6 +73,22 @@
 				}
 			},
 			{
+				"command": "databricks-run.refresh-experiments",
+				"title": "Refresh Remote Experiments",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "databricks-run.open-experiment",
+				"title": "Open experiment in browser",
+				"icon": {
+					"light": "resources/open.png",
+					"dark": "resources/open.png"
+				}
+			},
+			{
 				"command": "databricks-run.refresh-secrets",
 				"title": "Refresh Remote Secrets",
 				"icon": {
@@ -227,6 +243,10 @@
 					"name": "Python Variables"
 				},
 				{
+					"id": "databricksExperimentsExplorer",
+					"name": "MLflow Experiments"
+				},
+				{
 					"id": "databricksLibraryExplorer",
 					"name": "Python Libraries"
 				},
@@ -261,6 +281,11 @@
 					"group": "navigation"
 				},
 				{
+					"command": "databricks-run.refresh-experiments",
+					"when": "view == databricksExperimentsExplorer",
+					"group": "navigation"
+				},
+				{
 					"command": "databricks-run.refresh-databases",
 					"when": "view == databricksDatabaseExplorer",
 					"group": "navigation"
@@ -289,6 +314,11 @@
 				{
 					"command": "databricks-run.paste-from-dataframe",
 					"when": "view == databricksVariableExplorer && viewItem == dataframe",
+					"group": "inline"
+				},
+				{
+					"command": "databricks-run.open-experiment",
+					"when": "view == databricksExperimentsExplorer",
 					"group": "inline"
 				},
 				{

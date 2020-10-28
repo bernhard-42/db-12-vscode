@@ -14,6 +14,9 @@ import { Json } from '../rest/Rest';
 import { Variable } from '../explorers/variables/Variable';
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
 
+import { Experiment } from '../explorers/experiments/Experiment';
+import { createExperimentsExplorer, ExperimentsExplorerProvider } from '../explorers/experiments/ExperimentsExplorer';
+
 import { Library } from '../explorers/libraries/Library';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
 
@@ -53,6 +56,7 @@ export interface Watch {
 export class DatabricksRun {
     private databricksConfig = <DatabricksConfig>{};
     private variableExplorer: VariableExplorerProvider | undefined;
+    private experimentsExplorer: ExperimentsExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
     private databaseExplorer: DatabaseExplorerProvider | undefined;
     private clusterExplorer: ClusterExplorerProvider | undefined;
@@ -222,7 +226,8 @@ export class DatabricksRun {
             const error = result.toString();
             if (error.startsWith("ClusterNotReadyException")) {
                 if (error.indexOf("currently Pending") >= 0) {
-                    vscode.window.showErrorMessage("Cluster is currently starting");
+                    vscode.window.showInformationMessage("Cluster is currently starting");
+                    vscode.window.showInformationMessage("Once the cluster is started, please re-initialize the context.");
                 } else {
                     vscode.window.showErrorMessage("Cluster not running");
                     const answer = await inquiry(`Cluster not running, start it?`, ["yes", "no"]);
@@ -270,6 +275,10 @@ export class DatabricksRun {
             // Register Variable explorer
             this.variableExplorer = createVariableExplorer();
             this.variableExplorer?.refresh();
+
+            // Register Experiments explorer
+            this.experimentsExplorer = createExperimentsExplorer();
+            this.experimentsExplorer?.refresh();
 
             // Register Library explorer
             this.libraryExplorer = createLibraryExplorer();
@@ -463,6 +472,7 @@ export class DatabricksRun {
         }
 
         this.refreshVariables(filename);
+        this.refreshExperiments();
         this.refreshDatabases();
         this.refreshLibraries();
         this.refreshContexts();
@@ -524,6 +534,23 @@ export class DatabricksRun {
             let snippet = new vscode.SnippetString(this.variableExplorer.getSnippet(variable));
             const editor = getEditor();
             editor?.insertSnippet(snippet);
+        }
+    }
+
+    refreshExperiments(filename?: string) {
+        if (this.experimentsExplorer) {
+            this.experimentsExplorer.refresh(filename);
+        }
+    }
+
+    openExperiment(experiment: Experiment) {
+        let experiment_id = experiment.value;
+        if (experiment_id) {
+            const context = executionContexts.getContext();
+            if (context) {
+                let url = `${context.host}/#mlflow/experiments/${experiment_id}`;
+                vscode.env.openExternal(vscode.Uri.parse(url));
+            }
         }
     }
 

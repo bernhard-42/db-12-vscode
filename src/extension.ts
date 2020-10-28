@@ -74,7 +74,15 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.refresh-experiments', () => databricksRun.refreshExperiments()
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
 		"databricks-run.paste-from-dataframe", (dataframe) => databricksRun.pasteFromDataframe(dataframe)
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		"databricks-run.open-experiment", (experiment) => databricksRun.openExperiment(experiment)
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
@@ -122,6 +130,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (editor && path.isAbsolute(editor.document.fileName)) {
 				output.debug(`window.onDidChangeActiveTextEditor: ${editor.document.fileName}`);
 				databricksRun.refreshVariables(editor.document.fileName);
+				databricksRun.refreshExperiments(editor.document.fileName);
 				databricksRun.refreshDatabases(editor.document.fileName);
 				databricksRun.refreshLibraries(editor.document.fileName);
 			}
