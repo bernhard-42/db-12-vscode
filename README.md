@@ -76,3 +76,7 @@ None
 ### 0.9.2
 
 - Added watch feature
+
+## 0.9.3
+
+- New MLflow experiments browser
