@@ -26,10 +26,11 @@ export function getWorkspaceRoot() {
 }
 
 export async function inquiry(placeholder: string, options: string[]) {
+    console.log(options);
     const answer = await vscode.window.showQuickPick(options, {
         placeHolder: placeholder
-    }) || "";
-    return answer;
+    });
+    return answer || "";
 }
 
 

@@ -12,7 +12,6 @@ class OutputTerminal {
             close: () => { /* noop*/ },
         };
         this.terminal = vscode.window.createTerminal({ name: "Databricks Run Output", pty });
-        this.show(true);
     }
 
     write(line: string) {
@@ -51,7 +50,12 @@ function getPrefix(logLevel?: string) {
 
 export function create() {
     output = new OutputTerminal("Welcome to the Databricks Run integration for Visual Studio Code");
-    output.show(true);
+}
+
+export function show() {
+    if (output) {
+        output.show(true);
+    }
 }
 
 export function write(msg: string, withPrefix: boolean = false) {

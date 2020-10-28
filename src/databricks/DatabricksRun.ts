@@ -131,7 +131,6 @@ export class DatabricksRun {
         }
 
         const [host, token] = this.databricksConfig.getHostAndToken();
-        output.create();
 
         // Select cluster
         if (cluster === "") {
@@ -225,6 +224,7 @@ export class DatabricksRun {
                 if (error.indexOf("currently Pending") >= 0) {
                     vscode.window.showErrorMessage("Cluster is currently starting");
                 } else {
+                    vscode.window.showErrorMessage("Cluster not running");
                     const answer = await inquiry(`Cluster not running, start it?`, ["yes", "no"]);
                     if (answer === "yes") {
                         let clusterApi = new Clusters(host, token);
@@ -233,13 +233,15 @@ export class DatabricksRun {
                             output.error(result.toString());
                         }
                     }
-                    output.write("Once the cluster is started, please re-initialize the context.");
+
+                    vscode.window.showInformationMessage("Once the cluster is started, please re-initialize the context.");
                 }
             } else {
                 vscode.window.showErrorMessage(`Could not create Databricks Execution Context: ${result.toString()}`);
             }
             return;
         }
+
 
         if (language === "python") {
             if (libFolder === "") {
@@ -254,6 +256,8 @@ export class DatabricksRun {
                 this.databricksConfig.setPythonLibFolder(libFolder);
             }
 
+            output.create();
+            output.show();
 
             if (fileName) {
                 this.outfile = [this.remoteFolder.replace("dbfs:", ""), `.${path.basename(fileName).replace("/", ".")}.out`].join("/");
@@ -278,6 +282,7 @@ export class DatabricksRun {
             this.databaseExplorer?.refresh();
         }
 
+
         this.contextEplorer = createContextExplorer();
         this.contextEplorer?.refresh();
 
@@ -296,6 +301,7 @@ export class DatabricksRun {
         if (resolve) {
             resolve();
         }
+
     };
 
     async sendSelectionOrLine() {
