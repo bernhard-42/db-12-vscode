@@ -72,3 +72,7 @@ None
 - More explorers (databses, clusters, libraries)
 - Configuration is now outside of .vscode
 - Complete task build systems
+
+### 0.9.2
+
+- Added watch feature
