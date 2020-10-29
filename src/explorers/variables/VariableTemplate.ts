@@ -136,6 +136,34 @@ export function variablesCode(maxlen: number, maxstr: number) {
                     indent=2,
                 )
             )
+    #
+    # add the display function to avoid sending another execution request
+    #
+    def display_vs(input, *args, **kwargs):
+        import matplotlib
+        import plotly
+        import io
+        import base64
+    
+        class MPLWrapper:
+            def __init__(self, fig):
+                self.fig = fig
+    
+            def _repr_html_(self):
+                buf = io.BytesIO()
+                self.fig.savefig(buf, format="png")
+                buf.seek(0)
+                string = base64.b64encode(buf.read()).decode("utf-8")
+                return "data:image/png;base64," + string
+    
+        if isinstance(input, matplotlib.figure.Figure):
+            return MPLWrapper(input)
+    
+        elif isinstance(input, plotly.graph_objs._figure.Figure):
+            displayHTML(input.to_html(full_html=False))
+    
+        else:
+            display(input, *args, **kwargs)
 `;
 }
 
