@@ -108,6 +108,13 @@ export class RemoteCommand extends Rest {
                                 "type": resultType
                             }
                         });
+                    } else if (resultType === "images") {
+                        return this.success({
+                            "result": {
+                                "data": response["data"]["results"]["fileNames"],
+                                "type": resultType
+                            }
+                        });
                     } else {
                         return this.success({
                             "result": {

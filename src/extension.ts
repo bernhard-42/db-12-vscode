@@ -74,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
-		'databricks-run.refresh-experiments', () => databricksRun.refreshExperiments()
+		'databricks-run.refresh-mlflow', () => databricksRun.refreshMlflow()
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
@@ -82,7 +82,11 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
-		"databricks-run.open-experiment", (experiment) => databricksRun.openExperiment(experiment)
+		"databricks-run.open-experiment", (experiment) => databricksRun.openMlflowExperiment(experiment)
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
+		"databricks-run.open-model", (model) => databricksRun.openMlflowModel(model)
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
@@ -130,7 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (editor && path.isAbsolute(editor.document.fileName)) {
 				output.debug(`window.onDidChangeActiveTextEditor: ${editor.document.fileName}`);
 				databricksRun.refreshVariables(editor.document.fileName);
-				databricksRun.refreshExperiments(editor.document.fileName);
+				databricksRun.refreshMlflow(editor.document.fileName);
 				databricksRun.refreshDatabases(editor.document.fileName);
 				databricksRun.refreshLibraries(editor.document.fileName);
 			}

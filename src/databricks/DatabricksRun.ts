@@ -14,8 +14,8 @@ import { Json } from '../rest/Rest';
 import { Variable } from '../explorers/variables/Variable';
 import { createVariableExplorer, VariableExplorerProvider } from '../explorers/variables/VariableExplorer';
 
-import { Experiment } from '../explorers/experiments/Experiment';
-import { createExperimentsExplorer, ExperimentsExplorerProvider } from '../explorers/experiments/ExperimentsExplorer';
+import { MlflowObject } from '../explorers/mlflow/MlflowObject';
+import { createMlflowExplorer, MlflowExplorerProvider } from '../explorers/mlflow/MlflowExplorer';
 
 import { Library } from '../explorers/libraries/Library';
 import { createLibraryExplorer, LibraryExplorerProvider } from '../explorers/libraries/LibraryExplorer';
@@ -56,7 +56,7 @@ export interface Watch {
 export class DatabricksRun {
     private databricksConfig = <DatabricksConfig>{};
     private variableExplorer: VariableExplorerProvider | undefined;
-    private experimentsExplorer: ExperimentsExplorerProvider | undefined;
+    private mlflowExplorer: MlflowExplorerProvider | undefined;
     private libraryExplorer: LibraryExplorerProvider | undefined;
     private databaseExplorer: DatabaseExplorerProvider | undefined;
     private clusterExplorer: ClusterExplorerProvider | undefined;
@@ -277,8 +277,8 @@ export class DatabricksRun {
             this.variableExplorer?.refresh();
 
             // Register Experiments explorer
-            this.experimentsExplorer = createExperimentsExplorer();
-            this.experimentsExplorer?.refresh();
+            this.mlflowExplorer = createMlflowExplorer();
+            this.mlflowExplorer?.refresh();
 
             // Register Library explorer
             this.libraryExplorer = createLibraryExplorer();
@@ -370,6 +370,11 @@ export class DatabricksRun {
             DatabricksRunPanel.currentPanel?.update(div);
         };
 
+        let renderImage = (div: string) => {
+            output.writeln(`Cannot access remote image ${div}`);
+            output.writeln("If you use matplotlib, try single line 'display_vs(yyour figure>)'");
+        };
+
         let watch = undefined;
         if (isPython && code.includes("#%watch")) {
             code = code.replace(/#%watch/g, "__DB_Watch__.watch()");
@@ -389,8 +394,12 @@ export class DatabricksRun {
 
             if (result2["type"] === "table") {
                 renderTable(result2);
+            } else if (result2["type"] === "images") {
+                renderImage(data[0]);
             } else if (data.startsWith("<div>") || data.startsWith("<html>")) {
                 renderHtml(data);
+            } else if (data.startsWith("data:image/png;base64")) {
+                renderHtml(`<div><img src="${data}"/></div>`);
             } else if (isR) {
                 // strip R output HTML tags
                 data = data.replace(/<pre[^>]+>/g, "").replace(/<\/pre>/g, "");
@@ -472,7 +481,7 @@ export class DatabricksRun {
         }
 
         this.refreshVariables(filename);
-        this.refreshExperiments();
+        this.refreshMlflow();
         this.refreshDatabases();
         this.refreshLibraries();
         this.refreshContexts();
@@ -537,18 +546,29 @@ export class DatabricksRun {
         }
     }
 
-    refreshExperiments(filename?: string) {
-        if (this.experimentsExplorer) {
-            this.experimentsExplorer.refresh(filename);
+    refreshMlflow(filename?: string) {
+        if (this.mlflowExplorer) {
+            this.mlflowExplorer.refresh(filename);
         }
     }
 
-    openExperiment(experiment: Experiment) {
+    openMlflowExperiment(experiment: MlflowObject) {
         let experiment_id = experiment.value;
         if (experiment_id) {
             const context = executionContexts.getContext();
             if (context) {
                 let url = `${context.host}/#mlflow/experiments/${experiment_id}`;
+                vscode.env.openExternal(vscode.Uri.parse(url));
+            }
+        }
+    }
+
+    openMlflowModel(model: MlflowObject) {
+        let model_name = model.name;
+        if (model_name) {
+            const context = executionContexts.getContext();
+            if (context) {
+                let url = `${context.host}/#mlflow/models/${model_name}`;
                 vscode.env.openExternal(vscode.Uri.parse(url));
             }
         }
