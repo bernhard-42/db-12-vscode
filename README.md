@@ -79,4 +79,8 @@ None
 
 ## 0.9.3
 
-- New MLflow experiments browser
+- New MLflow experiments browser for MLflow tracking server
+
+## 0.9.4
+
+- MLflow browser now also supports models of the MLflow model registry
