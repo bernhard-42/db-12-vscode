@@ -54,33 +54,20 @@ None
 
 ## Release Notes
 
-### 0.1.0
-
-- Initial release
-
-### 0.2.0
-
-- Added support of libraries
-- Refactored to remove API 1.2 references
-
-### 0.3.0
-
-- Removed language as a setting
-
-### 0.9.0
-
-- More explorers (databses, clusters, libraries)
-- Configuration is now outside of .vscode
-- Complete task build systems
-
-### 0.9.2
-
-- Added watch feature
-
-## 0.9.3
-
-- New MLflow experiments browser for MLflow tracking server
-
-## 0.9.4
-
-- MLflow browser now also supports models of the MLflow model registry
+- **0.1.0**
+    - Initial release
+- **0.2.0**
+    - Added support of libraries
+    - Refactored to remove API 1.2 references
+- **0.3.0**
+    - Removed language as a setting
+- **0.9.0**
+    - More explorers (databases, clusters, libraries)
+    - Configuration is now outside of .vscode
+    - Complete task build systems
+- **0.9.2**
+    - Added watch feature
+- **0.9.3**
+    - New MLflow experiments browser for MLflow tracking server
+- **0.9.4**
+    - MLflow browser now also supports models of the MLflow model registry
