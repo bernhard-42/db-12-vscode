@@ -4,7 +4,7 @@ import * as output from './Output';
 export function getEditor() {
     const editor = vscode.window.activeTextEditor;
     if (editor === undefined) {
-        output.error("No editor window open");
+        vscode.window.showErrorMessage("No editor window open or in focus");
     }
     return editor;
 }
