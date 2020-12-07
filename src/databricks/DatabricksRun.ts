@@ -628,6 +628,7 @@ export class DatabricksRun {
             vscode.workspace.openTextDocument(context.value).then(doc => {
                 vscode.window.showTextDocument(doc);
             });
+            this, output.show();
         }
     }
 
