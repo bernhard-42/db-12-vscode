@@ -167,14 +167,30 @@ export class RemoteCommand extends Rest {
     }
 
     async getDatabases(): Promise<Response> {
-        return this.databaseInfo("show databases");
+        let result = this.databaseInfo("show databases");
+        return result;
     }
 
     async getTables(database: string): Promise<Response> {
-        return this.databaseInfo(`show tables in ${database}`);
+        let result = this.databaseInfo(`show tables in ${database}`);
+        return result;
     }
 
-    async getSchema(database: string, table: string): Promise<Response> {
-        return this.databaseInfo(`describe ${database}.${table}`);
+    async getSchema(table: string): Promise<Response> {
+        var result: Promise<Response>;
+        switch (this.language) {
+            case "sql":
+                result = this.databaseInfo(`describe ${table}`);
+                break;
+            case "python":
+                result = this.execute(`print(spark.table("${table}").schema.json())`);
+                break;
+            case "scala":
+                result = this.execute(`print(spark.table("${table}").schema.json)`);
+                break;
+            default:
+                return this.failure(`Language ${this.language} is not supported`);
+        }
+        return result;
     }
 }
