@@ -71,3 +71,8 @@ None
     - New MLflow experiments browser for MLflow tracking server
 - **0.9.4**
     - MLflow browser now also supports models of the MLflow model registry
+- **0.9.5**
+    - Added Link to Spark UI
+    - Magics #%pip and #%sh
+    - Support cmd-K ctrl-k (or ctrl-k ctrl-k on windows) to send block between "# --" markers
+    - When clicking on centext, both, code and terminal are getting focus

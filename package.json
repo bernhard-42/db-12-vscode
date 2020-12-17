@@ -3,7 +3,7 @@
 	"displayName": "Databricks Run",
 	"publisher": "bernhardwalter",
 	"description": "Commands to send code to Databricks cluster",
-	"version": "0.9.4",
+	"version": "0.9.5",
 	"repository": "https://github.com/bernhard-42/databricks-run",
 	"engines": {
 		"vscode": ">=1.48.2"
