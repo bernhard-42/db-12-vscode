@@ -412,20 +412,22 @@ export class DatabricksRun {
 
         let watch = undefined;
         if (isPython) {
-            if (code.startsWith("#%watch")) {
+            if (code.includes("#%watch")) {
                 code = code.replace(/#%watch/g, "__DB_Watch__.watch()");
                 code = code + "\n__DB_Watch__.unwatch()";
                 watch = { api: this.dbfs, path: this.outfile };
 
-            } else if (code.startsWith("#%unwatch")) {
+            }
+
+            if (code.includes("#%unwatch")) {
                 code = code.replace(/#%unwatch/g, "__DB_Watch__.unwatch()");
 
-            } else if (code.startsWith("#%unwatch")) {
-                code = code.replace(/#%unwatch/g, "__DB_Watch__.unwatch()");
-
-            } else if (code.startsWith("#%pip")) {
+            }
+            if (code.startsWith("#%pip")) {
                 code = code.replace(/^#/, "");
-            } else if (code.startsWith("#%sh")) {
+            }
+
+            if (code.startsWith("#%sh")) {
                 code = code.replace(/^#%sh/, "%%sh\n");
             }
         }
