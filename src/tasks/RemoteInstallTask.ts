@@ -28,7 +28,7 @@ export class RemoteInstallTask extends BaseTask {
                 let command = `%pip install ${this.remoteFile.replace("dbfs:", "/dbfs")}`;
                 let result = await context.remoteCommand.execute(command);
                 if (result.isSuccess()) {
-                    output.write("done");
+                    output.writeln("done");
                     this.writeEmitter.fire(`Success\r\n`);
                 } else {
                     output.write("failure");

@@ -17,7 +17,7 @@ export class RestartTask extends BaseTask {
                 setTimeout(() => {
                     this.writeEmitter.fire(`Restarting extension ...\r\n`);
                     vscode.commands.executeCommand("databricks-run.initialize", () => {
-                        output.write("done");
+                        output.writeln("done");
                         resolve();
                         this.closeEmitter.fire();
                     });
