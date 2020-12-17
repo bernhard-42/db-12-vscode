@@ -552,6 +552,17 @@ export class DatabricksRun {
         this.cleanupForCluster(cluster.getclusterId());
     }
 
+    async openSparkUi(cluster: ClusterAttribute) {
+        let cluster_id = cluster?.value?.cluster_id;
+        if (cluster_id) {
+            const context = executionContexts.getContext();
+            if (context) {
+                let url = `${context.host}/#setting/clusters/${cluster_id}/sparkUi`;
+                vscode.env.openExternal(vscode.Uri.parse(url));
+            }
+        }
+    }
+
     async stopCluster(cluster: ClusterAttribute) {
         if (await inquiry(`Stop cluster ? `, ["yes", "no"]) !== "yes") { return; }
         this.clusterExplorer?.manageCluster(cluster, "stop");

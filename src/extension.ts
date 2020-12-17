@@ -50,6 +50,10 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.open-sparkui', (cluster) => databricksRun.openSparkUi(cluster)
+	));
+
+	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.stop-cluster', (cluster) => databricksRun.stopCluster(cluster)
 	));
 
