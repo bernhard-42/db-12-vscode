@@ -326,9 +326,6 @@ export class DatabricksRun {
         } else {
             code = editor.document.getText(selection);
         }
-        if (code.startsWith("%sh")) {
-            code = `%%sh\n${code.slice(4, 10000)}`;
-        }
         return this.sendSelectionOrBlock(code);
     }
 
@@ -414,15 +411,25 @@ export class DatabricksRun {
         };
 
         let watch = undefined;
-        if (isPython && code.includes("#%watch")) {
-            code = code.replace(/#%watch/g, "__DB_Watch__.watch()");
-            code = code + "\n__DB_Watch__.unwatch()";
-            watch = { api: this.dbfs, path: this.outfile };
+        if (isPython) {
+            if (code.startsWith("#%watch")) {
+                code = code.replace(/#%watch/g, "__DB_Watch__.watch()");
+                code = code + "\n__DB_Watch__.unwatch()";
+                watch = { api: this.dbfs, path: this.outfile };
+
+            } else if (code.startsWith("#%unwatch")) {
+                code = code.replace(/#%unwatch/g, "__DB_Watch__.unwatch()");
+
+            } else if (code.startsWith("#%unwatch")) {
+                code = code.replace(/#%unwatch/g, "__DB_Watch__.unwatch()");
+
+            } else if (code.startsWith("#%pip")) {
+                code = code.replace(/^#/, "");
+            } else if (code.startsWith("#%sh")) {
+                code = code.replace(/^#%sh/, "%%sh\n");
+            }
         }
 
-        if (isPython && code.includes("#%unwatch")) {
-            code = code.replace(/#%unwatch/g, "__DB_Watch__.unwatch()");
-        }
 
         // Send code as a command
         let result = await context.remoteCommand.execute(code, watch);
