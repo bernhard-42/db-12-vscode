@@ -25,7 +25,10 @@ export function activate(context: vscode.ExtensionContext) {
 		'databricks-run.initialize', (resolve?: (value?: void) => void) => databricksRun.initialize(resolve)
 	));
 	context.subscriptions.push(vscode.commands.registerCommand(
-		'databricks-run.sendSelectionOrLine', () => databricksRun.sendSelectionOrLine()
+		'databricks-run.sendLine', () => databricksRun.sendLine()
+	));
+	context.subscriptions.push(vscode.commands.registerCommand(
+		'databricks-run.sendSelectionOrBlock', () => databricksRun.sendSelectionOrBlock()
 	));
 	context.subscriptions.push(vscode.commands.registerCommand(
 		'databricks-run.stop', () => databricksRun.stop()

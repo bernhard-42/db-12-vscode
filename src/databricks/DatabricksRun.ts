@@ -313,7 +313,17 @@ export class DatabricksRun {
 
     };
 
-    async sendSelectionOrLine() {
+    async sendLine() {
+        const editor = getEditor();
+        if (editor === undefined) {
+            vscode.window.showErrorMessage(`No VS Code editor open`);
+            return;
+        }
+        var line = editor.document.lineAt(editor.selection.active.line).text;
+        return this.sendSelectionOrBlock(line);
+    }
+
+    async sendSelectionOrBlock(line: string | undefined = undefined) {
         const editor = getEditor();
         if (editor === undefined) {
             vscode.window.showErrorMessage(`No VS Code editor open`);
@@ -334,11 +344,30 @@ export class DatabricksRun {
         const isSQL = (context.language === "sql");
 
         let code = "";
-        let selection = editor.selection;
-        if (selection.isEmpty) {
-            code = editor.document.lineAt(editor.selection.active.line).text;
+        if (line === undefined) {
+            let selection = editor.selection;
+            if (selection.isEmpty) {
+                let pos = editor.selection.active;
+                let lines = editor.document.getText().split("\n");
+                let start_line = 0;
+                let end_line = editor.document.lineCount - 1;
+                for (let i = 0; i < pos.line; i++) {
+                    if (lines[i].startsWith("# --")) {
+                        start_line = i;
+                    }
+                }
+                for (let i = pos.line + 1; i <= editor.document.lineCount; i++) {
+                    if (lines[i].startsWith("# --")) {
+                        end_line = i;
+                        break;
+                    }
+                }
+                code = lines.slice(start_line, end_line).join("\n");
+            } else {
+                code = editor.document.getText(selection);
+            }
         } else {
-            code = editor.document.getText(selection);
+            code = line;
         }
 
         var inPrompt = "";
