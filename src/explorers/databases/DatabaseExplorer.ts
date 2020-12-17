@@ -110,7 +110,11 @@ export class DatabaseExplorerProvider extends BaseExplorer<DatabaseItem> {
     }
 
     getSnippet(database: DatabaseItem) {
-        return database.fqName;
+        if (database.type === "column") {
+            return database.name;
+        } else {
+            return database.fqName;
+        }
     }
 }
 
