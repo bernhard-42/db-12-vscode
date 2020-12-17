@@ -319,8 +319,17 @@ export class DatabricksRun {
             vscode.window.showErrorMessage(`No VS Code editor open`);
             return;
         }
-        var line = editor.document.lineAt(editor.selection.active.line).text;
-        return this.sendSelectionOrBlock(line);
+        let code = "";
+        let selection = editor.selection;
+        if (selection.isEmpty) {
+            code = editor.document.lineAt(editor.selection.active.line).text;
+        } else {
+            code = editor.document.getText(selection);
+        }
+        if (code.startsWith("%sh")) {
+            code = `%%sh\n${code.slice(4, 10000)}`;
+        }
+        return this.sendSelectionOrBlock(code);
     }
 
     async sendSelectionOrBlock(line: string | undefined = undefined) {

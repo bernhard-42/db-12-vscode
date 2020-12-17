@@ -21,8 +21,12 @@
 				"title": "Databricks Run: Initialize a Databricks Connection"
 			},
 			{
-				"command": "databricks-run.sendSelectionOrLine",
-				"title": "Databricks Run: Send selection or line"
+				"command": "databricks-run.sendSelectionOrBlock",
+				"title": "Databricks Run: Send selection or block between #--"
+			},
+			{
+				"command": "databricks-run.sendLine",
+				"title": "Databricks Run: Send current line"
 			},
 			{
 				"command": "databricks-run.cancel",
@@ -177,9 +181,14 @@
 			}
 		],
 		"keybindings": [{
-				"command": "databricks-run.sendSelectionOrLine",
+				"command": "databricks-run.sendLine",
 				"key": "ctrl+k shift+enter",
 				"mac": "cmd+k shift+enter",
+				"when": "editorTextFocus"
+			}, {
+				"command": "databricks-run.sendSelectionOrBlock",
+				"key": "ctrl+k ctrl+enter",
+				"mac": "cmd+k ctrl+enter",
 				"when": "editorTextFocus"
 			},
 			{
